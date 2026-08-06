@@ -1,0 +1,1698 @@
+,diff,commit_id,summary,commit_time,files
+418,"@@ -206,7 +206,7 @@
+ /profile=ha/subsystem=resource-adapters/resource-adapter=google:add(module=org.jboss.teiid.resource-adapter.google)
+ /profile=ha/subsystem=resource-adapters/resource-adapter=ldap:add(module=org.jboss.teiid.resource-adapter.ldap)
+ /profile=ha/subsystem=resource-adapters/resource-adapter=salesforce:add(module=org.jboss.teiid.resource-adapter.salesforce)
+ /profile=ha/subsystem=resource-adapters/resource-adapter=salesforce-34:add(module=org.jboss.teiid.resource-adapter.salesforce, slot=""34"")
+ /profile=ha/subsystem=resource-adapters/resource-adapter=webservice:add(module=org.jboss.teiid.resource-adapter.webservice)
+ /profile=ha/subsystem=resource-adapters/resource-adapter=mongodb:add(module=org.jboss.teiid.resource-adapter.mongodb)
+ /profile=ha/subsystem=resource-adapters/resource-adapter=cassandra:add(module=org.jboss.teiid.resource-adapter.cassandra)
+",370,,,
+419,"@@ -20,18 +20,22 @@
+             </includes>
+         </fileSet>
+         <fileSet>
+             <directory>${project.build.directory}/rar-unpack/META-INF</directory>
+             <outputDirectory>${jbossas-module-root}/org/jboss/teiid/resource-adapter/salesforce-34/main/META-INF</outputDirectory>
+         </fileSet>
+     </fileSets>
+     
+        <dependencySets>
+ 	        <dependencySet>
+ 	            <outputDirectory>${jbossas-module-root}/org/jboss/teiid/resource-adapter/salesforce-34/main</outputDirectory>
+ 	            <includes>
+ 	                <include>org.jboss.teiid.connectors:connector-salesforce-34</include>
+ 	            </includes>
+ 	            <useTransitiveDependencies>false</useTransitiveDependencies>
+ 	        </dependencySet>
+ 	    </dependencySets>    
+ </assembly>
+",371,,,
+420,"@@ -5,6 +5,7 @@
+        
+     <resources>
+     	<resource-root path=""connector-salesforce-34-${project.version}.jar""/>
+         <resource-root path="".""/>
+         <!-- Insert resources here -->
+     </resources>
+@@ -18,7 +19,6 @@
+         <module name=""org.jboss.teiid.api""/>
+         <module name=""javax.jws.api""/>
+         <module name=""javax.wsdl4j.api""/>
+         <module name=""org.jboss.teiid.resource-adapter.salesforce"" />
+         <module name=""org.jboss.teiid.translator.salesforce"" slot=""34""/>
+         <module name=""org.apache.cxf.impl.frontend-jaxrs"" services=""export"" export=""true""/>
+         <module name=""org.apache.cxf.impl"" export=""true"">
+@@ -31,7 +31,7 @@
+                 <include path=""META-INF/cxf"" />
+             </exports>
+         </module>
+         <module name=""org.apache.cxf"" export=""true"">
+             <imports>
+                 <include path=""META-INF"" />
+                 <include path=""META-INF/cxf"" />
+@@ -50,4 +50,4 @@
+             </exports>
+         </module>        
+     </dependencies>
+ </module>
+\ No newline at end of file
+",372,,,
+421,"@@ -12,21 +12,22 @@
+ 	<description>Integrates the query engine with Salesforce.com.</description>
+     
+ 	<dependencies>
+ 		<dependency>
+ 			<groupId>org.jboss.teiid.connectors</groupId>
+ 			<artifactId>translator-salesforce-34</artifactId>
+ 		</dependency>	
+ 		<dependency>
+ 			<groupId>org.jboss.teiid.connectors</groupId>
+ 			<artifactId>connector-salesforce</artifactId>
+ 			<classifier>lib</classifier>
+ 			<exclusions>
+ 				<exclusion>
+ 					<groupId>org.jboss.teiid.connectors</groupId>
+ 					<artifactId>translator-salesforce</artifactId>
+ 				</exclusion>
+ 			</exclusions>
+ 		</dependency>
+ 
+         <dependency>
+             <groupId>org.jboss.teiid</groupId>
+@@ -76,7 +77,7 @@
+         </dependencies>
+     <build>
+         <plugins>
+             <plugin>
+                 <groupId>org.apache.felix</groupId>
+                 <artifactId>maven-bundle-plugin</artifactId>
+                 <extensions>true</extensions>
+@@ -92,7 +93,7 @@
+                 <configuration>
+                     <classifier>lib</classifier>
+                 </configuration>
+             </plugin>        
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-rar-plugin</artifactId>
+",373,,,
+422,"@@ -0,0 +1 @@
+",374,,,
+679,"@@ -58,12 +58,11 @@ public class CouchbaseExecutionFactory extends ExecutionFactory<ConnectionFactor
+     protected Map<String, FunctionModifier> functionModifiers = new TreeMap<String, FunctionModifier>(String.CASE_INSENSITIVE_ORDER);
+     
+     private int maxBulkInsertSize = 100;
+ 
+ 	public CouchbaseExecutionFactory() {
+ 	    setSupportsSelectDistinct(true);
+ 		setSourceRequiredForMetadata(false);
+ //		setTransactionSupport(TransactionSupport.NONE);
+ 		
+ 		// Couchbase subquery returns an array every time, Join relate with use-keys-clause
+ 	}
+ 
+@@ -83,14 +82,14 @@ public void start() throws TranslatorException {
+             public List<?> translate(Function function) {
+                 Expression param = function.getParameters().get(0);
+                 int targetCode = getCode(function.getType());
+                 if(targetCode == BYTE || targetCode == SHORT || targetCode == INTEGER || targetCode == LONG || targetCode == FLOAT || targetCode == DOUBLE ) {
+                     return Arrays.asList(""TONUMBER"" + Tokens.LPAREN, param, Tokens.RPAREN);//$NON-NLS-1$ 
+                 } else if(targetCode == STRING || targetCode == CHAR) {
+                     return Arrays.asList(""TOSTRING"" + Tokens.LPAREN, param, Tokens.RPAREN);//$NON-NLS-1$ 
+                 } else if(targetCode == BOOLEAN) {
+                     return Arrays.asList(""TOBOOLEAN"" + Tokens.LPAREN, param, Tokens.RPAREN);//$NON-NLS-1$ 
+                 } else {
+                     return Arrays.asList(""TOOBJECT"" + Tokens.LPAREN, param, Tokens.RPAREN);//$NON-NLS-1$ 
+                 }
+             }});
+ 		
+@@ -314,7 +313,7 @@ public N1QLUpdateVisitor getN1QLUpdateVisitor() {
+         return new N1QLUpdateVisitor(this);
+     }
+ 
+     public Object retrieveValue(Class<?> columnType, Object value) {
+         
+         if (value == null) {
+             return null;
+@@ -399,4 +398,15 @@ public void setMaxBulkInsertSize(int maxBulkInsertSize) {
+         this.maxBulkInsertSize = maxBulkInsertSize;
+     }
+ 
+ }
+",466,,,
+680,"@@ -53,6 +53,7 @@ public static enum Event implements BundleUtil.Event{
+         TEIID29017,
+         TEIID29018,
+         TEIID29019,
+         TEIID29020
+     }
+ }
+",467,,,
+681,"@@ -78,6 +78,7 @@ public List<?> next() throws TranslatorException, DataNotAvailableException {
+ 	            List<Object> row = new ArrayList<Object>(expectedTypes.length);
+ 	            JsonObject json = queryRow.value();
+ 	            
+ 	            for(int i = 0 ; i < expectedTypes.length ; i ++){
+ 	                String columnName = null;
+ 	                Object value = null;
+@@ -96,9 +97,13 @@ public List<?> next() throws TranslatorException, DataNotAvailableException {
+ 	                }
+ 	                
+ 	                // column without reference and alias
+ 	                if(value == null && json.getNames().contains(buildPlaceholder(1))) {
+ 	                    columnName = buildPlaceholder(1);
+ 	                    value = json.get(columnName);
+ 	                }
+ 
+ 	                row.add(this.executionFactory.retrieveValue(expectedTypes[i], value));
+",468,,,
+682,"@@ -136,7 +136,7 @@ public void visit(Insert obj) {
+                 CBColumnData columnData = rowCache.get(i);
+                 
+                 if(columnData.getCBColumn().isPK()) {
+                     documentID = (String)ef.retrieveValue(columnData.getColumnType(), columnData.getValue());
+                 } else {
+                     String attr = columnData.getCBColumn().getLeafName();
+                     String path = columnData.getCBColumn().getNameInSource();
+",469,,,
+683,"@@ -47,4 +47,5 @@ TEIID29017=Array item do not allow bulk updates, {0}
+ TEIID29018=documentID, array index do not allow to update, {0}
+ TEIID29019=documentID and all array index columns must be in equality predicates and separate by AND, {0}
+ TEIID29020=Max bulk insert documents size must be greater than 0
+ 
+",470,,,
+684,"@@ -267,6 +267,36 @@ public void testConversionFunctions() throws TranslatorException {
+ 
+         String sql = ""SELECT convert(attr_long, string) FROM T2"";
+         helpTest(sql, ""N1QL1101"");
+     }
+     
+     @Test
+",471,,,
+685,"@@ -45,6 +45,12 @@
+    <entry key=""N1QL0603"">SELECT `$cb_c1_Name`, `$cb_c2_type` FROM `test` `$cb_t1` LET `$cb_c1_Name` = `$cb_t1`.`Name`, `$cb_c2_type` = `$cb_t1`.`type` WHERE `$cb_c2_type` = 'Customer' ORDER BY `$cb_c2_type`</entry>
+    <entry key=""N1QL0602"">SELECT `$cb_c1_type` FROM `test` `$cb_t1` LET `$cb_c1_type` = `$cb_t1`.`type`, `$cb_c2_Name` = `$cb_t1`.`Name` WHERE `$cb_c1_type` = 'Customer' ORDER BY `$cb_c2_Name`</entry>
+    <entry key=""N1QL1101"">SELECT TOSTRING(`$cb_c1_attr_long`) FROM `T2` `$cb_t1` LET `$cb_c1_attr_long` = `$cb_t1`.`attr_long`</entry>
+    <entry key=""N1QL0601"">SELECT `$cb_c1_Name`, `$cb_c2_type` FROM `test` `$cb_t1` LET `$cb_c1_Name` = `$cb_t1`.`Name`, `$cb_c2_type` = `$cb_t1`.`type` WHERE `$cb_c2_type` = 'Customer' ORDER BY `$cb_c1_Name`</entry>
+    <entry key=""N1QL1004"">SELECT RANDOM(`$cb_c1_attr_integer`) FROM `T2` `$cb_t1` LET `$cb_c1_attr_integer` = `$cb_t1`.`attr_integer`</entry>
+    <entry key=""N1QL1003"">SELECT LOG(`$cb_c1_attr_double`) FROM `T2` `$cb_t1` LET `$cb_c1_attr_double` = `$cb_t1`.`attr_double`</entry>
+",472,,,
+686,"@@ -75,11 +75,11 @@
+  */
+ public final class DSLSearch implements SearchType  {
+ 	
+ 	private ObjectConnection conn;
+ 	
+ 	
+ 	public DSLSearch(ObjectConnection connection) {
+ 		this.conn = connection;
+ 	}
+ 	
+ 	/** 
+@@ -204,12 +204,15 @@ private List<Object> performSearch(ObjectVisitor visitor) throws TranslatorExcep
+ 	}
+ 	
+ 	@SuppressWarnings(""rawtypes"")
+ 	private static QueryBuilder getQueryBuilder(ObjectConnection conn) throws TranslatorException {
+ 		
+ 		Class<?> type = conn.getCacheClassType();
+ 		
+ 		QueryFactory qf = ((InfinispanConnectionImpl) conn).getQueryFactory();
+ 	    		  
+ 	    return qf.from(type);
+ 	}
+ 	
+",65,,,
+687,"@@ -268,11 +268,14 @@ public void execute() throws TranslatorException {
+ 					""ObjectExecution: number of returned objects is :"", objResults.size() ); //$NON-NLS-1$
+ 			
+ 			this.objResultsItr = objResults.iterator();
+ 		} catch (RuntimeException re) {
+ 			// Cache containers, like JDG, can throw runtime exception when there are problems accessing the data in the cache, even though the 
+ 			// container and cache are available.  So translator needs to re-throw the exception so that Teiid can respond accordingly.
+ 			this.connection.forceCleanUp();
+ 			throw new TranslatorException(re);
+ 		} finally {
+ 			connection.getDDLHandler().setStagingTarget(false);
+ 		}
+",330,,,
+688,"@@ -58,6 +58,7 @@ public static enum Event implements BundleUtil.Event{
+ 		TEIID21016,
+ 		TEIID21017,
+ 		TEIID21018,
+ 		TEIID21302,
+     }
+ }
+",344,,,
+689,"@@ -143,11 +143,13 @@ private int executeUpdate(Command command ) throws TranslatorException {
+ 			} else {
+ 				throw new TranslatorException(ObjectPlugin.Util.gs(ObjectPlugin.Event.TEIID21004, new Object[] {command.getClass().getName()}));
+ 			}
+ 		} catch (RuntimeException re) {
+ 			// Cache containers, like JDG, can throw runtime exception when there are problems accessing the data in the cache, even though the 
+ 			// container and cache are available.  So translator needs to re-throw the exception so that Teiid can respond accordingly.
+ 			this.connection.forceCleanUp();
+ 			throw new TranslatorException(re);
+ 		} finally {
+ 			this.connection.getDDLHandler().setStagingTarget(false);
+ 		}
+",332,,,
+690,"@@ -44,6 +44,8 @@ TEIID21016=ObjectUpdateException: Invalid argument value ""{0}"" when executing (m
+ TEIID21017=Unable to update or delete from child table {0}, updating and deleting is currently disabled for child objects.
+ TEIID21018=Deleting class is not currently supported, no primary key defined on table {0}
+ 
+ TEIID21301=Materialization Life Cycle Issue: invalid arguments on native query ""{0}"", should use format: ""{1}"" 
+ TEIID21302=Materialization Life Cycle Issue: invalid native query ""{0}"", must follow either format: ""{1}""
+ TEIID21303=Materialization Life Cycle Issue: no cache, for cache name {0}, was returned by the connection
+",345,,,
+691,"@@ -642,7 +642,9 @@ public void close() {
+ 	
+ 		this.cacheResultsIt = null;
+ 		
+ 		this.visitor.cleanUp();
+ 		this.visitor = null;
+ 		
+ 	}
+",330,,,
+692,"@@ -135,7 +135,6 @@ public void execute() throws TranslatorException {
+     			throw new TranslatorException(InfinispanPlugin.Event.TEIID25015,
+     					InfinispanPlugin.Util.gs(InfinispanPlugin.Event.TEIID25015, tableOne, aliasName));
+     		}
+     		clearContents(aliasCache, tableOne);
+     		return;
+     	}
+     	
+",473,,,
+693,"@@ -211,11 +211,7 @@ protected List<ServerAddress> getServers() throws ResourceException {
+     			if (idx < 0) {
+     				throw new InvalidPropertyException(UTIL.getString(""no_database"")); //$NON-NLS-1$
+     			}
+     			try {
+     				addresses.add(new ServerAddress(token.substring(0, idx), Integer.valueOf(token.substring(idx+1))));
+     			} catch(UnknownHostException e) {
+     				throw new ResourceException(e);
+     			}
+     		}
+     		return addresses;
+ 	    }
+",474,,,
+694,"@@ -81,9 +81,9 @@ public void setName(String name) {
+ 	public DBRef getDBRef(DB db, boolean push) {
+ 		if (this.id != null) {
+ 			if (this.idReference != null) {
+ 				return new DBRef(db, push?this.parentTable:this.embeddedTable, new DBRef(db, this.idReference, this.id.getValue()));
+ 			}
+ 			return new DBRef(db, push?this.parentTable:this.embeddedTable, this.id.getValue());
+ 		}
+ 		return null;
+ 	}
+",12,,,
+695,"@@ -130,8 +130,8 @@ public void substitute(Argument arg, StringBuilder builder, int index) {
+                 }
+                 else if (result instanceof WriteResult) {
+                     WriteResult wr = (WriteResult)result;
+                     if (wr.getError() != null) {
+                         throw new TranslatorException(wr.getError());
+                     }
+                 }
+             } catch (NoSuchMethodException e) {
+",475,,,
+696,"@@ -30,13 +30,31 @@
+ import java.sql.Clob;
+ import java.sql.SQLException;
+ import java.sql.SQLXML;
+ import java.util.*;
+ 
+ import javax.resource.cci.ConnectionFactory;
+ 
+ import org.bson.types.Binary;
+ import org.teiid.core.types.*;
+ import org.teiid.language.*;
+ import org.teiid.language.visitor.SQLStringVisitor;
+ import org.teiid.metadata.FunctionMethod;
+ import org.teiid.metadata.RuntimeMetadata;
+@@ -45,7 +63,11 @@
+ import org.teiid.translator.jdbc.AliasModifier;
+ import org.teiid.translator.jdbc.FunctionModifier;
+ 
+ import com.mongodb.*;
+ import com.mongodb.gridfs.GridFS;
+ import com.mongodb.gridfs.GridFSDBFile;
+ import com.mongodb.gridfs.GridFSInputFile;
+@@ -516,7 +538,7 @@ else if (value instanceof BasicDBList) {
+ 		}
+ 		else if (value instanceof org.bson.types.ObjectId) {
+ 		    org.bson.types.ObjectId id = (org.bson.types.ObjectId) value;
+ 		    value = id.toStringBabble();
+ 		}
+ 		else {
+ 		    Transform transform = DataTypeManager.getTransform(value.getClass(), expectedClass);
+",476,,,
+697,"@@ -27,14 +27,23 @@
+ import java.util.Set;
+ 
+ import org.bson.types.Binary;
+ import org.teiid.metadata.*;
+ import org.teiid.metadata.Column.SearchType;
+ import org.teiid.mongodb.MongoDBConnection;
+ import org.teiid.translator.MetadataProcessor;
+ import org.teiid.translator.TranslatorException;
+ import org.teiid.translator.TypeFacility;
+ 
+ import com.mongodb.*;
+ 
+ public class MongoDBMetadataProcessor implements MetadataProcessor<MongoDBConnection> {
+ 
+@@ -44,7 +53,7 @@ public class MongoDBMetadataProcessor implements MetadataProcessor<MongoDBConnec
+     @ExtensionMetadataProperty(applicable=Table.class, datatype=String.class, display=""Embedded Into Table"", description=""Declare the name of table that this table needs to be embedded into. A separate copy is also maintained"")
+     public static final String EMBEDDABLE = MetadataFactory.MONGO_URI+""EMBEDDABLE""; //$NON-NLS-1$
+ 
+     private static final String ID = ""_id""; //$NON-NLS-1$
+     private static final String TOP_LEVEL_DOC = ""TOP_LEVEL_DOC""; //$NON-NLS-1$
+     private static final String ASSOSIATION = ""ASSOSIATION""; //$NON-NLS-1$
+ 
+@@ -152,7 +161,7 @@ else if (value instanceof BasicDBList) {
+         else if (value instanceof DBRef) {
+             Object obj = ((DBRef)value).getId();
+             column = addColumn(metadataFactory, table, columnKey, obj);
+             String ref = ((DBRef)value).getRef();
+             metadataFactory.addForiegnKey(""FK_""+columnKey, Arrays.asList(columnKey), ref, table); //$NON-NLS-1$
+         }
+         else {
+",477,,,
+698,"@@ -29,6 +29,7 @@
+ import java.util.regex.Pattern;
+ 
+ import org.teiid.language.*;
+ import org.teiid.language.Join.JoinType;
+ import org.teiid.language.SortSpecification.Ordering;
+ import org.teiid.language.visitor.HierarchyVisitor;
+",478,,,
+699,"@@ -21,17 +21,26 @@
+  */
+ package org.teiid.translator.mongodb;
+ 
+ import static org.teiid.language.visitor.SQLStringVisitor.getRecordName;
+ 
+ import java.util.*;
+ 
+ import org.teiid.GeneratedKeys;
+ import org.teiid.language.Command;
+ import org.teiid.language.Insert;
+ import org.teiid.language.Update;
+ import org.teiid.logging.LogConstants;
+ import org.teiid.logging.LogManager;
+ import org.teiid.metadata.*;
+ import org.teiid.mongodb.MongoDBConnection;
+ import org.teiid.translator.DataNotAvailableException;
+ import org.teiid.translator.ExecutionContext;
+@@ -618,17 +627,25 @@ private void addAutoGeneretedKeys(WriteResult result) throws TranslatorException
+ 		Table table = this.visitor.mongoDoc.getTargetTable();
+ 
+ 		int cols = table.getPrimaryKey().getColumns().size();
+ 		Class<?>[] columnDataTypes = new Class<?>[cols];
+ 		String[] columnNames = new String[cols];
+ 		//this is typically expected to be an int/long, but we'll be general here.  we may eventual need the type logic off of the metadata importer
+         for (int i = 0; i < cols; i++) {
+         	columnDataTypes[i] = table.getPrimaryKey().getColumns().get(i).getJavaType();
+         	columnNames[i] = table.getPrimaryKey().getColumns().get(i).getName();
+         }
+         GeneratedKeys generatedKeys = this.executionContext.getCommandContext().returnGeneratedKeys(columnNames, columnDataTypes);
+         List<Object> vals = new ArrayList<Object>(columnDataTypes.length);
+         for (int i = 0; i < columnDataTypes.length; i++) {
+             Object value = this.executionFactory.retrieveValue(result.getField(columnNames[i]), columnDataTypes[i], this.mongoDB, columnNames[i], columnNames[i]);
+             vals.add(value);
+         }
+         generatedKeys.addKey(vals);
+",479,,,
+700,"@@ -28,7 +28,7 @@
+ 
+ import org.teiid.language.*;
+ import org.teiid.language.AndOr.Operator;
+ import org.teiid.language.Update;
+ import org.teiid.language.visitor.CollectorVisitor;
+ import org.teiid.metadata.RuntimeMetadata;
+ import org.teiid.translator.TranslatorException;
+",480,,,
+701,"@@ -320,7 +320,7 @@ public DBObject getEmbeddedDocument(DB mongoDB, String docName) {
+ 			if (ref.getName().equals(docName)) {
+ 				DBRef dbRef = ref.getDBRef(mongoDB, false);
+ 				if (dbRef != null) {
+ 					return mongoDB.getCollection(dbRef.getRef()).findOne(new BasicDBObject(""_id"", dbRef.getId())); //$NON-NLS-1$
+ 				}
+ 			}
+ 		}
+",481,,,
+702,"@@ -74,7 +74,7 @@ public void testMetadata() throws TranslatorException {
+         row.append(""col3"", new Long(3L));
+         row.append(""col5"", Boolean.TRUE);
+         row.append(""col6"", new Date(0L));
+         row.append(""col6"", new DBRef(db, ""ns"", ""one""));
+         row.append(""col7"", array);
+         row.append(""col8"", new Binary(""binary"".getBytes()));
+         
+",482,,,
+703,"@@ -114,8 +114,8 @@
+  
+ 	    
+ 	    <!-- drivers and other external, provided, dependencies -->
+     	<version.org.mongodb.mongo-java-driver>2.13.1</version.org.mongodb.mongo-java-driver>
+     	<version.com.couchbase.client>2.4.2</version.com.couchbase.client>
+     	<version.com.couchbase.core.io>1.4.2</version.com.couchbase.core.io>
+     	<version.io.reactivex>1.2.3</version.io.reactivex>
+     	    	
+",235,,,
+704,"@@ -114,7 +114,7 @@
+  
+ 	    
+ 	    <!-- drivers and other external, provided, dependencies -->
+         <version.org.mongodb.mongo-java-driver>3.4.2</version.org.mongodb.mongo-java-driver>
+         <version.com.couchbase.client>2.4.2</version.com.couchbase.client>
+     	<version.com.couchbase.core.io>1.4.2</version.com.couchbase.core.io>
+     	<version.io.reactivex>1.2.3</version.io.reactivex>
+",235,,,
+705,"@@ -22,11 +22,13 @@
+ import java.security.Principal;
+ import java.util.HashMap;
+ import java.util.Map;
+ 
+ import javax.security.auth.Subject;
+ import javax.security.auth.login.LoginException;
+ 
+ import org.ietf.jgss.GSSContext;
+ import org.ietf.jgss.GSSException;
+ import org.jboss.as.security.plugins.SecurityDomainContext;
+ import org.jboss.as.server.CurrentServiceContainer;
+@@ -176,18 +178,26 @@ public GSSResult negotiateGssLogin(String securityDomain, byte[] serviceTicket)
+                             principal = p;
+                             break;
+                         }
+                         
+                         Object sc = createSecurityContext(securityDomain, principal, null, subject);
+                         LogManager.logDetail(LogConstants.CTX_SECURITY, new Object[] {""Logon successful though GSS API""}); //$NON-NLS-1$
+                         GSSResult result = buildGSSResult(context, securityDomain, true);
+                         result.setSecurityContext(sc);
+                         result.setUserName(principal.getName());
+                         return result;
+                     }
+                     LoginException le = (LoginException)securityContext.getData().get(""org.jboss.security.exception""); //$NON-NLS-1$
+                     if (le != null) {
+                         if (le.getMessage().equals(""Continuation Required."")) { //$NON-NLS-1$
+                             return buildGSSResult(context, securityDomain, false);
+                         }
+                         throw le;
+                     }
+@@ -200,15 +210,18 @@ public GSSResult negotiateGssLogin(String securityDomain, byte[] serviceTicket)
+         throw new LoginException(IntegrationPlugin.Util.gs(IntegrationPlugin.Event.TEIID50072, ""GSS Auth"", securityDomain)); //$NON-NLS-1$     
+     }
+ 
+     private GSSResult buildGSSResult(NegotiationContext context, String securityDomain, boolean validAuth) throws LoginException {
+         GSSContext securityContext = (GSSContext) context.getSchemeContext();
+         try {
+             if (context.getResponseMessage() == null && validAuth) {
+                 return new GSSResult(context.isAuthenticated(), securityContext.getCredDelegState()?securityContext.getDelegCred():null);            
+             }
+             if (context.getResponseMessage() instanceof KerberosMessage) {
+                 KerberosMessage km = (KerberosMessage)context.getResponseMessage();
+                 return new GSSResult(km.getToken(), context.isAuthenticated(), securityContext.getCredDelegState()?securityContext.getDelegCred():null);
+             }
+         } catch (GSSException e) {
+             // login exception can not take exception
+",483,,,
+706,"@@ -43,7 +43,7 @@ public ProxyHttpServletRequest(HttpServletRequest delegate, String proxyBaseURI)
+         String buf = url.toExternalForm();
+         try {
+             buf = extractURI(url, proxyBaseURI);
+             encodedURI = URI.create(buf);
+         } catch (Exception e) {
+             throw new RuntimeException(""Unable to create URI: "" + buf, e); //$NON-NLS-1$
+         }
+@@ -60,13 +60,13 @@ private static String extractURI(URL url, String baseURI) throws UnsupportedEnco
+ 
+         buffer.append(baseURI);
+         if (url.getPath() != null) {
+             buffer.append(URLEncoder.encode(url.getPath(), ""UTF-8"")); //$NON-NLS-1$
+         }
+         if (url.getQuery() != null) {
+             buffer.append(""?"").append(url.getQuery()); //$NON-NLS-1$
+         }
+         if (url.getRef() != null) {
+             buffer.append(""#"").append(URLEncoder.encode(url.getRef(), ""UTF-8"")); //$NON-NLS-1$ //$NON-NLS-2$
+         }
+         String buf = buffer.toString();
+         return buf;
+",29,,,
+707,"@@ -60,7 +60,7 @@
+         <version.org.jboss.spec.jboss-javaee-6.0>1.0.0.Final</version.org.jboss.spec.jboss-javaee-6.0>
+         <version.de.flapdoodle.embed.mongo>1.46.0</version.de.flapdoodle.embed.mongo>
+         <version.org.eclipse.persistence>2.5.0</version.org.eclipse.persistence>
+         <version.org.apache.olingo>4.2.0-teiid-5</version.org.apache.olingo>
+         <version.org.eclipse.jetty>9.2.7.v20150116</version.org.eclipse.jetty>
+         <version.commons-codec>1.9</version.commons-codec>
+         <version.com.fasterxml.jackson.core>2.5.4</version.com.fasterxml.jackson.core>
+",235,,,
+721,"@@ -227,6 +227,35 @@ <h4 class=""western"">from ${project.version}</h4>
+ 	<li/>
+ 	<p style=""margin-bottom: 0in"">
+ <a href='https://issues.jboss.org/browse/TEIID-4468'>TEIID-4468</a> - Google translator throws SpreadsheetOperationException for query DELETE FROM table
+         <li/>
+         <p style=""margin-bottom: 0in"">
+ <a href='https://issues.jboss.org/browse/TEIID-4595'>TEIID-4595</a> - Wrong pushdown of several spatial functions to Oracle 
+",399,,,
+722,"@@ -730,6 +730,8 @@ private void pushGroupNode(PlanNode groupNode,
+     			break;
+         	}        		
+     	}
+         for (PlanNode planNode : possibleTargetNodes) {
+             Set<Expression> stagedGroupingSymbols = new LinkedHashSet<Expression>();
+             Collection<AggregateSymbol> aggregates = aggregateMap.get(planNode);
+@@ -741,6 +743,10 @@ private void pushGroupNode(PlanNode groupNode,
+ 
+         	filterExpressions(stagedGroupingSymbols, planNode.getGroups(), groupingExpressions, false);
+ 
+             collectSymbolsFromOtherAggregates(allAggregates, aggregates, planNode, stagedGroupingSymbols);
+             
+             //perform a costing check, if there's not a significant reduction, then don't stage
+@@ -761,6 +767,8 @@ private void pushGroupNode(PlanNode groupNode,
+             }
+             
+             addGroupBy(planNode, new ArrayList<Expression>(stagedGroupingSymbols), aggregates, metadata, groupNode.getParent(), capFinder, true, stagedGroupingSymbols.isEmpty() && containsNullDependent(aggregates));
+         }
+     }
+ 
+",492,,,
+723,"@@ -38,7 +38,6 @@
+ import org.teiid.core.TeiidComponentException;
+ import org.teiid.core.TeiidProcessingException;
+ import org.teiid.core.TeiidRuntimeException;
+ import org.teiid.core.util.Assertion;
+ import org.teiid.logging.LogManager;
+ import org.teiid.logging.MessageLevel;
+ import org.teiid.query.QueryPlugin;
+@@ -364,7 +363,9 @@ public static int[] getProjectionIndexes(Map<? extends Expression, Integer> tupl
+ 		int i = 0;
+ 		for (Expression symbol : projectElements) {
+ 			Integer index = tupleElements.get(symbol);
+ 			Assertion.isNotNull(index);
+ 			result[i++] = index;
+ 		}
+ 
+",493,,,
+724,"@@ -435,6 +435,36 @@ private void sampleDataBQT_defect9842(FakeDataManager dataMgr) throws Exception
+ 		helpProcess(plan, dataManager, expected);
+ 	}
+ 	
+ 	@Test public void testMultiJoinGroupBy() throws Exception {
+ 		String sql = ""SELECT count(t2.e4) as s, t1.e3 || t2.e3 FROM pm1.g1 as t1, pm1.g2 as t2, pm1.g3 as t3 WHERE t1.e1 = t2.e1 and t2.e2 = t3.e2 GROUP BY t1.e3 || t2.e3""; //$NON-NLS-1$
+ 
+",56,,,
+729,"@@ -51,7 +51,7 @@
+         <maven.compiler.source>1.8</maven.compiler.source>
+         <maven.compiler.target>1.8</maven.compiler.target>
+ 
+         <version.javadoc.plugin>3.0.1</version.javadoc.plugin>
+ 
+         <derby.version>10.2.1.6</derby.version>
+         <mysql.connector.version>5.1.5</mysql.connector.version>
+",235,,,
+730,"@@ -21,6 +21,7 @@
+ import java.math.BigInteger;
+ import java.util.*;
+ import java.util.stream.Collectors;
+ 
+ import javax.persistence.EntityManager;
+ import javax.persistence.metamodel.Attribute;
+@@ -121,15 +122,15 @@ private Table addEntity(MetadataFactory mf, Metamodel model, EntityType<?> entit
+ 			table.setSupportsUpdate(true);
+ 			table.setProperty(ENTITYCLASS, entity.getJavaType().getCanonicalName());
+ 			addPrimaryKey(mf, model, entity, table);
+ 			addSingularAttributes(mf, model, entity, table);
+ 		}
+ 		return table;
+ 	}
+ 	
+ 	private boolean columnExists(String name, Table table) {
+ 		return table.getColumnByName(name) != null;
+ 	}
+ 	
+ 	private Column addColumn(MetadataFactory mf, String name, String type, Table entityTable) throws TranslatorException {
+ 		if (!columnExists(name, entityTable)) {
+ 			Column c = mf.addColumn(name, type, entityTable);
+@@ -148,31 +149,39 @@ private void addForeignKey(MetadataFactory mf, String name, List<String> columnN
+ 		fk.setNameInSource(name);
+ 	}
+ 
+ 	private void addSingularAttributes(MetadataFactory mf, Metamodel model, ManagedType<?> entity, Table entityTable) throws TranslatorException {
+ 		for (Attribute<?, ?> attr:entity.getAttributes()) {
+ 			if (!attr.isCollection()) {
+ 				boolean simpleType = isSimpleType(attr.getJavaType());
+ 				if (simpleType) {
+ 					Column column = addColumn(mf, attr.getName(), TypeFacility.getDataTypeName(getJavaDataType(attr.getJavaType())), entityTable);
+ 					if (((SingularAttribute)attr).isOptional()) {
+ 						column.setDefaultValue(null);
+ 					}
+ 				}
+ 				else if (attr.getJavaType().isEnum()) {
+ 					Column column = addColumn(mf, attr.getName(),
+ 							DataTypeManager.DefaultDataTypes.STRING, entityTable);
+ 					if (((SingularAttribute)attr).isOptional()) {
+ 						column.setDefaultValue(null);
+ 					}
+ 					column.setNativeType(attr.getJavaType().getName());
+ 				}
+ 				else {
+ 					boolean classFound = false;
+ 					// If this attribute is a @Embeddable then add its columns as
+ 					// this tables columns
+ 					for (EmbeddableType<?> embeddable:model.getEmbeddables()) {
+ 						if (embeddable.getJavaType().equals(attr.getJavaType())) {
+ 							addSingularAttributes(mf, model, embeddable, entityTable);
+ 							classFound = true;
+ 							break;
+ 						}
+@@ -192,6 +201,7 @@ else if (attr.getJavaType().isEnum()) {
+ 										Column c = addColumn(mf, fk, column.getDatatype().getRuntimeTypeName(), entityTable);
+ 										c.setProperty(RELATION_PROPERTY, attr.getName());
+ 										c.setProperty(RELATION_KEY, column.getName());
+ 										keys.add(fk);
+ 									}
+ 									if (!foreignKeyExists(keys, entityTable)) {
+@@ -214,7 +224,7 @@ else if (attr.getJavaType().isEnum()) {
+ 			}
+ 		}
+ 	}
+ 	
+ 	private boolean isSimpleType(Class type) {
+ 		return type.isPrimitive() || type.equals(String.class)
+ 				|| type.equals(BigDecimal.class) || type.equals(Date.class)
+@@ -260,13 +270,13 @@ else if (entity.getIdType().getPersistenceType().equals(PersistenceType.EMBEDDAB
+ 				SingularAttribute<?, ?> pkattr = entity.getId(entity.getIdType().getJavaType());
+ 				for (EmbeddableType<?> embeddable:model.getEmbeddables()) {
+ 					if (embeddable.getJavaType().equals(pkattr.getJavaType())) {
+ 						addSingularAttributes(mf, model, embeddable, entityTable);
+ 						ArrayList<String> keys = new ArrayList<String>();
+ 						for (Attribute<?, ?> attr:embeddable.getAttributes()) {
+ 							if (isSimpleType(attr.getJavaType())) {
+ 								keys.add(attr.getName());
+ 							}
+ 							else {
+ 								throw new TranslatorException(JPAPlugin.Util.gs(JPAPlugin.Event.TEIID14003, entityTable.getName()));
+ 							}
+ 						}
+",496,,,
+731,"@@ -424,7 +424,12 @@ public void visit(ColumnReference column) {
+     		if (record != null) {
+     			String name = record.getProperty(JPAMetadataProcessor.KEY_ASSOSIATED_WITH_FOREIGN_TABLE, false); 
+     			if (name == null) {
+ 					buffer.append(column.getTable().getCorrelationName()).append(Tokens.DOT).append(column.getMetadataObject().getName());
+     			}
+     			else {
+ 					String attrName = record.getProperty(JPAMetadataProcessor.RELATION_PROPERTY, false);
+",497,,,
+732,"@@ -104,5 +104,12 @@ public void testMultiLevelJoin() throws Exception {
+ 						""LEFT OUTER JOIN tp.thing_type AS J_1"");
+ 	}
+ 
+ 	// needs one with composite PK
+ }
+",498,,,
+733,"@@ -115,3 +115,10 @@ CREATE FOREIGN TABLE thing (
+   FOREIGN KEY (thing_type_id) REFERENCES thing_type (id) OPTIONS(NAMEINSOURCE 'thing_type'),
+   FOREIGN KEY (thing_subtype_id) REFERENCES thing_type (id) OPTIONS(NAMEINSOURCE 'thing_subtype')
+ );
+\ No newline at end of file
+",499,,,
+734,"@@ -120,7 +120,7 @@ public void visit(NamedTable obj) {
+     	}
+     	else {
+ 	    	for (NamedTable table:this.implicitGroups.values()) {
+     			this.joins.add(new JoinTable(obj, table, JoinType.INNER_JOIN));
+ 	    	}
+     	}
+     }
+@@ -133,7 +133,7 @@ public void visit(Join obj) {
+ 	    		NamedTable parent = findParent(table);
+ 	    		if (parent != null) {
+ 	    			if (!alreadyInJoin(table.getMetadataObject().getFullName())) {
+ 	    				this.joins.add(new JoinTable(parent, table, JoinType.INNER_JOIN));
+ 	    			}
+ 	    		}
+ 	    		else {
+",497,,,
+735,"@@ -51,7 +51,7 @@ private void helpExecute(String query, String expected) throws Exception {
+     
+     @Test
+     public void testProjectionBasedJoin() throws Exception {
+     	helpExecute(""select * from customer as c"", ""SELECT c.customer_id, J_0.store_id, c.first_name, c.last_name, c.email, J_1.address_id, c.active, c.create_date, c.last_update FROM customer AS c INNER JOIN c.store AS J_0 INNER JOIN c.address AS J_1"");
+     }
+     
+     @Test
+",498,,,
+736,"@@ -258,30 +258,30 @@ static class JoinTable {
+     	String parentAttributeName;
+     	JoinType joinType;
+     	
+     	JoinTable(NamedTable customer, NamedTable address, JoinType type) {
+     		this.left = customer;
+     		this.right = address;
+     		this.joinType = type;
+     		if (address == null) {
+     			this.parent = customer;
+     			this.parentAttributeName = customer.getName();
+     		}
+     		else {
+ 	    		for (ForeignKey fk:customer.getMetadataObject().getForeignKeys()){
+ 	    			if (fk.getReferenceKey().getParent().equals(address.getMetadataObject())) {
+ 	    				this.parent = customer;
+ 	    				this.child = address;
+ 	    				this.childAttributeName = fk.getSourceName();
+ 	    				this.parentAttributeName = customer.getName();
+ 	    			}
+ 	    		}
+ 	    		if (this.parent == null) {
+ 	        		for (ForeignKey fk:address.getMetadataObject().getForeignKeys()){
+ 	        			if (fk.getReferenceKey().getParent().equals(customer.getMetadataObject())) {
+ 	            			this.parent = address;
+ 	            			this.child = customer;
+ 	        				this.childAttributeName = fk.getSourceName();
+ 	        				this.parentAttributeName = customer.getName();
+ 	        			}
+ 	        		}    			
+ 	    		}
+",497,,,
+737,"@@ -108,12 +108,6 @@ public Set<EmbeddableType<?>> getEmbeddables() {
+ 		for (EntityType<?> entity:entities) {
+ 			addEntity(mf, filteredModel, entity);
+ 		}
+ 		
+ 		// take a second swipe and add Foreign Keys
+ 		for (EntityType<?> entity:entities) {
+ 			Table t = mf.getSchema().getTable(entity.getName());
+ 			addForeignKeys(mf, filteredModel, entity, t);
+ 		}		
+ 	}
+ 
+ 	private Table addEntity(MetadataFactory mf, Metamodel model, EntityType<?> entity) throws TranslatorException {
+@@ -220,40 +214,7 @@ private boolean isSimpleType(Class type) {
+ 				|| type.equals(BigInteger.class)
+ 				|| TypeFacility.getRuntimeType(type) != Object.class;
+ 	}
+ 	
+ 	private void addForeignKeys(MetadataFactory mf, Metamodel model, ManagedType<?> entity, Table entityTable) throws TranslatorException {
+ 		for (Attribute<?, ?> attr:entity.getAttributes()) {
+ 			if (attr.isCollection()) {
+ 				
+ 				PluralAttribute pa = (PluralAttribute)attr;
+ 				Table forignTable = null;
+ 				
+ 				for (EntityType et:model.getEntities()) {
+ 					if (et.getJavaType().equals(pa.getElementType().getJavaType())) {
+ 						forignTable = mf.getSchema().getTable(et.getName());
+ 						break;
+ 					}
+ 				}
+ 				
+ 				if (forignTable == null) {
+ 					continue;
+ 				}
+ 				
+ 				// add foreign keys as columns in table first; check if they exist first
+ 				ArrayList<String> keys = new ArrayList<String>();
+ 				KeyRecord pk = entityTable.getPrimaryKey();
+ 				for (Column entityColumn:pk.getColumns()) {
+ 					addColumn(mf, entityColumn.getName(), entityColumn.getDatatype().getRuntimeTypeName(), forignTable);
+ 					keys.add(entityColumn.getName());
+ 				}
+ 
+ 				if (!foreignKeyExists(keys, forignTable)) {
+ 					addForeignKey(mf, attr.getName(), keys, entityTable.getName(), forignTable);
+ 				}
+ 			}
+ 		}
+ 	}
+ 	
+ 	private boolean foreignKeyExists(List<String> keys, Table forignTable) {
+ 		boolean fkExists = false;
+ 		for (ForeignKey fk:forignTable.getForeignKeys()) {
+",496,,,
+738,"@@ -184,8 +184,9 @@ else if (attr.getJavaType().isEnum()) {
+ 								if (pk != null) { // TODO: entities must have PK, so this check is not needed.
+ 									ArrayList<String> keys = new ArrayList<String>();
+ 									for (Column column:pk.getColumns()) {
+ 										addColumn(mf, column.getName(), column.getDatatype().getRuntimeTypeName(), entityTable);
+ 										keys.add(column.getName());
+ 									}
+ 									if (!foreignKeyExists(keys, entityTable)) {
+ 										addForeignKey(mf, attr.getName(), keys, attributeTable.getName(), entityTable);
+",496,,,
+739,"@@ -54,6 +54,10 @@ public class JPAMetadataProcessor implements MetadataProcessor<EntityManager> {
+     
+     @ExtensionMetadataProperty(applicable=Column.class, datatype=String.class, display=""Foreign Table Name"", description=""Applicable on Foreign Key columns"")
+ 	public static final String KEY_ASSOSIATED_WITH_FOREIGN_TABLE = MetadataFactory.JPA_URI+""assosiated_with_table"";
+ 
+     @ExtensionMetadataProperty(applicable=Table.class, datatype=String.class, display=""Entity Class"", description=""Java Entity Class that represents this table"", required=true)
+ 	public static final String ENTITYCLASS= MetadataFactory.JPA_URI+""entity_class"";
+@@ -186,6 +190,8 @@ else if (attr.getJavaType().isEnum()) {
+ 									for (Column column:pk.getColumns()) {
+ 										String fk = attr.getName() + ""_"" + column.getName();
+ 										Column c = addColumn(mf, fk, column.getDatatype().getRuntimeTypeName(), entityTable);
+ 										keys.add(fk);
+ 									}
+ 									if (!foreignKeyExists(keys, entityTable)) {
+",496,,,
+740,"@@ -24,20 +24,12 @@
+ import java.util.LinkedList;
+ import java.util.concurrent.atomic.AtomicInteger;
+ 
+ import org.teiid.language.ColumnReference;
+ import org.teiid.language.Function;
+ import org.teiid.language.Join;
+ import org.teiid.language.Join.JoinType;
+ import org.teiid.language.NamedTable;
+ import org.teiid.language.SQLConstants.Tokens;
+ import org.teiid.language.Select;
+ import org.teiid.language.TableReference;
+ import org.teiid.language.visitor.HierarchyVisitor;
+ import org.teiid.language.visitor.SQLStringVisitor;
+ import org.teiid.metadata.AbstractMetadataRecord;
+ import org.teiid.metadata.ForeignKey;
+ import org.teiid.metadata.RuntimeMetadata;
+ import org.teiid.metadata.Table;
+ import org.teiid.translator.TranslatorException;
+ /**
+  * This visitor converts the Teiid command into JPQL string 
+@@ -93,8 +85,13 @@ public void visit(ColumnReference obj) {
+ 			if (name != null) {
+ 				try {
+ 					Table t = this.metadata.getTable(name);
+ 					if (this.implicitGroups.get(name) == null) {
+ 						this.implicitGroups.put(name, new NamedTable(t.getName(), ""J_""+this.aliasCounter.getAndIncrement(), t)); //$NON-NLS-1$
+ 					}
+ 				} catch (TranslatorException e) {
+ 					exceptions.add(e);
+@@ -103,12 +100,16 @@ public void visit(ColumnReference obj) {
+ 		}
+     }
+     
+     private boolean alreadyInJoin(String tableName) {
+     	for(JoinTable joinTable:this.joins) {
+ 			if ((joinTable.left != null && joinTable.left.getMetadataObject().getFullName().equals(tableName))
+ 					|| (joinTable.right != null && joinTable.right.getMetadataObject().getFullName().equals(tableName))) {
+     			return true;
+     		}
+     	}
+     	return false;
+     }
+@@ -132,7 +133,7 @@ public void visit(Join obj) {
+ 	    	for (NamedTable table:this.implicitGroups.values()) {
+ 	    		NamedTable parent = findParent(table);
+ 	    		if (parent != null) {
+ 	    			if (!alreadyInJoin(table.getMetadataObject().getFullName())) {
+ 	    				this.joins.add(new JoinTable(parent, table, JoinType.LEFT_OUTER_JOIN));
+ 	    			}
+ 	    		}
+@@ -167,7 +168,7 @@ private JoinTable handleJoin(Join obj)  throws TranslatorException {
+     	TableReference right = obj.getRightItem();
+     	
+     	if ((left instanceof NamedTable) && (right instanceof NamedTable)) {
+     		JoinTable join = handleJoin(obj.getJoinType(), left, right, true);
+     		this.joins.add(join);
+     		return join;
+     	}    	
+@@ -176,7 +177,7 @@ private JoinTable handleJoin(Join obj)  throws TranslatorException {
+     	if (left instanceof Join) {
+     		leftJoin = handleJoin((Join)left);
+     		if (right instanceof NamedTable) {
+     			JoinTable join =  handleJoin(obj.getJoinType(), leftJoin, (NamedTable)right);
+         		this.joins.add(join);
+         		return join;    			
+     		}
+@@ -186,70 +187,110 @@ private JoinTable handleJoin(Join obj)  throws TranslatorException {
+     	if (right instanceof Join) {
+     		rightJoin = handleJoin((Join)right);
+     		if (left instanceof NamedTable) {
+     			JoinTable join = handleJoin(obj.getJoinType(), (NamedTable)left, rightJoin);
+         		this.joins.add(join);
+         		return join;      			
+     		}
+     	}
+     	throw new TranslatorException(JPAPlugin.Util.gs(JPAPlugin.Event.TEIID14005));
+ 	}
+ 	
+ 	private JoinTable handleJoin(Join.JoinType joinType, JoinTable left, NamedTable right) throws TranslatorException {
+ 		// first we need to find correct parent for the right 
+ 		JoinTable withParent = handleJoin(joinType, left.getParent(), right, false);
+ 		JoinTable withChild = handleJoin(joinType, left.getChild(), right, false);
+ 		
+ 		NamedTable parent = (withParent.getParent() != null)?withParent.getParent():withChild.getParent();
+ 		if (parent != null) {
+ 			return handleJoin(joinType, parent, right, true);
+ 		}
+ 		throw new TranslatorException(JPAPlugin.Util.gs(JPAPlugin.Event.TEIID14006)); 
+ 	}
+ 	
+ 	private JoinTable handleJoin(Join.JoinType joinType, NamedTable left, JoinTable right) throws TranslatorException {
+ 		// first we need to find correct parent for the left 
+ 		JoinTable withParent = handleJoin(joinType, left, right.getParent(), false);
+ 		JoinTable withChild = handleJoin(joinType, left, right.getChild(), false);
+ 		
+ 		NamedTable parent = (withParent.getParent() != null)?withParent.getParent():withChild.getParent();
+ 		if (parent != null) {
+ 			return handleJoin(joinType, left, parent, true);
+ 		}
+ 		throw new TranslatorException(JPAPlugin.Util.gs(JPAPlugin.Event.TEIID14006));
+ 	}	
+ 
+ 	private JoinTable handleJoin(Join.JoinType joinType, TableReference left, TableReference right, boolean fixCorrelatedNames) {
+ 		// both sides are named tables
+ 		NamedTable leftTable = (NamedTable)left;
+ 		NamedTable rightTable = (NamedTable)right;
+ 		JoinTable joinTable = new JoinTable(leftTable, rightTable, joinType);
+ 		
+ 		if (fixCorrelatedNames) {
+ 			// fix left table's correleated name
+ 			NamedTable table = this.implicitGroups.get(leftTable.getMetadataObject().getFullName());
+ 			if (table != null) {
+ 				table.setCorrelationName(leftTable.getCorrelationName());
+ 			}
+ 			
+ 			// fix right table's correleated name
+ 			table = this.implicitGroups.get(rightTable.getMetadataObject().getFullName());
+ 			if (table != null) {
+ 				table.setCorrelationName(rightTable.getCorrelationName());
+ 			}   
+ 		}
+ 		return joinTable;
+ 	}    
+     
+ 	private boolean isParentOf(NamedTable parent, NamedTable child) {
+ 		for (ForeignKey fk:parent.getMetadataObject().getForeignKeys()){
+ 			if (fk.getPrimaryKey().getParent().equals(child.getMetadataObject())) {
+ 				return true;
+ 			}
+ 		}
+ 		return false;
+ 	}
+     
+     static class JoinTable {
+     	NamedTable parent;
+     	NamedTable child;
+     	NamedTable left;
+@@ -267,8 +308,22 @@ static class JoinTable {
+     			this.parentAttributeName = left.getName();
+     		}
+     		else {
+ 	    		for (ForeignKey fk:left.getMetadataObject().getForeignKeys()){
+ 	    			if (fk.getReferenceKey().getParent().equals(right.getMetadataObject())) {
+ 	    				this.parent = left;
+ 	    				this.child = right;
+ 	    				this.childAttributeName = fk.getSourceName();
+@@ -281,9 +336,9 @@ static class JoinTable {
+ 	            			this.parent = right;
+ 	            			this.child = left;
+ 	        				this.childAttributeName = fk.getSourceName();
+ 	        				this.parentAttributeName = left.getName();
+ 	        			}
+ 	        		}    			
+ 	    		}
+     		}
+     	}
+@@ -327,7 +382,7 @@ public JPQLSelectStringVisitor(JPQLSelectVisitor visitor) {
+     	
+     	@Override
+     	public void visit(Select obj) {
+     		
+     		buffer.append(SELECT).append(Tokens.SPACE);
+     		
+             if (obj.isDistinct()) {
+@@ -365,14 +420,18 @@ public void visit(Select obj) {
+     	
+     	@Override
+         public void visit(ColumnReference column) {
+     		AbstractMetadataRecord record = column.getMetadataObject();
+     		if (record != null) {
+     			String name = record.getProperty(JPAMetadataProcessor.KEY_ASSOSIATED_WITH_FOREIGN_TABLE, false); 
+     			if (name == null) {
+ 					buffer.append(column.getTable().getCorrelationName()).append(Tokens.DOT).append(column.getMetadataObject().getName());
+     			}
+     			else {
+     				buffer.append(this.visitor.implicitGroups.get(name).getCorrelationName()).append(Tokens.DOT).append(column.getMetadataObject().getName());
+     			}
+     		}   
+     		else {
+",497,,,
+741,"@@ -83,6 +83,26 @@ public void testRightandinnerJoinRewriteSelect() throws Exception {
+     	helpExecute(""select c.first_name, c.last_name, a.address_id, a.phone, ci.city from customer c join address a on c.address_Id=a.address_Id right join city ci on ci.city_id = a.city_id where c.last_Name='MYERS' OR c.last_Name='TALBERT' order by c.first_Name"", 
+     			""SELECT c.first_name, c.last_name, a.address_id, a.phone, ci.city FROM customer AS c INNER JOIN c.address AS a RIGHT OUTER JOIN a.city AS ci WHERE c.last_name IN ('TALBERT', 'MYERS') ORDER BY c.first_name"");
+     }
+     
+ 	// needs one with composite PK
+ }
+",498,,,
+742,"@@ -8,7 +8,10 @@ CREATE FOREIGN TABLE country (
+ CREATE FOREIGN TABLE city (
+   city_id integer  NOT NULL AUTO_INCREMENT,
+   city varchar(50) NOT NULL,
+   country_id integer  NOT NULL OPTIONS (""teiid_jpa:assosiated_with_table"" 'sakila.country'),
+   last_update timestamp NOT NULL,
+   PRIMARY KEY  (city_id),
+   FOREIGN KEY (country_id) REFERENCES country (country_id) OPTIONS(NAMEINSOURCE 'country')
+@@ -19,7 +22,11 @@ CREATE FOREIGN TABLE address (
+   address varchar(50) NOT NULL,
+   address2 varchar(50),
+   district varchar(20) NOT NULL,
+   city_id integer  NOT NULL OPTIONS (""teiid_jpa:assosiated_with_table"" 'sakila.city'),
+   postal_code varchar(10),
+   phone varchar(20) NOT NULL,
+   last_update timestamp NOT NULL,
+@@ -31,9 +38,15 @@ CREATE FOREIGN TABLE staff (
+   staff_id byte NOT NULL AUTO_INCREMENT,
+   first_name varchar(45) NOT NULL,
+   last_name varchar(45) NOT NULL,
+   address_id integer NOT NULL OPTIONS (""teiid_jpa:assosiated_with_table"" 'sakila.address'),
+   email varchar(50),
+   store_id byte NOT NULL OPTIONS (""teiid_jpa:assosiated_with_table"" 'sakila.store'),
+   active boolean NOT NULL,
+   username varchar(16) NOT NULL,
+   password varchar(40),
+@@ -45,7 +58,10 @@ CREATE FOREIGN TABLE staff (
+ 
+ CREATE FOREIGN TABLE store (
+   store_id byte  NOT NULL AUTO_INCREMENT,
+   manager_staff_id byte NOT NULL OPTIONS (""teiid_jpa:assosiated_with_table"" 'sakila.staff'),
+   address_id integer NOT NULL OPTIONS (""teiid_jpa:assosiated_with_table"" 'sakila.store'),
+   last_update timestamp NOT NULL,
+   PRIMARY KEY  (store_id),
+@@ -55,15 +71,47 @@ CREATE FOREIGN TABLE store (
+ 
+ CREATE FOREIGN TABLE customer (
+   customer_id integer NOT NULL AUTO_INCREMENT,
+   store_id byte NOT NULL OPTIONS (""teiid_jpa:assosiated_with_table"" 'sakila.store'),
+   first_name varchar(45) NOT NULL,
+   last_name varchar(45) NOT NULL,
+   email varchar(50),
+   address_id integer  NOT NULL OPTIONS (""teiid_jpa:assosiated_with_table"" 'sakila.address'),
+   active boolean NOT NULL,
+   create_date timestamp NOT NULL,
+   last_update timestamp,
+   PRIMARY KEY  (customer_id),
+   FOREIGN KEY (address_id) REFERENCES address (address_id) OPTIONS(NAMEINSOURCE 'address'),
+   FOREIGN KEY (store_id) REFERENCES store (store_id) OPTIONS(NAMEINSOURCE 'store')
+ );
+\ No newline at end of file
+",499,,,
+743,"@@ -0,0 +1,118 @@
+",500,,,
+747,"@@ -14,7 +14,7 @@
+         <module name=""javax.resource.api""/>
+         <module name=""org.jboss.teiid.common-core""/>
+         <module name=""org.jboss.teiid.api""/>
+         <module name=""org.apache.solr""/>
+         <module name=""org.jboss.teiid.translator.solr""/>
+     </dependencies>
+ </module>
+\ No newline at end of file
+",502,,,
+748,"@@ -23,7 +23,7 @@
+   
+   <dependencySets>
+      <dependencySet>
+          <outputDirectory>${jbossas-module-root}/org/apache/solr/main</outputDirectory>
+          <includes>
+              <include>org.apache.solr:solr-solrj</include>
+              <include>org.noggit:noggit</include>
+",503,,,
+749,"@@ -1,4 +1,4 @@
+ <module xmlns=""urn:jboss:module:1.1"" name=""org.apache.solr"">
+     <properties>
+         <property name=""jboss.api"" value=""private""/>
+     </properties>
+",504,,,
+750,"@@ -15,7 +15,7 @@
+         <module name=""javax.resource.api""/>
+         <module name=""org.jboss.teiid.common-core"" />
+         <module name=""org.jboss.teiid.api"" />
+ 	    <module name=""org.apache.solr"" />
+         <module name=""org.jboss.teiid.translator.jdbc"" />
+     </dependencies>
+ </module>
+\ No newline at end of file
+",505,,,
+751,"@@ -249,6 +249,9 @@ <h4 class=""western"">from ${project.version}</h4>
+ <a href='https://issues.jboss.org/browse/TEIID-4859'>TEIID-4859</a> - OData throws org.apache.olingo.commons.api.edm.EdmPrimitiveTypeException when primary key is bigdecimal
+         <li/>
+         <p style=""margin-bottom: 0in"">
+ <a href='https://issues.jboss.org/browse/TEIID-4867'>TEIID-4867</a> - Loosen up OData4 URL validation or parsing
+         <li/>
+         <p style=""margin-bottom: 0in"">
+",399,,,
+752,"@@ -154,7 +154,8 @@ && canFilterEmpty(metadata, capFinder, child, groupingExpressions)) {
+ 	            				if (groupingExpressions.isEmpty()) {
+ 	            					addEmptyFilter(aggregates, groupNode, metadata, capFinder, RuleRaiseAccess.getModelIDFromAccess(child, metadata));
+ 	            				}
+ 	            				FrameUtil.convertNode(groupNode.getParent(), null, null, ((SymbolMap)groupNode.getProperty(Info.SYMBOL_MAP)).inserseMapping(), metadata, false);
+ 	            				RuleRaiseAccess.performRaise(null, access, access.getParent());
+ 	            				if (groupingExpressions.isEmpty() && RuleRaiseAccess.canRaiseOverSelect(access, metadata, capFinder, access.getParent(), null)) {
+ 	            					RuleRaiseAccess.performRaise(null, access, access.getParent());
+",492,,,
+753,"@@ -30,6 +30,7 @@
+ import java.util.Map;
+ 
+ import org.junit.Test;
+ import org.teiid.adminapi.impl.ModelMetaData;
+ import org.teiid.adminapi.impl.VDBMetaData;
+ import org.teiid.common.buffer.TupleSource;
+@@ -40,12 +41,13 @@
+ import org.teiid.query.metadata.TempCapabilitiesFinder;
+ import org.teiid.query.metadata.TempMetadataAdapter;
+ import org.teiid.query.metadata.TempMetadataStore;
+ import org.teiid.query.optimizer.QueryOptimizer;
+ import org.teiid.query.optimizer.TestAggregatePushdown;
+ import org.teiid.query.optimizer.TestOptimizer;
+ import org.teiid.query.optimizer.capabilities.BasicSourceCapabilities;
+ import org.teiid.query.optimizer.capabilities.CapabilitiesFinder;
+ import org.teiid.query.optimizer.capabilities.FakeCapabilitiesFinder;
+ import org.teiid.query.optimizer.capabilities.SourceCapabilities;
+ import org.teiid.query.optimizer.capabilities.SourceCapabilities.Capability;
+ import org.teiid.query.processor.HardcodedDataManager;
+@@ -137,8 +139,7 @@ public ProcessorPlan helpTestMultiSourcePlan(QueryMetadataInterface metadata, St
+         }
+         // Plan
+         command = QueryRewriter.rewrite(command, wrapper, null);
+         FakeCapabilitiesFinder fakeFinder = new FakeCapabilitiesFinder();
+         fakeFinder.addCapabilities(multiModel, bsc); 
+         
+         CapabilitiesFinder finder = new TempCapabilitiesFinder(fakeFinder);
+         IDGenerator idGenerator = new IDGenerator();
+@@ -641,4 +642,40 @@ public ProcessorPlan helpTestMultiSourcePlan(QueryMetadataInterface metadata, St
+         helpTestMultiSourcePlan(metadata, userSql, multiModel, sources, dataMgr, expected, RealMetadataFactory.exampleMultiBindingVDB(), null, new Options().implicitMultiSourceJoin(false), bsc);
+     }
+     
+ }
+",6,,,
+754,"@@ -48,14 +48,33 @@ $ cd $WILDFLY_HOME
+ $ unzip keycloak-wildfly-adapter-dist-${version}.zip
+ ---- 
+ 
+ Now, start the Teiid Server and using the jboss-cli.sh file run the following to install the KeyCloak confiuration into the Teiid Server.
+ 
+ [source,sh]
+ ----
+ ./bin/jboss-cli.sh --file=adapter-install.cli
+ ----
+ 
+ The Keycloak is installed, now we need to install security-domain called ""passthrough"". Note that the web layer is using OAuth2, but at the VDB layer, this logged in user need to be passed through and this security domain will help with that.
+ 
+ [souce,CLI]
+ ---- 
+@@ -94,7 +113,17 @@ Replace the ""teiid-web-security/teiid-odata-oauth-keycloak/src/main/webapp/WEB-I
+ 
+ Similarly replace the ""teiid-web-security/examples/database-service/src/main/webapp/WEB-INF/keyclock.json"" file contents with ""installation"" script in ""keycloak.json"" format from Keycloak admin console's ""database-client"" client application.
+ 
+ to build the WAR files running the maven command
+ 
+ [source]
+ ----
+@@ -136,13 +165,12 @@ deployment-overlay add --name=myOverlay --content=/WEB-INF/web.xml=teiid-web-sec
+ [source,xml]
+ ----
+ <vdb name=""oauthdemo"" version=""1"">
+     <property name=""security-domain"" value=""passthough""/>
+     <model visible=""true"" name=""PM1"">
+         <source name=""any"" translator-name=""loopback""/> 
+         <metadata type = ""DDL""><![CDATA[        
+             CREATE FOREIGN TABLE G1 (e1 integer PRIMARY KEY, e2 varchar(25), e3 double);
+         ]]>
+        </metadata>        
+     </model>
+ </vdb>
+ ----
+@@ -203,5 +231,3 @@ curl -k -H ""Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI0YjI4NDMzYS1..
+ ----
+ 
+ You should see same XML response as above. Please note that to programatically achieve the access_token in your own program (not using curl) you can see some suggestions in this document [https://keycloak.gitbooks.io/documentation/server_development/topics/admin-rest-api.html]
+ 
+ 
+",506,,,
+755,"@@ -60,7 +60,7 @@ Then we need to change the OData transport’s ""security-domain"" to ""keycloak"".
+ [source,sh]
+ ----
+ ./bin/jboss-cli.sh --connect
+ /subsystem=teiid/transport=odata:write-attribute(name=authentication-security-domain, value=*keycloak*)
+ 
+ reload
+ ----
+@@ -70,7 +70,7 @@ above commands will result in XML in standalone.xml or domain.xml file like (you
+ [source,xml]
+ ----
+     <transport name=""odata"">
+         <authentication security-domain=""*keycloak*""/>
+     </transport>
+ ----
+ 
+@@ -119,7 +119,7 @@ Edit the ""teiid-web-security/odata-oauth-keycloak/src/main/webapp/WEB-INF/web.xm
+ ----
+     <init-param>
+         <param-name>PassthroughAuthentication</param-name>
+         <param-value>*true*</param-value>
+     </init-param>
+ ----
+ 
+",506,,,
+757,"@@ -41,36 +41,44 @@
+ public class InfinispanCacheRAConnection extends BasicConnection
+ 		implements InfinispanCacheConnection {
+ 
+ 	private InfinispanCacheWrapper<?, ?> cacheWrapper;
+ 	
+ 	public InfinispanCacheRAConnection(InfinispanManagedConnectionFactory config) {
+ 		this.cacheWrapper = config.getCacheWrapper();
+ 		LogManager.logDetail(LogConstants.CTX_CONNECTOR, ""Infinispan-Cache Connection has been created.""); //$NON-NLS-1$				
+ 	}
+ 
+ 	@Override
+ 	public Object getCache() throws TranslatorException  {
+ 		return cacheWrapper.getCache();
+ 	}
+ 	
+ 	@Override
+ 	public Collection<Object> getAll() throws TranslatorException {
+ 		return cacheWrapper.getAll();
+ 	}
+ 	
+ 	@Override
+ 	public QueryFactory getQueryFactory() throws TranslatorException {
+ 		return cacheWrapper.getQueryFactory();
+ 	}
+ 
+ 	@Override
+ 	public String getPkField() {
+ 		return cacheWrapper.getPkField();
+ 	}
+ 
+ 	@Override
+ 	public Class<?> getCacheKeyClassType() {
+ 		return cacheWrapper.getCacheKeyClassType();
+ 	}
+ 
+ 	/**
+@@ -81,7 +89,7 @@ public Class<?> getCacheKeyClassType() {
+ 	@Override
+ 	public String getCacheName()  {
+ 		try {			
+ 			return cacheWrapper.getConfig().getCacheNameProxy().getPrimaryCacheAliasName(this);
+ 		} catch (TranslatorException te) {
+ 			throw new RuntimeException(te);
+ 		}
+@@ -94,7 +102,7 @@ public String getCacheName()  {
+ 	 */
+ 	@Override
+ 	public Class<?> getCacheClassType() {
+ 		return cacheWrapper.getCacheClassType();
+ 	}
+ 
+ 	/**
+@@ -104,7 +112,7 @@ public Class<?> getCacheClassType() {
+ 	 */
+ 	@Override
+ 	public void add(Object key, Object value) throws TranslatorException {
+ 		 this.cacheWrapper.add(key, value);
+ 	}
+ 
+ 	/**
+@@ -114,7 +122,7 @@ public void add(Object key, Object value) throws TranslatorException {
+ 	 */
+ 	@Override
+ 	public Object remove(Object key) throws TranslatorException {
+ 		return this.cacheWrapper.remove(key);
+ 	}
+ 
+ 	/**
+@@ -124,7 +132,7 @@ public Object remove(Object key) throws TranslatorException {
+ 	 */
+ 	@Override
+ 	public void update(Object key, Object value) throws TranslatorException {
+ 		this.cacheWrapper.update(key, value);
+ 	}
+ 
+ 	/**
+@@ -134,7 +142,7 @@ public void update(Object key, Object value) throws TranslatorException {
+ 	 */
+ 	@Override
+ 	public ClassRegistry getClassRegistry() {
+ 		return cacheWrapper.getClassRegistry();
+ 	}
+ 
+ 	/**
+@@ -144,7 +152,7 @@ public ClassRegistry getClassRegistry() {
+ 	 */
+ 	@Override
+ 	public Object get(Object key) throws TranslatorException {
+ 		return this.cacheWrapper.get(key);
+ 	}
+ 
+ 	/**
+@@ -154,7 +162,6 @@ public Object get(Object key) throws TranslatorException {
+ 	 */
+ 	@Override
+ 	public void close() {
+ 		this.cacheWrapper = null;
+ 	}
+ 
+ 	/**
+@@ -164,7 +171,7 @@ public void close() {
+ 	 */
+ 	@Override
+ 	public Object getCache(String cacheName) throws TranslatorException {
+ 		return cacheWrapper.getCache(cacheName);
+ 	}
+ 
+ 	/**
+@@ -174,7 +181,7 @@ public Object getCache(String cacheName) throws TranslatorException {
+ 	 */
+ 	@Override
+ 	public void clearCache(String cacheName) throws TranslatorException {
+ 		cacheWrapper.clearCache(cacheName);
+ 	}
+ 
+ 	/**
+@@ -184,7 +191,7 @@ public void clearCache(String cacheName) throws TranslatorException {
+ 	 */
+ 	@Override
+ 	public DDLHandler getDDLHandler() {
+ 		return cacheWrapper.getDDLHandler();
+ 	}
+ 
+ 	/** 
+@@ -194,7 +201,7 @@ public DDLHandler getDDLHandler() {
+ 	 */
+ 	@Override
+ 	public SearchType getSearchType() {
+ 		return cacheWrapper.getSearchType();
+ 	}
+ 
+ 	/**
+@@ -204,7 +211,7 @@ public SearchType getSearchType() {
+ 	 */
+ 	@Override
+ 	public Version getVersion() throws TranslatorException {
+ 		return null;
+ 	}
+ 
+ 	/**
+@@ -224,18 +231,18 @@ public boolean configuredUsingAnnotations() {
+ 	 */
+ 	@Override
+ 	public boolean configuredForMaterialization() {
+ 		return false;
+ 	}
+ 
+ 	@Override
+ 	public void forceCleanUp() {
+ 		this.cacheWrapper.forceCleanUp();
+ 	}
+ 	
+ 	@Override
+ 	public void cleanUp() {
+ 		this.cacheWrapper.cleanUp();
+ 		
+ 	}
+ 
+ }
+",299,,,
+758,"@@ -23,8 +23,6 @@
+ 
+ import javax.resource.ResourceException;
+ 
+ import org.infinispan.client.hotrod.RemoteCache;
+ import org.teiid.core.util.Assertion;
+ import org.teiid.translator.TranslatorException;
+ import org.teiid.translator.infinispan.cache.InfinispanCacheConnection;
+ import org.teiid.translator.object.ClassRegistry;
+@@ -85,17 +83,6 @@ public Class<?> getCacheKeyClassType()  {
+ 	public String getCacheName() {
+ 		return getTargetCacheName();
+ 	}
+ 	
+ //	private RemoteCache getTargetCache() throws TranslatorException {
+ //		final String cacheName = getTargetCacheName();
+ //		
+ //	    if (cacheName == null) {
+ //	       Assertion.isNotNull(cacheName, ""Program Error: Cache Name is null"");
+ //	    }
+ //
+ //	    return getCacheContainer().getCache(cacheName);
+ //	}
+ 	
+ 
+ 	protected String getTargetCacheName() {
+ 		try {
+@@ -138,6 +125,11 @@ public DDLHandler getDDLHandler() {
+ 		return getConfig().getCacheNameProxy().getDDLHandler();
+ 	}	
+ 	
+ 	/**
+ 	 * Provided for testing purposes
+ 	 */
+",300,,,
+759,"@@ -29,16 +29,19 @@
+ import javax.resource.ResourceException;
+ import javax.resource.spi.InvalidPropertyException;
+ 
+ import org.jboss.modules.Module;
+ import org.jboss.modules.ModuleIdentifier;
+ import org.jboss.modules.ModuleLoadException;
+ import org.teiid.core.BundleUtil;
+ import org.teiid.core.util.StringUtil;
+ import org.teiid.resource.spi.BasicConnectionFactory;
+ import org.teiid.resource.spi.BasicManagedConnectionFactory;
+ import org.teiid.translator.TranslatorException;
+ import org.teiid.translator.object.CacheNameProxy;
+ import org.teiid.translator.object.ClassRegistry;
+ 
+ public class InfinispanManagedConnectionFactory extends
+ 		BasicManagedConnectionFactory {
+@@ -102,6 +105,8 @@ public BasicConnectionFactory<InfinispanCacheRAConnection> createConnectionFacto
+ 			@Override
+ 			public InfinispanCacheRAConnection getConnection()
+ 					throws ResourceException {
+ 				return InfinispanManagedConnectionFactory.this.createCacheConnection();
+ 
+ 			}
+@@ -332,8 +337,24 @@ public void setCacheJndiName(String jndiName) {
+ 		this.cacheJndiName = jndiName;
+ 	}
+ 	
+ 	protected InfinispanCacheWrapper<?,?> getCacheWrapper() {
+ 		return cacheWrapper;
+ 	}
+ 
+ 	public ClassLoader getClassLoader() {
+@@ -348,81 +369,92 @@ protected Class<?> loadClass(String className) throws ResourceException {
+ 		}
+ 	}
+ 
+ 	protected synchronized ClassLoader loadClasses() throws ResourceException {
+ 
+ 		cl = null;
+ 		// Thread.currentThread().getContextClassLoader();
+ 		if (getModule() != null) {
+ 
+ 			try {
+ 				List<String> mods = StringUtil.getTokens(getModule(), "",""); //$NON-NLS-1$
+ 				for (String mod : mods) {
+ 		
+ 					Module x = Module.getContextModuleLoader().loadModule(
+ 							ModuleIdentifier.create(mod));
+ 					// the first entry must be the module associated with the
+ 					// cache
+ 					if (cl == null) {
+ 						cl = x.getClassLoader();
+ 					} else {
+ 						throw new ResourceException(""Unable to get classloader for "" + mod);
+ 					}
+ 				}
+ 			} catch (ModuleLoadException e) {
+ 				throw new ResourceException(e);
+ 			}
+ 
+ 		} else {
+ 			cl =  Thread.currentThread().getContextClassLoader();
+ 
+ 		}
+ 
+ 		/*
+ 		 * Parsing based on format:  cacheName:className[;pkFieldName[:cacheKeyJavaType]]
+ 		 * 
+ 		 */
+ 		
+ 		List<String> parms = StringUtil.getTokens(getCacheTypeMap(), "";""); //$NON-NLS-1$
+ 		String leftside = parms.get(0);
+ 		List<String> cacheClassparm = StringUtil.getTokens(leftside, "":"");
+ 		
+ 		if (cacheClassparm.size() != 2) {
+ 			throw new InvalidPropertyException(UTIL.gs(""TEIID25022""));
+ 		}
+ 		
+ 		String cn = cacheClassparm.get(0);
+ 		setCacheName(cn);
+ 		String className = cacheClassparm.get(1);
+ 		cacheTypeClass = loadClass(className);
+ //		try {
+ 			methodUtil.registerClass(cacheTypeClass);
+ //		} catch (TranslatorException e1) {
+ //			throw new ResourceException(e1);
+ //		}
+ 			
+ 		if (parms.size() == 2) {
+ 			String rightside = parms.get(1);
+ 			List<String> pkKeyparm = StringUtil.getTokens(rightside, "":"");
+ 			pkKey = pkKeyparm.get(0);
+ 			if (pkKeyparm.size() == 2) {
+ 				String pktype = pkKeyparm.get(1);
+ 				if (pktype != null) {
+ 					pkCacheKeyJavaType = getPrimitiveClass(pktype);
+ 				}
+ 			}
+ 		}		
+ 		
+ 		return cl;
+ 
+ 	}
+ 
+ 	protected synchronized InfinispanCacheRAConnection createCacheConnection() throws ResourceException {
+ 		if (this.cacheWrapper == null) {
+ 			ClassLoader cl = Thread.currentThread().getContextClassLoader();
+ 			try {
+ 				Thread.currentThread().setContextClassLoader(
+ 						this.getClass().getClassLoader());
+ 				loadClasses();
+ 				
+ 				Class<?> clz = null;
+ 				if (getCacheJndiName() != null) {
+@@ -453,16 +485,12 @@ protected synchronized InfinispanCacheRAConnection createCacheConnection() throw
+ 							.getString(
+ 									""InfinispanManagedConnectionFactory.aliasCacheNotDefined"", cacheNameProxy.getAliasCacheName())); //$NON-NLS-1$
+ 					}
+ //					cacheNameProxy.initializeAliasCache(aliasCache);
+ 				}
+ 
+ 			} catch (Exception e) {
+ 				throw new ResourceException(e);
+ 			} finally {
+ 				Thread.currentThread().setContextClassLoader(cl);
+ 			}
+ 		}
+ 		return new InfinispanCacheRAConnection(this);
+ 	}
+ 
+ 	private boolean determineConnectionType() {
+@@ -599,10 +627,8 @@ public void cleanUp() {
+ 		cl = null;
+ 
+ 	}
+ 	
+ 	
+ 	/** used in testing */
+ 	public void shutDown() {
+ 		this.cacheWrapper.cleanUp();
+ 	}
+ }
+",301,,,
+760,"@@ -32,12 +32,10 @@
+ import org.infinispan.Cache;
+ import org.infinispan.client.hotrod.RemoteCache;
+ import org.infinispan.configuration.cache.Configuration;
+ //import org.infinispan.;
+ import org.infinispan.manager.DefaultCacheManager;
+ import org.infinispan.manager.EmbeddedCacheManager;
+ import org.infinispan.query.Search;
+ import org.infinispan.query.dsl.QueryFactory;
+ import org.teiid.core.util.Assertion;
+ import org.teiid.logging.LogConstants;
+ import org.teiid.logging.LogManager;
+ import org.teiid.resource.adapter.infinispan.DSLSearch;
+@@ -294,7 +292,9 @@ public SearchType getSearchType() {
+ 	 */
+ 	@Override
+ 	public Version getVersion() throws TranslatorException {
+ 		return null;
+ 	}
+ 
+ 	/**
+@@ -307,14 +307,5 @@ public boolean configuredUsingAnnotations() {
+ 		return false;
+ 	}
+ 
+ 	/**
+ 	 * {@inheritDoc}
+ 	 *
+ 	 * @see org.teiid.translator.object.ObjectConnection#configuredForMaterialization()
+ 	 */
+ 	@Override
+ 	public boolean configuredForMaterialization() {
+ 		return false;
+ 	}
+ 
+ }
+",302,,,
+761,"@@ -30,6 +30,7 @@
+ 
+ import javax.resource.ResourceException;
+ 
+ import org.infinispan.client.hotrod.RemoteCache;
+ import org.infinispan.client.hotrod.RemoteCacheManager;
+ import org.infinispan.client.hotrod.Search;
+@@ -290,7 +291,9 @@ public SearchType getSearchType() {
+ 	 */
+ 	@Override
+ 	public Version getVersion() throws TranslatorException {
+ 		return null;
+ 	}
+ 
+ 	/**
+",303,,,
+762,"@@ -41,13 +41,7 @@ public void before() {
+ 		factory = new InfinispanManagedConnectionFactory();
+ 		factory.setConfigurationFileNameForLocalCache(""./src/test/resources/infinispan_persistent_config.xml"");
+ 	}
+ 	
+ 	
+ 	@After
+ 	public void after() {
+ 		factory.getCacheWrapper().shutDownCacheManager();
+ 	}
+ 	
+     @Test
+     public void testCacheTypeMap1() throws Exception {
+  		factory.setCacheTypeMap(InfinispanTestHelper.TRADE_CACHE_NAME + "":"" + ""org.teiid.translator.object.testdata.trades.Trade"");
+@@ -63,6 +57,8 @@ public void testCacheTypeMap1() throws Exception {
+     		
+     		assertEquals(InfinispanTestHelper.TRADE_CACHE_NAME, conn.getCacheName());
+     		assertNotNull(conn.getClassRegistry());
+      		
+     		factory.cleanUp();
+     }
+@@ -85,6 +81,8 @@ public void testCacheTypeMap2() throws Exception {
+     		
+     		assertEquals(""longValue"", conn.getPkField());
+     		
+     		factory.cleanUp();
+     }   
+     
+@@ -106,6 +104,8 @@ public void testCacheTypeMap3() throws Exception {
+     		
+     		assertEquals(""longValue"", conn.getPkField());
+     		
+     		factory.cleanUp();
+     }   
+     
+@@ -129,6 +129,45 @@ public void testCacheTypeMap4() throws Exception {
+     		
+     		assertEquals(""longValue"", conn.getPkField());
+     		
+     		factory.cleanUp();
+     }          
+ }
+",307,,,

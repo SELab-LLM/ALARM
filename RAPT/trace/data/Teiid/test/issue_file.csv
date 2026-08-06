@@ -1,0 +1,627 @@
+,issue_id,issue_comments,issue_desc,created_at,closed_at
+18,TEIID-4608,"If first tuple of multi-value insert contains NULL value (regular statement, not prepared statement), Teiid is not able to resolve types properly.
+*Example 1:*
+IntKey - primary key, type integer
+IntNum - regular column, type integer
+{code:sql}
+INSERT INTO tablea (IntKey, IntNum) VALUES (1, null), (2, 2);
+{code}
+This query ends with ClassCastException:
+{code:plain}
+14:24:39,133 ERROR [org.teiid.CONNECTOR] (Worker8_QueryProcessorQueue105) Connector worker process failed for atomic-request=8V7FTKxvQ5zY.14.0.34: java.lang.ClassCastException: java.lang.Integer cannot be cast to java.lang.Float
+	at org.teiid.translator.jdbc.JDBCExecutionFactory.bindValue(JDBCExecutionFactory.java:957) [translator-jdbc-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.translator.jdbc.sybase.BaseSybaseExecutionFactory.bindValue(BaseSybaseExecutionFactory.java:147) [translator-jdbc-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.translator.jdbc.JDBCBaseExecution.bind(JDBCBaseExecution.java:107) [translator-jdbc-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.translator.jdbc.JDBCUpdateExecution.executeTranslatedCommand(JDBCUpdateExecution.java:243) [translator-jdbc-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.translator.jdbc.JDBCUpdateExecution.execute(JDBCUpdateExecution.java:84) [translator-jdbc-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.dqp.internal.datamgr.ConnectorWorkItem$1.execute(ConnectorWorkItem.java:402)
+	at org.teiid.dqp.internal.datamgr.ConnectorWorkItem.execute(ConnectorWorkItem.java:364)
+	at sun.reflect.GeneratedMethodAccessor137.invoke(Unknown Source) [:1.8.0-internal]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) [rt.jar:1.8.0-internal]
+	at java.lang.reflect.Method.invoke(Method.java:483) [rt.jar:1.8.0-internal]
+	at org.teiid.dqp.internal.datamgr.ConnectorManager$1.invoke(ConnectorManager.java:211)
+	at com.sun.proxy.$Proxy48.execute(Unknown Source)
+	at org.teiid.dqp.internal.process.DataTierTupleSource.getResults(DataTierTupleSource.java:306)
+	at org.teiid.dqp.internal.process.DataTierTupleSource.nextTuple(DataTierTupleSource.java:142)
+	at org.teiid.query.processor.relational.ProjectIntoNode.checkExitConditions(ProjectIntoNode.java:257)
+	at org.teiid.query.processor.relational.ProjectIntoNode.nextBatchDirect(ProjectIntoNode.java:228)
+	at org.teiid.query.processor.relational.RelationalNode.nextBatch(RelationalNode.java:282)
+	at org.teiid.query.processor.relational.RelationalPlan.nextBatch(RelationalPlan.java:145)
+	at org.teiid.query.processor.QueryProcessor.nextBatchDirect(QueryProcessor.java:151)
+	at org.teiid.query.processor.QueryProcessor.nextBatch(QueryProcessor.java:114)
+	at org.teiid.query.processor.BatchCollector.collectTuples(BatchCollector.java:164)
+	at org.teiid.query.processor.BatchCollector.collectTuples(BatchCollector.java:146)
+	at org.teiid.dqp.internal.process.RequestWorkItem.processMore(RequestWorkItem.java:472)
+	at org.teiid.dqp.internal.process.RequestWorkItem.process(RequestWorkItem.java:348)
+	at org.teiid.dqp.internal.process.AbstractWorkItem.run(AbstractWorkItem.java:51)
+	at org.teiid.dqp.internal.process.RequestWorkItem.run(RequestWorkItem.java:274)
+	at org.teiid.dqp.internal.process.DQPWorkContext.runInContext(DQPWorkContext.java:276)
+	at org.teiid.dqp.internal.process.ThreadReuseExecutor$RunnableWrapper.run(ThreadReuseExecutor.java:119)
+	at org.teiid.dqp.internal.process.ThreadReuseExecutor$3.run(ThreadReuseExecutor.java:210)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) [rt.jar:1.8.0-internal]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) [rt.jar:1.8.0-internal]
+	at java.lang.Thread.run(Thread.java:744) [rt.jar:1.8.0-internal]
+
+14:24:39,136 ERROR [org.teiid.PROCESSOR] (Worker8_QueryProcessorQueue105) TEIID30019 Unexpected exception for request 8V7FTKxvQ5zY.14: java.lang.ClassCastException: java.lang.Integer cannot be cast to java.lang.Float
+	at org.teiid.translator.jdbc.JDBCExecutionFactory.bindValue(JDBCExecutionFactory.java:957)
+	at org.teiid.translator.jdbc.sybase.BaseSybaseExecutionFactory.bindValue(BaseSybaseExecutionFactory.java:147)
+	at org.teiid.translator.jdbc.JDBCBaseExecution.bind(JDBCBaseExecution.java:107)
+	at org.teiid.translator.jdbc.JDBCUpdateExecution.executeTranslatedCommand(JDBCUpdateExecution.java:243)
+	at org.teiid.translator.jdbc.JDBCUpdateExecution.execute(JDBCUpdateExecution.java:84)
+	at org.teiid.dqp.internal.datamgr.ConnectorWorkItem$1.execute(ConnectorWorkItem.java:402) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.dqp.internal.datamgr.ConnectorWorkItem.execute(ConnectorWorkItem.java:364) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at sun.reflect.GeneratedMethodAccessor137.invoke(Unknown Source) [:1.8.0-internal]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) [rt.jar:1.8.0-internal]
+	at java.lang.reflect.Method.invoke(Method.java:483) [rt.jar:1.8.0-internal]
+	at org.teiid.dqp.internal.datamgr.ConnectorManager$1.invoke(ConnectorManager.java:211) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at com.sun.proxy.$Proxy48.execute(Unknown Source)
+	at org.teiid.dqp.internal.process.DataTierTupleSource.getResults(DataTierTupleSource.java:306) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.dqp.internal.process.DataTierTupleSource.nextTuple(DataTierTupleSource.java:142) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.query.processor.relational.ProjectIntoNode.checkExitConditions(ProjectIntoNode.java:257) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.query.processor.relational.ProjectIntoNode.nextBatchDirect(ProjectIntoNode.java:228) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.query.processor.relational.RelationalNode.nextBatch(RelationalNode.java:282) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.query.processor.relational.RelationalPlan.nextBatch(RelationalPlan.java:145) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.query.processor.QueryProcessor.nextBatchDirect(QueryProcessor.java:151) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.query.processor.QueryProcessor.nextBatch(QueryProcessor.java:114) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.query.processor.BatchCollector.collectTuples(BatchCollector.java:164) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.query.processor.BatchCollector.collectTuples(BatchCollector.java:146) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.dqp.internal.process.RequestWorkItem.processMore(RequestWorkItem.java:472) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.dqp.internal.process.RequestWorkItem.process(RequestWorkItem.java:348) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.dqp.internal.process.AbstractWorkItem.run(AbstractWorkItem.java:51) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.dqp.internal.process.RequestWorkItem.run(RequestWorkItem.java:274) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.dqp.internal.process.DQPWorkContext.runInContext(DQPWorkContext.java:276) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.dqp.internal.process.ThreadReuseExecutor$RunnableWrapper.run(ThreadReuseExecutor.java:119) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at org.teiid.dqp.internal.process.ThreadReuseExecutor$3.run(ThreadReuseExecutor.java:210) [teiid-engine-8.12.5.redhat-8.jar:8.12.5.redhat-8]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) [rt.jar:1.8.0-internal]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) [rt.jar:1.8.0-internal]
+	at java.lang.Thread.run(Thread.java:744) [rt.jar:1.8.0-internal]
+{code}
+
+If I switch tuples, no exception occurs and insert finishes successfully.
+{code:sql}
+INSERT INTO tablea (IntKey, IntNum) VALUES (2, 2), (1, null);
+{code}
+
+*Example 2*
+IntKey - primary key, type integer
+CharValue - regular column, type char
+{code:sql}
+INSERT INTO tablea (IntKey, CharValue) VALUES (1, null), (2, convert('+', char));
+{code}
+This query ends with TEIID30328 Unable to evaluate convert(X.expr2, short):...
+{code:plain}
+14:41:35,053 WARN  [org.teiid.PROCESSOR] (Worker14_QueryProcessorQueue136) TEIID30020 Processing exception for request 8V7FTKxvQ5zY.30 'TEIID30328 Unable to evaluate convert(X.expr2, short): TEIID30384 Error while evaluating function convert'. Originally ExpressionEvaluationException 'TEIID10076 Invalid conversion from type class java.lang.Character with value '+' to type class java.lang.Short' DataTypeManager.java:940. Enable more detailed logging to see the entire stacktrace.
+{code}
+Again, switching tuples resolves the issue.
+{code:sql}
+INSERT INTO tablea (IntKey, CharValue) VALUES (2, convert('+', char)), (1, null);
+{code}
+
+
+This occurs only in case of view with defined _trigger instead of insert_. Here is my VDB for MSSQL, but I can see same behavior for MySql and PostgreSQL
+{code:xml}
+<metadata type=""DDL"">
+    CREATE FOREIGN TABLE SmallA (IntKey integer PRIMARY KEY,
+        StringKey string,
+        IntNum integer,
+        StringNum string,
+        FloatNum float,
+        LongNum bigint,
+        DoubleNum double,
+        ByteNum smallint,
+        DateValue date,
+        TimeValue time,
+        TimestampValue timestamp,
+        BooleanValue boolean,
+        CharValue char(1),
+        ShortValue smallint,
+        BigIntegerValue decimal,
+        BigDecimalValue decimal,
+        ObjectValue blob)
+    OPTIONS (UPDATABLE 'TRUE');
+</metadata>
+...
+<metadata type=""DDL""><
+CREATE VIEW SmallA (IntKey integer PRIMARY KEY,
+    StringKey string,
+    IntNum integer,
+    StringNum string,
+    FloatNum float,
+    LongNum long,
+    DoubleNum double,
+    ByteNum byte,
+    DateValue date,
+    TimeValue time,
+    TimestampValue timestamp,
+    BooleanValue boolean,
+    CharValue char,
+    ShortValue short,
+    BigIntegerValue biginteger,
+    BigDecimalValue bigdecimal,
+    ObjectValue object)
+OPTIONS (UPDATABLE 'TRUE')
+AS
+SELECT IntKey, StringKey, IntNum,
+    StringNum, FloatNum, LongNum, DoubleNum,
+    convert(ByteNum, byte) AS ByteNum, DateValue, TimeValue, TimestampValue,
+    BooleanValue, CharValue, ShortValue,
+    convert(BigIntegerValue, biginteger) AS BigIntegerValue, BigDecimalValue,
+    convert(ObjectValue, object) AS ObjectValue
+FROM Source.SmallA;
+CREATE TRIGGER ON SmallA INSTEAD OF INSERT AS FOR EACH ROW
+BEGIN ATOMIC
+    INSERT INTO Source.smalla (IntKey, StringKey, IntNum, StringNum, FloatNum, LongNum, DoubleNum, ByteNum, DateValue, TimeValue, TimestampValue, BooleanValue, CharValue, ShortValue, BigIntegerValue, BigDecimalValue, ObjectValue) VALUES
+        (NEW.IntKey, NEW.StringKey, NEW.IntNum, NEW.StringNum, NEW.FloatNum, NEW.LongNum, NEW.DoubleNum, NEW.ByteNum, NEW.DateValue, NEW.TimeValue, NEW.TimestampValue,
+        NEW.BooleanValue, NEW.CharValue, NEW.ShortValue, NEW.BigIntegerValue, NEW.BigDecimalValue, to_bytes(convert(NEW.ObjectValue, string), 'UTF-8'));
+END;
+</metadata>
+{code}",,,
+20,TEIID-4611,"DSL translator is not able to delete rows from table:
+{code:sql|title=Example queries}
+insert into smalla (intkey, stringkey) values (1, '1');
+insert into smalla (intkey, stringkey) values (2, '2');
+delete from smalla
+{code}
+
+Teiid seems to try to delete record repeatedly:
+{code:plain|title=Exception}
+14:05:20,351 WARN  [org.teiid.CONNECTOR] (Worker1_QueryProcessorQueue37) TEIID21013 ObjectUpdateExecution: Warning - The object does not exist when trying to delete from table SmallA with key 2
+14:05:20,352 WARN  [org.teiid.CONNECTOR] (Worker1_QueryProcessorQueue37) Connector worker process failed for atomic-request=IuoK2RpItaN2.13.0.6: org.teiid.translator.TranslatorException: TEIID21012 Processing error: Unable to delete the object in table SmallA with key 2
+    at org.teiid.translator.object.ObjectUpdateExecution.handleDelete(ObjectUpdateExecution.java:385) [translator-object-8.12.8.6_3-redhat-1.jar:8.12.8.6_3-redhat-1]
+    at org.teiid.translator.object.ObjectUpdateExecution.executeUpdate(ObjectUpdateExecution.java:137) [translator-object-8.12.8.6_3-redhat-1.jar:8.12.8.6_3-redhat-1]
+    at org.teiid.translator.object.ObjectUpdateExecution.execute(ObjectUpdateExecution.java:100) [translator-object-8.12.8.6_3-redhat-1.jar:8.12.8.6_3-redhat-1]
+    at org.teiid.dqp.internal.datamgr.ConnectorWorkItem$1.execute(ConnectorWorkItem.java:404) [teiid-engine-8.12.8.6_3-redhat-1.jar:8.12.8.6_3-redhat-1]
+    at org.teiid.dqp.internal.datamgr.ConnectorWorkItem.execute(ConnectorWorkItem.java:366) [teiid-engine-8.12.8.6_3-redhat-1.jar:8.12.8.6_3-redhat-1]
+    at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) [rt.jar:1.8.0-internal]
+    at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) [rt.jar:1.8.0-internal]
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) [rt.jar:1.8.0-internal]
+    at java.lang.reflect.Method.invoke(Method.java:483) [rt.jar:1.8.0-internal]
+    at org.teiid.dqp.internal.datamgr.ConnectorManager$1.invoke(ConnectorManager.java:211) [teiid-engine-8.12.8.6_3-redhat-1.jar:8.12.8.6_3-redhat-1]
+    at com.sun.proxy.$Proxy47.execute(Unknown Source)
+    at org.teiid.dqp.internal.process.DataTierTupleSource.getResults(DataTierTupleSource.java:306) [teiid-engine-8.12.8.6_3-redhat-1.jar:8.12.8.6_3-redhat-1]
+    at org.teiid.dqp.internal.process.DataTierTupleSource$1.call(DataTierTupleSource.java:112) [teiid-engine-8.12.8.6_3-redhat-1.jar:8.12.8.6_3-redhat-1]
+    at org.teiid.dqp.internal.process.DataTierTupleSource$1.call(DataTierTupleSource.java:108) [teiid-engine-8.12.8.6_3-redhat-1.jar:8.12.8.6_3-redhat-1]
+    at java.util.concurrent.FutureTask.run(FutureTask.java:266) [rt.jar:1.8.0-internal]
+    at org.teiid.dqp.internal.process.FutureWork.run(FutureWork.java:65) [teiid-engine-8.12.8.6_3-redhat-1.jar:8.12.8.6_3-redhat-1]
+    at org.teiid.dqp.internal.process.DQPWorkContext.runInContext(DQPWorkContext.java:280) [teiid-engine-8.12.8.6_3-redhat-1.jar:8.12.8.6_3-redhat-1]
+    at org.teiid.dqp.internal.process.ThreadReuseExecutor$RunnableWrapper.run(ThreadReuseExecutor.java:119) [teiid-engine-8.12.8.6_3-redhat-1.jar:8.12.8.6_3-redhat-1]
+    at org.teiid.dqp.internal.process.ThreadReuseExecutor$3.run(ThreadReuseExecutor.java:210) [teiid-engine-8.12.8.6_3-redhat-1.jar:8.12.8.6_3-redhat-1]
+    at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) [rt.jar:1.8.0-internal]
+    at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) [rt.jar:1.8.0-internal]
+    at java.lang.Thread.run(Thread.java:744) [rt.jar:1.8.0-internal]
+{code}
+
+Moreover, Teiid removes only one row (I will log this issue separately):
+*Data in table before delete:*
+|IntKey|StringKey|...|
+|1|1|...|
+|2|2|...|
+
+*Data in table after delete:*
+|IntKey|StringKey|...|
+|2|2|...|
+",,,
+23,TEIID-4597,"In the metadata processor, the loading of the staging table doesn't get loaded due to the isStaging() method return false.
+
+
+This jira is created so that this issue is documented, as the fix is included in the commit for TEIID-4588  because this has to be fixed in order to see the duplicate column issue in TEIID-4588.",,,
+30,TEIID-4588,"When deploying a VDB xml where the JDG source model doesn't contain the metadata, it relies upon the translator to generate the metadata for the tables.  However, when there is a materialized view, the staging metadata is causing the following exception:
+
+{code}
+19:52:29,254 ERROR [org.teiid.PROCESSOR] (Worker0_QueryProcessorQueue16) TEIID30019 Unexpected exception for request 7Dx4HhkSCh4e.0: java.lang.AssertionError: duplicate uid Column name=name, nameInSource=name, uuid=tid:97f8ad85a287-1c39ba6d-00000002
+	at org.teiid.query.metadata.CompositeMetadataStore.addOid(CompositeMetadataStore.java:199) [teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.query.metadata.CompositeMetadataStore.addOids(CompositeMetadataStore.java:212) [teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.query.metadata.CompositeMetadataStore.assignOids(CompositeMetadataStore.java:179) [teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.query.metadata.CompositeMetadataStore.getOids(CompositeMetadataStore.java:231) [teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.DataTierManagerImpl$13.processQuery(DataTierManagerImpl.java:567) [teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.ChildRecordExtractionTable.processQuery(BaseExtractionTable.java:151) [teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.DataTierManagerImpl.processSystemQuery(DataTierManagerImpl.java:1177) [teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.DataTierManagerImpl.registerRequest(DataTierManagerImpl.java:941) [teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+{code}
+	",,,
+37,TEIID-4603,There is an INSERT issue when there are multiple pojo's stored in the same cache and the keys' overlap (meaning the different types of pojo's have the same key).  ,,,
+39,TEIID-4590,Fix the select * (ALL) logic so that it can work when there are multiple object types in the cache.   The select ALL should only be selecting based on the object type associated with that table.,,,
+256,TEIID-4510,"When using infinispan-cache-dsl translator to access JDG cache incorrect results are returned for joins between the parent and child table.
+POJO proto schema:
+{code:plain}
+package org.jboss.qe.jdg.remote.protobuf.complex;
+/* @Indexed */
+message Person {
+    
+    /* @IndexedField(index=true, store=false) */
+    required int32 id = 1;
+
+    /* @IndexedField */
+    required string name = 2;
+    
+    /* @IndexedField */
+    optional string email = 3;
+    
+    /* @IndexedField(index=true, store=false) */
+    repeated PhoneNumber phones = 4;
+    /* @Indexed */
+    message Address {
+
+        /* @IndexedField */
+        required string Address = 1;
+        
+        /* @IndexedField(index=true, store=false) */
+        required string City = 2;
+        
+        /* @IndexedField(index=true, store=false) */
+        required string State = 3;
+    }
+    /* @IndexedField(index=true, store=false) */
+    optional Address address = 5;
+}
+
+/* @Indexed */
+message PhoneNumber {
+
+    /* @IndexedField */
+    required string number = 1;
+}
+{code}
+Source metadata:
+{code:sql}
+CREATE FOREIGN TABLE Address (
+    Address string NOT NULL PRIMARY KEY OPTIONS (NAMEINSOURCE 'address.Address', SEARCHABLE 'Searchable', NATIVE_TYPE 'java.lang.String'),
+    City string NOT NULL OPTIONS (NAMEINSOURCE 'address.City', SEARCHABLE 'Searchable', NATIVE_TYPE 'java.lang.String'),
+    State string NOT NULL OPTIONS (NAMEINSOURCE 'address.State', SEARCHABLE 'Searchable', NATIVE_TYPE 'java.lang.String'),
+    id integer NOT NULL OPTIONS (NAMEINSOURCE 'id', SELECTABLE TRUE, SEARCHABLE 'Searchable', NATIVE_TYPE 'int'),
+    CONSTRAINT FK_PERSON FOREIGN KEY(id) REFERENCES Person (id) OPTIONS (NAMEINSOURCE 'address')
+) OPTIONS (UPDATABLE TRUE);
+
+CREATE FOREIGN TABLE Person (
+    id integer NOT NULL OPTIONS (NAMEINSOURCE 'id', SEARCHABLE 'Searchable', NATIVE_TYPE 'int'),
+    name string NOT NULL OPTIONS (NAMEINSOURCE 'name', SEARCHABLE 'Searchable', NATIVE_TYPE 'java.lang.String'),
+    email string OPTIONS (NAMEINSOURCE 'email', SEARCHABLE 'Searchable', NATIVE_TYPE 'java.lang.String'),
+    CONSTRAINT PK_ID PRIMARY KEY(id)
+) OPTIONS (UPDATABLE TRUE);
+
+CREATE FOREIGN TABLE PhoneNumber (
+    number string NOT NULL PRIMARY KEY OPTIONS (NAMEINSOURCE 'phones.number', SEARCHABLE 'Searchable', NATIVE_TYPE 'java.lang.String'),
+    id integer NOT NULL OPTIONS (NAMEINSOURCE 'id', SELECTABLE TRUE, SEARCHABLE 'Searchable', NATIVE_TYPE 'int'),
+    CONSTRAINT FK_PERSON FOREIGN KEY(id) REFERENCES Person (id) OPTIONS (NAMEINSOURCE 'phones')
+) OPTIONS (UPDATABLE TRUE);
+{code}
+Tested scenario:
+{code:sql}
+SELECT COUNT(*) FROM PhoneNumber WHERE id=1
+{code}
+returns 2.
+{code:sql}
+SELECT COUNT(*) FROM Person p, PhoneNumber pn WHERE p.id=pn.id AND p.id=1
+{code}
+or
+{code:sql}
+SELECT COUNT(*) FROM Person p INNER JOIN PhoneNumber pn ON p.id=pn.id WHERE p.id=1
+{code}
+both return only 1.
+
+NOTE: issue appears also when using only nested descriptors in the proto schema.",,,
+401,TEIID-4651,"Teiid's and SAP IQ's LOCATE function differs in order of arguments. Translator is pushing the LOCATE function as is into the source, which results in undesirable results. This is critical issue, as the queries seemingly work, but are not producing correct results.
+See [SAP IQ LOCATE function docs|http://help.sap.com/saphelp_iq1611_iqrefbb/helpdata/en/a5/5fae8484f2101591b6b7d46dca7cc4/content.htm]
+Query:
+{code:sql}
+SELECT INTKEY, STRINGNUM, LOCATE(1,STRINGNUM) FROM BQT1.SmallA ORDER BY intkey
+{code}
+being pushed as:
+{code:sql}
+[SELECT g_0.""intkey"" AS c_0, g_0.""stringnum"" AS c_1, locate('1', g_0.""stringnum"") AS c_2 FROM ""bqt-server"".""dvqe"".""SmallA"" AS g_0 ORDER BY c_0]
+{code}
+Results in:
+|| intkey ||	stringnum	|| expr3 ||
+|0 | -24 | 0| 
+|1 | <null> | <null>| 
+|2 | -22 | 0| 
+|3 | -21 | 0| 
+|4 | -20 | 0| 
+|5 | -19 | 0| 
+|6 | -18 | 0| 
+|7 | -17 | 0| 
+|8 | -16 | 0| 
+|9 | -15 | 0| 
+|10 | -14 | 0| 
+|11 | -13 | 0| 
+|12 | -12 | 0| 
+|13 | -11 | 0| 
+|14 | -10 | 0| 
+|15 | -9 | 0| 
+|16 | -8 | 0| 
+|17 | <null> | <null>| 
+|18 | -6 | 0| 
+|19 | -5 | 0| 
+|20 | -4 | 0| 
+|21 | -3 | 0| 
+|22 | -2 | 0| 
+|23 | -1 | 0| 
+|24 | 0 | 0| 
+|25 | 1 | 1| 
+|26 | 2 | 0| 
+|27 | 3 | 0| 
+|28 | 4 | 0| 
+|29 | 5 | 0| 
+|30 | 6 | 0| 
+|31 | 7 | 0| 
+|32 | 8 | 0| 
+|33 | <null> | <null>| 
+|34 | 10 | 0| 
+|35 | 11 | 0| 
+|36 | 12 | 0| 
+|37 | 13 | 0| 
+|38 | 14 | 0| 
+|39 | 15 | 0| 
+|40 | 16 | 0| 
+|41 | 17 | 0| 
+|42 | 18 | 0| 
+|43 | 19 | 0| 
+|44 | 20 | 0| 
+|45 | 21 | 0| 
+|46 | 22 | 0| 
+|47 | 23 | 0| 
+|48 | 24 | 0| 
+|49 | <null> | <null> |",,,
+412,TEIID-4519,"When using JDG and complex pojos, delete query issued against child tables end with error.
+* 1-1 relation:
+When deleting a child object, whole parent object is deleted
+* 1-n relation:
+An exception is thrown:
+{code:plain}
+13:31:28,926 WARN  [org.teiid.CONNECTOR] (Worker7_QueryProcessorQueue91) Connector worker process failed for atomic-request=rKsoeHUfbaAW.21.0.21: org.teiid.translator.TranslatorException: TEIID31111 No such accessible property/method number on class java.util.ArrayList.
+          at org.teiid.translator.object.ObjectUpdateExecution.handleDelete(ObjectUpdateExecution.java:388) [translator-object-8.12.6.6_3.jar:8.12.6.6_3]
+          at org.teiid.translator.object.ObjectUpdateExecution.executeUpdate(ObjectUpdateExecution.java:137) [translator-object-8.12.6.6_3.jar:8.12.6.6_3]
+          at org.teiid.translator.object.ObjectUpdateExecution.execute(ObjectUpdateExecution.java:100) [translator-object-8.12.6.6_3.jar:8.12.6.6_3]
+          at org.teiid.dqp.internal.datamgr.ConnectorWorkItem$1.execute(ConnectorWorkItem.java:402) [teiid-engine-8.12.6.6_3-redhat-1.jar:8.12.6.6_3-redhat-1]
+          at org.teiid.dqp.internal.datamgr.ConnectorWorkItem.execute(ConnectorWorkItem.java:364) [teiid-engine-8.12.6.6_3-redhat-1.jar:8.12.6.6_3-redhat-1]
+          at sun.reflect.GeneratedMethodAccessor211.invoke(Unknown Source) [:1.8.0_102]
+          at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) [rt.jar:1.8.0_102]
+          at java.lang.reflect.Method.invoke(Method.java:498) [rt.jar:1.8.0_102]
+          at org.teiid.dqp.internal.datamgr.ConnectorManager$1.invoke(ConnectorManager.java:211) [teiid-engine-8.12.6.6_3-redhat-1.jar:8.12.6.6_3-redhat-1]
+          at com.sun.proxy.$Proxy81.execute(Unknown Source)
+          at org.teiid.dqp.internal.process.DataTierTupleSource.getResults(DataTierTupleSource.java:306) [teiid-engine-8.12.6.6_3-redhat-1.jar:8.12.6.6_3-redhat-1]
+          at org.teiid.dqp.internal.process.DataTierTupleSource$1.call(DataTierTupleSource.java:112) [teiid-engine-8.12.6.6_3-redhat-1.jar:8.12.6.6_3-redhat-1]
+          at org.teiid.dqp.internal.process.DataTierTupleSource$1.call(DataTierTupleSource.java:108) [teiid-engine-8.12.6.6_3-redhat-1.jar:8.12.6.6_3-redhat-1]
+          at java.util.concurrent.FutureTask.run(FutureTask.java:266) [rt.jar:1.8.0_102]
+          at org.teiid.dqp.internal.process.FutureWork.run(FutureWork.java:65) [teiid-engine-8.12.6.6_3-redhat-1.jar:8.12.6.6_3-redhat-1]
+          at org.teiid.dqp.internal.process.DQPWorkContext.runInContext(DQPWorkContext.java:276) [teiid-engine-8.12.6.6_3-redhat-1.jar:8.12.6.6_3-redhat-1]
+          at org.teiid.dqp.internal.process.ThreadReuseExecutor$RunnableWrapper.run(ThreadReuseExecutor.java:119) [teiid-engine-8.12.6.6_3-redhat-1.jar:8.12.6.6_3-redhat-1]
+          at org.teiid.dqp.internal.process.ThreadReuseExecutor$3.run(ThreadReuseExecutor.java:210) [teiid-engine-8.12.6.6_3-redhat-1.jar:8.12.6.6_3-redhat-1]
+          at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) [rt.jar:1.8.0_102]
+          at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) [rt.jar:1.8.0_102]
+          at java.lang.Thread.run(Thread.java:745) [rt.jar:1.8.0_102]
+Caused by: javax.script.ScriptException: TEIID31111 No such accessible property/method number on class java.util.ArrayList.
+          at org.teiid.translator.object.ObjectScriptEngine$1.eval(ObjectScriptEngine.java:144) [translator-object-8.12.6.6_3.jar:8.12.6.6_3]
+          at org.teiid.translator.object.ObjectUpdateExecution.handleDelete(ObjectUpdateExecution.java:372) [translator-object-8.12.6.6_3.jar:8.12.6.6_3]
+          ... 20 more
+{code}
+
+These two cases should be handled. Given the lack of DELETE support, all the DELETE queries on child entities should throw exception instead.
+
+The DELETE on parent should be enabled though.",,,
+427,TEIID-4601,"When a POJO class field is of type byte[] , insert into a table, which is mapped to the POJO class fails with:
+{code:plain}
+Caused by: org.teiid.translator.TranslatorException: Conversion from String to byte is not supported
+	at org.teiid.translator.object.ObjectUpdateExecution.writeColumnData(ObjectUpdateExecution.java:624) ~[?:?]
+	at org.teiid.translator.object.ObjectUpdateExecution.writeColumnData(ObjectUpdateExecution.java:579) ~[?:?]
+	at org.teiid.translator.object.ObjectUpdateExecution.writeColumnData(ObjectUpdateExecution.java:572) ~[?:?]
+	at org.teiid.translator.object.ObjectUpdateExecution.handleInsert(ObjectUpdateExecution.java:208) ~[?:?]
+	at org.teiid.translator.object.ObjectUpdateExecution.executeUpdate(ObjectUpdateExecution.java:143) ~[?:?]
+	at org.teiid.translator.object.ObjectUpdateExecution.execute(ObjectUpdateExecution.java:100) ~[?:?]
+	at org.teiid.dqp.internal.datamgr.ConnectorWorkItem$1.execute(ConnectorWorkItem.java:404) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.datamgr.ConnectorWorkItem.execute(ConnectorWorkItem.java:366) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:1.8.0_102]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[?:1.8.0_102]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:1.8.0_102]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[?:1.8.0_102]
+	at org.teiid.dqp.internal.datamgr.ConnectorManager$1.invoke(ConnectorManager.java:211) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at com.sun.proxy.$Proxy82.execute(Unknown Source) ~[?:?]
+	at org.teiid.dqp.internal.process.DataTierTupleSource.getResults(DataTierTupleSource.java:306) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.DataTierTupleSource$1.call(DataTierTupleSource.java:112) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.DataTierTupleSource$1.call(DataTierTupleSource.java:108) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266) ~[?:1.8.0_102]
+	at org.teiid.dqp.internal.process.FutureWork.run(FutureWork.java:65) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.DQPWorkContext.runInContext(DQPWorkContext.java:276) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.ThreadReuseExecutor$RunnableWrapper.run(ThreadReuseExecutor.java:119) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.ThreadReuseExecutor$3.run(ThreadReuseExecutor.java:210) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) ~[?:1.8.0_102]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) ~[?:1.8.0_102]
+	at java.lang.Thread.run(Thread.java:745) ~[?:1.8.0_102]
+Caused by: java.lang.IllegalArgumentException: Conversion from String to byte is not supported
+	at org.teiid.core.util.StringUtil.valueOf(StringUtil.java:797) ~[teiid-jdbc-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.core.util.StringUtil.valueOf(StringUtil.java:768) ~[teiid-jdbc-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.translator.object.ClassRegistry.executeSetMethod(ClassRegistry.java:139) ~[?:?]
+	at org.teiid.translator.object.ObjectUpdateExecution.writeColumnData(ObjectUpdateExecution.java:608) ~[?:?]
+	at org.teiid.translator.object.ObjectUpdateExecution.writeColumnData(ObjectUpdateExecution.java:579) ~[?:?]
+	at org.teiid.translator.object.ObjectUpdateExecution.writeColumnData(ObjectUpdateExecution.java:572) ~[?:?]
+	at org.teiid.translator.object.ObjectUpdateExecution.handleInsert(ObjectUpdateExecution.java:208) ~[?:?]
+	at org.teiid.translator.object.ObjectUpdateExecution.executeUpdate(ObjectUpdateExecution.java:143) ~[?:?]
+	at org.teiid.translator.object.ObjectUpdateExecution.execute(ObjectUpdateExecution.java:100) ~[?:?]
+	at org.teiid.dqp.internal.datamgr.ConnectorWorkItem$1.execute(ConnectorWorkItem.java:404) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.datamgr.ConnectorWorkItem.execute(ConnectorWorkItem.java:366) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:1.8.0_102]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[?:1.8.0_102]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:1.8.0_102]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[?:1.8.0_102]
+	at org.teiid.dqp.internal.datamgr.ConnectorManager$1.invoke(ConnectorManager.java:211) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at com.sun.proxy.$Proxy82.execute(Unknown Source) ~[?:?]
+	at org.teiid.dqp.internal.process.DataTierTupleSource.getResults(DataTierTupleSource.java:306) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.DataTierTupleSource$1.call(DataTierTupleSource.java:112) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.DataTierTupleSource$1.call(DataTierTupleSource.java:108) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266) ~[?:1.8.0_102]
+	at org.teiid.dqp.internal.process.FutureWork.run(FutureWork.java:65) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.DQPWorkContext.runInContext(DQPWorkContext.java:276) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.ThreadReuseExecutor$RunnableWrapper.run(ThreadReuseExecutor.java:119) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at org.teiid.dqp.internal.process.ThreadReuseExecutor$3.run(ThreadReuseExecutor.java:210) ~[teiid-engine-8.12.7.6_3-redhat-1.jar:8.12.7.6_3-redhat-1]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) ~[?:1.8.0_102]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) ~[?:1.8.0_102]
+	at java.lang.Thread.run(Thread.java:745) ~[?:1.8.0_102]
+{code}
+POJO class:
+{code:java|title=SmallA.proto}
+package org.jboss.qe.jdg.remote.protobuf;
+
+message SmallA {
+
+   required int32 intKey = 1;
+   optional string stringNum = 2;
+   required string stringKey = 3;
+   optional float floatNum = 4;
+   optional string bigIntegerValue = 5;
+   optional int32 shortValue = 6;
+   optional double doubleNum = 7;
+   optional bytes objectValue = 8;
+   optional int32 intNum = 9;
+   optional string bigDecimalValue = 10;
+   optional int64 longNum = 11;
+   optional bool booleanValue = 12;
+   optional int64 timeStampValue = 13;
+   optional int32 byteNum = 14;
+   optional int64 timeValue = 15;
+   optional int64 dateValue = 16;
+   optional int32 charValue = 17;
+}
+{code}
+
+Java code used to insert:
+{code:java}
+PreparedStatement pSt = con.prepareStatement(
+""INSERT INTO jdgSource1.SmallA(intKey,stringNum,stringKey,floatNum,bigIntegerValue,shortValue,doubleNum,objectValue,intNum,bigDecimalValue,longNum,booleanValue,timeStampValue,byteNum,timeValue,dateValue,charValue) VALUES""
++ ""(1,'1','1',1.0,1,1,1,?,1,1.00,1,true,{ts '2016-01-01 12:00:00'},1,'12:00:00','2016-01-01','1')"");
+pSt.setBytes(1, ""1"".getBytes());
+pSt.executeUpdate();
+{code}
+The cause is that internally the object translator uses StringUtil which can't handle byte type.",,,
+479,TEIID-4581,"The following NPE occurs when the pkFieldName is not defined on the cacheTypeMap property:
+
+ 19:11:34,107 WARN  [org.teiid.RUNTIME] (teiid-async-threads - 4) TEIID50036 VDB People.1 model ""People"" metadata failed to load. Reason:java.lang.
+
+NullPointerException: java.lang.NullPointerException
+    at org.teiid.translator.infinispan.dsl.metadata.ProtobufMetadataProcessor.createRootTable(ProtobufMetadataProcessor.java:186)
+    at org.teiid.translator.infinispan.dsl.metadata.ProtobufMetadataProcessor.process(ProtobufMetadataProcessor.java:101)
+    at org.teiid.translator.infinispan.dsl.metadata.ProtobufMetadataProcessor.process(ProtobufMetadataProcessor.java:78)
+    at org.teiid.translator.ExecutionFactory.getMetadata(ExecutionFactory.java:950)
+    at org.teiid.query.metadata.NativeMetadataRepository.getMetadata(NativeMetadataRepository.java:96)
+    at org.teiid.query.metadata.NativeMetadataRepository.loadMetadata(NativeMetadataRepository.java:62)
+    at org.teiid.query.metadata.ChainingMetadataRepository.loadMetadata(ChainingMetadataRepository.java:55)
+    at org.teiid.jboss.VDBService$6.run(VDBService.java:395)
+    at org.teiid.jboss.VDBService$7.run(VDBService.java:446)
+    at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) [rt.jar:1.8.0_111]
+    at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) [rt.jar:1.8.0_111]
+    at java.lang.Thread.run(Thread.java:745) [rt.jar:1.8.0_111]
+    at org.jboss.threads.JBossThread.run(JBossThread.java:122)",,,
+708,TEIID-4730,"Having defined a VDB which contains a Model that has External Materialization, when importing this VDB into another that also uses External Materialization, Teiid Server is searching in the wrong place for the view status.
+
+Example:
+
+..
+<import-vdb name=""CountryServiceListVDB"" version=""1"" import-data-policies=""true""/>
+...
+<model name=""MyView"" type=""VIRTUAL"">
+...
+				SELECT cns,
+					country_code
+				FROM NumberingPlan.numbering_plan;
+....
+		</metadata>
+	</model>
+
+*NumberingPlan.numbering_plan is defined in the imported VDB, and is also Materialized.*
+
+
+
+*Warning in Logs: *
+
+17:51:45,161 WARN  [org.teiid.MATVIEWS] (Worker8_QueryProcessorQueue10653) n9M6de3y5xHM org.teiid.jdbc.TeiidSQLException: TEIID30328 Unable to evaluate (SELECT mvstatus('NumberingPlan', 'numbering_plan', Valid, LoadState, 'THROW_EXCEPTION') FROM (SELECT 1) AS x LEFT OUTER JOIN NumberingPlanMaterialized.status ON VDBName = 'ExternalMaterializationOrderProblem' AND VDBVersion = '1' AND SchemaName = 'NumberingPlan' AND Name = 'numbering_plan' LIMIT 2): TEIID30328 Unable to evaluate mvstatus('NumberingPlan', 'numbering_plan', Valid, LoadState, 'THROW_EXCEPTION'): TEIID30384 Error while evaluating function mvstatus",,,
+725,TEIID-4806,"Infinispan DSL Resource adapter properties AdminUserName and AdminPassword are not defined as required. If they are not configured it results in NullpointerException during metadata load of a vdb which uses the connector.
+
+Creation of such resource-adapter shouldn't have succeeded, if the properties are required.
+
+{code:xml}
+<resource-adapter id=""jdg-protobuf-customer-report"">
+    <module slot=""main"" id=""org.jboss.teiid.resource-adapter.infinispan.dsl""/>
+    <transaction-support>LocalTransaction</transaction-support>
+    <connection-definitions>
+        <connection-definition class-name=""org.teiid.resource.adapter.infinispan.dsl.InfinispanManagedConnectionFactory"" jndi-name=""java:/teiid4709-pro-ds"" enabled=""true"" use-java-context=""true"" pool-name=""jdg-protobuf-customer-report"">
+            <config-property name=""MessageDescriptor"">
+                org.jboss.qe.jdg.remote.protobuf.CustomerReport
+            </config-property>
+            <config-property name=""AuthApplicationRealm"">
+                ApplicationRealm
+            </config-property>
+            <config-property name=""MessageMarshallers"">
+                org.jboss.qe.jdg.pojo.CustomerReport:org.jboss.qe.jdg.remote.marshaller.CustomerReportMarshaller
+            </config-property>
+            <config-property name=""AuthUserName"">
+                teiidUser
+            </config-property>
+            <config-property name=""AuthServerName"">
+                hostsecured
+            </config-property>
+            <config-property name=""AuthSASLMechanism"">
+                DIGEST-MD5
+            </config-property>
+            <config-property name=""AuthPassword"">
+                password
+            </config-property>
+            <config-property name=""Module"">
+                org.jboss.qe.jdg.pojos
+            </config-property>
+            <config-property name=""RemoteServerList"">
+                hostname:11323
+            </config-property>
+            <config-property name=""ProtobufDefinitionFile"">
+                /org/jboss/qe/jdg/remote/protobuf/CustomerReport.proto
+            </config-property>
+            <config-property name=""CacheTypeMap"">
+                sec-cache:org.jboss.qe.jdg.pojo.CustomerReport;customerId
+            </config-property>
+        </connection-definition>
+    </connection-definitions>
+</resource-adapter>
+{code}
+
+{code}
+13:34:21,156 WARN  [org.teiid.RUNTIME] (teiid-async-threads - 2) TEIID50036 VDB teiid4709-pro.1 model ""Source"" metadata failed to load. Reason:java.lang.NullPointerException: org.teiid.translator.TranslatorException: java.lang.NullPointerException
+	at org.teiid.resource.adapter.infinispan.dsl.InfinispanConnectionImpl.getCacheContainer(InfinispanConnectionImpl.java:363)
+	at org.teiid.resource.adapter.infinispan.dsl.InfinispanConnectionImpl.getDescriptor(InfinispanConnectionImpl.java:189)
+	at org.teiid.resource.adapter.infinispan.dsl.InfinispanConnectionImpl.getDescriptor(InfinispanConnectionImpl.java:180)
+	at org.teiid.translator.infinispan.dsl.metadata.ProtobufMetadataProcessor.process(ProtobufMetadataProcessor.java:103)
+	at org.teiid.translator.infinispan.dsl.metadata.ProtobufMetadataProcessor.process(ProtobufMetadataProcessor.java:77)
+	at org.teiid.translator.ExecutionFactory.getMetadata(ExecutionFactory.java:950) [teiid-api-8.12.10.6_3.jar:8.12.10.6_3]
+	at org.teiid.query.metadata.NativeMetadataRepository.getMetadata(NativeMetadataRepository.java:96) [teiid-engine-8.12.10.6_3.jar:8.12.10.6_3]
+	at org.teiid.query.metadata.NativeMetadataRepository.loadMetadata(NativeMetadataRepository.java:62) [teiid-engine-8.12.10.6_3.jar:8.12.10.6_3]
+	at org.teiid.query.metadata.ChainingMetadataRepository.loadMetadata(ChainingMetadataRepository.java:55) [teiid-engine-8.12.10.6_3.jar:8.12.10.6_3]
+	at org.teiid.jboss.VDBService$6.run(VDBService.java:395) [teiid-jboss-integration-8.12.10.6_3.jar:8.12.10.6_3]
+	at org.teiid.jboss.VDBService$7.run(VDBService.java:446) [teiid-jboss-integration-8.12.10.6_3.jar:8.12.10.6_3]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) [rt.jar:1.8.0_111]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) [rt.jar:1.8.0_111]
+	at java.lang.Thread.run(Thread.java:745) [rt.jar:1.8.0_111]
+	at org.jboss.threads.JBossThread.run(JBossThread.java:122)
+Caused by: javax.resource.ResourceException: java.lang.NullPointerException
+	at org.teiid.resource.adapter.infinispan.dsl.InfinispanConnectionImpl.createRemoteCache(InfinispanConnectionImpl.java:537)
+	at org.teiid.resource.adapter.infinispan.dsl.InfinispanConnectionImpl.createRemoteCacheFromServerList(InfinispanConnectionImpl.java:477)
+	at org.teiid.resource.adapter.infinispan.dsl.InfinispanConnectionImpl.createCacheContainer(InfinispanConnectionImpl.java:390)
+	at org.teiid.resource.adapter.infinispan.dsl.InfinispanConnectionImpl.getCacheContainer(InfinispanConnectionImpl.java:361)
+	... 14 more
+Caused by: java.lang.NullPointerException
+	at org.teiid.resource.adapter.infinispan.dsl.InfinispanConnectionImpl.createRemoteCache(InfinispanConnectionImpl.java:500)
+	... 17 more
+{code}",,,
+744,TEIID-4722,"Assertion failure:
+
+{code:java}
+ERROR [org.teiid.PROCESSOR] (Worker1_QueryProcessorQueue19151) TEIID30019 Unexpected exception for request WrzxYIqVWQ8G.11: java.lang.AssertionError: Assertion failed.
+	at org.teiid.core.util.Assertion.failed(Assertion.java:73) [teiid-common-core-8.7.10.6_2-redhat-2.jar:8.7.10.6_2-redhat-2]
+	at org.teiid.core.util.Assertion.assertTrue(Assertion.java:68) [teiid-common-core-8.7.10.6_2-redhat-2.jar:8.7.10.6_2-redhat-2]
+	at org.teiid.core.util.Assertion.assertTrue(Assertion.java:60) [teiid-common-core-8.7.10.6_2-redhat-2.jar:8.7.10.6_2-redhat-2]
+	at org.teiid.query.processor.relational.MergeJoinStrategy.setProcessingSortRight(MergeJoinStrategy.java:367) [teiid-engine-8.7.10.6_2-redhat-2.jar:8.7.10.6_2-redhat-2]
+	at org.teiid.query.processor.relational.DependentAccessNode.prepareNextCommand(DependentAccessNode.java:162) [teiid-engine-8.7.10.6_2-redhat-2.jar:8.7.10.6_2-redhat-2]
+	at org.teiid.query.processor.relational.AccessNode.openInternal(AccessNode.java:259) [teiid-engine-8.7.10.6_2-redhat-2.jar:8.7.10.6_2-redhat-2]
+	at org.teiid.query.processor.relational.AccessNode.nextBatchDirect(AccessNode.java:371) [teiid-engine-8.7.10.6_2-redhat-2.jar:8.7.10.6_2-redhat-2]
+	at org.teiid.query.processor.relational.RelationalNode.nextBatch(RelationalNode.java:278) [teiid-engine-8.7.10.6_2-redhat-2.jar:8.7.10.6_2-redhat-2]
+{code}
+
+",,,
+756,TEIID-4841,"Remove the jboss-logging-generator dependency, causing a missing maven artifact in QE's validation reporting.",,,
+763,TEIID-4716,The jdg-slot is not being substituted when the dist module is packaged.,,,

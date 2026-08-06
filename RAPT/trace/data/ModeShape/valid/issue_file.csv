@@ -1,0 +1,2363 @@
+,issue_id,issue_comments,issue_desc,created_at,closed_at
+3110,MODE-2694,"Detected when using in combination with S3 binary storage: _TikaNameOnlyDetector.detect()_ doesn't close the input stream passed as parameter.
+Consequence is that S3 connection pool fills up due to non-released connections.
+
+Content-based MIME type detection doesn't have this issue by the way.",,,
+3111,MODE-2692,"Due to S3 automatically adding a ""Content-Type"" header with a value of ""application/octet-stream"" to all objects by default, _S3BinaryStorage.getStoredMimeType()_ *always* return a non-null value.
+This behavior breaks the MIME type detection functionality of ModeShape.",,,
+3113,MODE-2685,"When attempting to reorder one or more SNS children of a parent which also have transient changes in a given JCR session, the following exception is raised:
+{code}
+Caused by: java.lang.ClassCastException: org.modeshape.jcr.cache.document.TransactionalWorkspaceCache cannot be cast to org.modeshape.jcr.cache.document.AbstractSessionCache
+	at org.modeshape.jcr.cache.document.SessionNode.session(SessionNode.java:298)
+	at org.modeshape.jcr.cache.document.SessionNode.getPath(SessionNode.java:480)
+	at org.modeshape.jcr.cache.PathCache.getPath(PathCache.java:41)
+	at org.modeshape.jcr.cache.document.WritableSessionCache.computePathChangesForSNS(WritableSessionCache.java:1476)
+	at org.modeshape.jcr.cache.document.WritableSessionCache.persistChanges(WritableSessionCache.java:1258)
+	at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:690)
+	at org.modeshape.jcr.JcrSession.save(JcrSession.java:1179)
+	... 28 more
+{code}
+
+Note that this can happen in 2 cases:
+# explicitly reordering transient SNS
+# restoring a non existent version (from a JCR session point of view) using the {{JcrVersionManager}}",,,
+3115,MODE-2683,"When running a query like {{SELECT * FROM [mix:title] WHERE UPPER([jcr:title]) LIKE '%TITLE%'}} against a Lucene index, this will not return the correct results even if it has the correct indexed data.
+
+",,,
+3119,MODE-2681,"We had some issues with our indices. We could find out, that the problems always appears after the ModeShape-Server was killed by someone.
+
+In the {{LocalDuplicateIndex}}-class you are using a counter for the key-map. 
+Sadly the counter will only saved permanently, when the server steps into the {{shutdown}}-method. If the server gets killed, then the counter won't be saved and after the restart the Server will start counting at '0'. 
+This leads to some issues:
+# familiar nodes will be replaced if the counter matches (e.g. NodeType A on the counter 2 will be replaced by a diffrent NodeType A if the counter ist at 2 after restart)
+# some other nodes will never found anymore until you are doing a reindex
+
+Solution: 
+since it's not very harmful, you could just save permanently the counter while adding new nodes too:
+
+{code:java}
+ @Override
+    public void add( String nodeKey,
+                     String propertyName, 
+                     T value ) {
+        logger.trace(""Adding node '{0}' to '{1}' index with value '{2}'"", nodeKey, name, value);
+        keysByValue.put(new UniqueKey<T>(value, counter.getAndIncrement()), nodeKey);
+// Store the value of the next counter in the options map ...
+        options.put(NEXT_COUNTER, counter.get());
+    }
+{code}
+
+Maybe we can provide a pull request later this day :) ",,,
+3120,MODE-2679,"Modeshape login fails with the following RepositoryException when running with the default Locale language set to Turkish (tr):
+{code}
+javax.jcr.RepositoryException: Error while starting 'simple' repository: null
+	at org.modeshape.jcr.JcrRepository.login(JcrRepository.java:631)
+	at org.modeshape.jcr.JcrRepository.login(JcrRepository.java:590)
+	at org.modeshape.jcr.JcrRepository.login(JcrRepository.java:136)
+	at modeshape.TurkishLocaleBug.main(TurkishLocaleBug.java:31)
+Caused by: java.lang.NullPointerException
+	at org.modeshape.jcr.NodeTypes.<init>(NodeTypes.java:321)
+	at org.modeshape.jcr.NodeTypes.with(NodeTypes.java:379)
+	at org.modeshape.jcr.RepositoryNodeTypeManager.registerNodeTypes(RepositoryNodeTypeManager.java:529)
+	at org.modeshape.jcr.JcrRepository$RunningState.<init>(JcrRepository.java:1132)
+	at org.modeshape.jcr.JcrRepository$RunningState.<init>(JcrRepository.java:936)
+	at org.modeshape.jcr.JcrRepository.doStart(JcrRepository.java:372)
+	at org.modeshape.jcr.JcrRepository.login(JcrRepository.java:629)
+	... 3 more
+{code}
+
+The NPE is caused by a missing ntUnstructuredType.   
+
+The ntUnstructuredType is missing because the jsr_283_builtins.cnd is failing to parse.
+
+The parsing failure is getting masked by what looks like a recurrence of MODE-1400.  Basically, in JcrRepository fails to check the reported problems of the previous call to importBuiltins at line 1131.
+
+The parsing failure itself is caused by an unknown token failure on the ""multiple"" token in the CND file.  This is due to the ""Turkish Locale Bug"" (http://mattryall.net/blog/2009/02/the-infamous-turkish-locale-bug).   The lowercase ""i"" (\u0069) in the Turkish locale does not map to the latin uppercase ""I"" (\u0049), but to \u0130.
+
+Hacking a local versions of TokenStream and CndImporter to use String.toLowerCase(Locale.ENGLISH) and String.toUpperCase(Locale.ENGLISH) seem to allow Modeshape to at least startup and seems to work.
+
+Probably a more thorough review of the Modeshape code base for use of these methods would need to be done to guarantee Modeshape truly works in the Turkish locale.
+
+Attached is a sample gradle project showing the problem.
+
+ ",,,
+3127,MODE-2678,"ModeShape's {{DatabaseBinaryStore}} uses database connections in auto-commit mode for all of its operations. While this might work in practice for operations which involve a single query for example, it's likely that this is not a good approach for operations which write to the DB.
+
+For example, when storing a new binary value, the {{storeValue}} method performs a number of database calls, including operations like searching for an existing value and doing something if that value does not exist.
+
+Since binaries are not necessarily created inside of transactions (the default {{binaryValueFactory.createBinary}} is almost always called outside of a transaction unless user transactions are employed), the code should never rely in all cases on auto-commit mode. 
+
+This is one possible explanation for the exception from the attached forum issue, where multiple cluster writers are simultaneously attempting to insert the same binary.",,,
+3129,MODE-2677,"After updating to the latest version we were facing an ugly bug with the indices. 
+After some time debugging and detect where it could come from we found the mistake.
+
+In commit [9db7a79|https://github.com/ModeShape/modeshape/pull/1551/commits/9db7a79b98f4cd4ed12226c0eb3e4c250e91af9d] [~hchiorean] wanted to shorten the loadAll()-Method from the BufferingSequence. 
+But the current code depend now on the order of batches to iterate. 
+
+Example: 
+Is the first batch empty (bacth.hasNext() == false) it wouldn't count any batchsize ever.
+Before this change, the ""old"" while-loop tried all batches until any found to count. 
+
+It could be fixed easily if you change line 140 to {{firstBatchCounted = batchSize != 0;}}",,,
+3130,MODE-2676,"When using ModeShape's API and attempting to remove all the version histories of a node via the {{org.modeshape.jcr.api.version.VersionManager}} interface, a referential integrity constraint of the form:
+{code}
+org.modeshape.jcr.cache.ReferentialIntegrityException: Cannot remove some nodes because they are still strongly referred by existing nodes: {/{http://www.jcp.org/jcr/1.0}system/{http://www.jcp.org/jcr/1.0}versionStorage/{}53/{}63/{}2f/{}53632fb320c5312a4f98cfea0221d86bab739ec1=[/{http://www.jcp.org/jcr/1.0}system/{http://www.jcp.org/jcr/1.0}versionStorage/{}ef/{}d1/{}ce/{}efd1ce92b033299879aa009fabc40f49cc7f22d4/{}1.0/{http://www.jcp.org/jcr/1.0}frozenNode/{}testNeu, /{http://www.jcp.org/jcr/1.0}system/{http://www.jcp.org/jcr/1.0}versionStorage/{}ef/{}d1/{}ce/{}efd1ce92b033299879aa009fabc40f49cc7f22d4/{}1.1/{http://www.jcp.org/jcr/1.0}frozenNode/{}testNeu]}
+    at org.modeshape.jcr.cache.document.WritableSessionCache.persistChanges(WritableSessionCache.java:1433)
+    at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:701)
+    at org.modeshape.jcr.JcrVersionManager.remove(JcrVersionManager.java:1056)
+{code}
+
+is raised if the parent of the node in question is versionable and has multiple versions of the child subgraph.
+",,,
+3134,MODE-2675,"I am trying to concurrently edit a Word document stored in ModeShape:
+
+1. As user1: open the Word document stored in ModeShape, do some modifications in it, save it, but don't close it yet
+2. As user2: open the Word document stored in ModeShape, choose the ""Edit the file and merge your changes"" option, do some modifications in it but don't save yet
+3. As user1: close the Word document
+4. As user2: save the Word document and close it
+
+I now get an upload failed error and in the log I see:
+
+java.lang.StringIndexOutOfBoundsException: String index out of range: -1 in org.modeshape.webdav.methods.AbstractMethod.getLockIdFromIfHeader(AbstractMethod.java:278)
+
+I have debugged this, and it seems that in this case the lock token has an ETag in it:
+
+(<opaquelocktoken:dfa5f971-75f6-4e18-a20e-df70a11c587c> [W/""55162-1489572275688""])
+
+which causes the above-mentioned exception.
+
+I suppose this ETag should be taken into account when locking so that the merge of the two document versions is done correctly.
+",,,
+3135,MODE-2673,"Using the [latest|https://github.com/ModeShape/modeshape/commit/a4a57252cc114fb65a7bbfaa57c33baea422d0ac] {{5.4-SNAPSHOT}} of ModeShape, I am getting the following exception when dealing with aborted user transactions, where transaction reaper terminates an active transaction from a background thread. It appears that the message used to warn the user about the problem is missing an argument (or it expects an extra one that should not be necessary):
+
+{code}
+LOGGER.warn(RelationalProviderI18n.threadAssociatedWithAnotherTransaction, activeTx, id);
+{code}
+
+{noformat}
+java.lang.IllegalArgumentException: Internationalization field ""threadAssociatedWithAnotherTransaction"" in class org.modeshape.persistence.relational.RelationalProviderI18n: 2 parameters supplied, but 3 parameters required: ""The current thread '{0}' is already associated with transaction '{1}' instead of '{2}'; this may indicate a rollback was performed off another thread"" => ""The current thread '1a5496fb-183e-4241-9b99-f1fc8e617a71' is already associated with transaction '137021ee-0fd9-446c-9dd6-cf95d9a62c5f' instead of '{2}""
+	at org.modeshape.common.i18n.I18n.text(I18n.java:414)
+	at org.modeshape.common.logging.slf4j.SLF4JLoggerImpl.warn(SLF4JLoggerImpl.java:86)
+	at org.modeshape.persistence.relational.RelationalDb.txStarted(RelationalDb.java:310)
+	at org.modeshape.jcr.txn.Transactions$BaseTransaction.started(Transactions.java:429)
+	at org.modeshape.jcr.txn.Transactions.begin(Transactions.java:183)
+	at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:668)
+	at org.modeshape.jcr.RepositoryLockManager.unlock(RepositoryLockManager.java:479)
+	at org.modeshape.jcr.RepositoryLockManager.unlock(RepositoryLockManager.java:447)
+	at org.modeshape.jcr.JcrLockManager.unlock(JcrLockManager.java:305)
+	at org.modeshape.jcr.JcrLockManager.unlock(JcrLockManager.java:283)
+{noformat}",,,
+3136,MODE-2672,"h3. Problem
+
+It is possible to get the node, which would be permanently locked, when stressed with multiple concurrent writes and, perhaps, unfortunate timing. For more details and a detailed explanation as to how to reproduce the issue, please refer to the following post:
+* [https://developer.jboss.org/message/969456#969456]
+
+As [suggested|https://developer.jboss.org/message/969464#969464] by [~hchiorean], once the MODE-2670 was resolved, I pulled in the latest code and gave the aforementioned test case another try. The results were surprising. Here is a comparison between what I saw before and what I see now.
+
+*Before*:
+# A few runs of the provided test case, using the same DB between runs, could result in the corruption of the originally locked node, where multiple attempts from multiple members of the cluster, performed after configured lock expiration, could not unlock the node.
+# When corruption happens in the previous step, an attempt to run the same test again will fail right away for various underlying reasons, e.g. {{NullPointerException}}, {{DocumentAlreadyExistsException}}. Note that all members of the cluster could be stood up for actual test to begin, i.e. there were no problems getting members online.
+
+*Now*:
+* Every run of the test case hangs after {{~ 20}} seconds, i.e. there are some successful/failed actions taking place for some time, but after that everything freezes. The thread dump reveals plenty of threads waiting on a condition to happen, for instance:
+{noformat}
+""modeshape-event-dispatcher-17-thread-1"" #154 prio=5 os_prio=31 tid=0x00007fb8d349d000 nid=0x14d07 waiting on condition [0x000000012bb64000]
+   java.lang.Thread.State: WAITING (parking)
+	at sun.misc.Unsafe.park(Native Method)
+	- parking to wait for  <0x00000007710e3068> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+	at java.util.concurrent.locks.LockSupport.park(LockSupport.java:175)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2039)
+	at org.modeshape.common.collection.ring.BlockingWaitStrategy.waitFor(BlockingWaitStrategy.java:46)
+	at org.modeshape.common.collection.ring.GarbageCollectingConsumer$1.waitFor(GarbageCollectingConsumer.java:61)
+	at org.modeshape.common.collection.ring.GarbageCollectingConsumer.run(GarbageCollectingConsumer.java:87)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+
+""in-memory-corruption-25"" #95 daemon prio=5 os_prio=31 tid=0x00007fb8d405d800 nid=0xf903 waiting on condition [0x00000001293ef000]
+   java.lang.Thread.State: WAITING (parking)
+	at sun.misc.Unsafe.park(Native Method)
+	- parking to wait for  <0x0000000770d83250> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+	at java.util.concurrent.locks.LockSupport.park(LockSupport.java:175)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2039)
+	at java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:442)
+	at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1067)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1127)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+{noformat}
+* Eventually, the log gets filled with the following entries, but the process does not get terminated:
+{noformat}
+[in-memory-corruption-23] org.modeshape.jcr.cache.RepositoryCache - Repository '9f2434a6-4378-4fe7-a352-aea6c07f56b1' is still not fully initialized after 10 minutes. Aborting.
+{noformat}
+* If I terminate the Java process that was stuck and run the same test again without cleaning the H2 DB on the filesystem, I can never get to the actual execution of the test, because the members of the cluster necessary for testing cannot be stood up, i.e. two out of five members get started, but then nothing happens.
+
+h3. Summary
+
+The MODE-2670 did make a big difference, but in a clustered environment such a difference ended up having an unexpected outcome, assuming the provided test case is valid. I sincerely hope that I am doing something wrong and I would be thrilled to have a confirmation of that. Otherwise, this problem can result in very much undesired consequences for a production system that relies on ModeShape.
+
+[~hchiorean], knowing the additional details and problems provided in this JIRA, would it be possible for you to revisit the following [decision|https://developer.jboss.org/message/969464#969464]?
+{quote}
+As far as I'm concerned, after I fix MODE-2670 I will focus on something else because these complex test cases simply take up too much of my time. If in the meantime someone else in the community proposes a fix, I'm more than happy to review any PRs.
+{quote}
+
+As far as complexity of the provided test case goes, unless I messed something up in terms of configuration, the presented scenario is fairly common in a clustered environment where multiple consumers work with a single node, e.g. creating files under a given folder. It is true that I had to manually craft the delay between retries for each thread, but that was done to make sure that the problem can be reproduced.
+
+[~hchiorean] and [~rhauch], as always, your help is greatly appreciated. The turnaround time for various issues is simply amazing, especially for an open-source project. Once again, my apologies for so many questions, however, I hope that in the long run your answers will help the entire community.",,,
+3139,MODE-2671,Database connection leaks when BinaryStoreException is thrown at DatabaseBinaryStore.getInputStream().,,,
+3142,MODE-2670,"When user transactions are used with a repository and some transactions are rolled back, if the rollback operation is performed from another thread (which is the case with Arjuna for example), then any locks that might have been obtained by previously successful {{session.save}} operations are never released.
+
+The reason is that internally ModeShape uses {{ReentrantLock}} to track locked node keys, so when a transaction is started and some {{session.save}} operations are performed on thread {{T1}}, node keys are locked for this thread. If a subsequent rollback happens from a separate thread - {{T2}} - these node keys will not be released because {{T2}} is not the owning thread.",,,
+3156,MODE-2669,"When storing data in relational databases and using user transactions, if a user transaction is rolled back from *a different thread* than the thread which created the transaction and which was used by ModeShape to detect the transaction, the backend database connection and transient data is not cleared correctly.
+
+This can be reproduced in a specific test case which uses Arjuna and forces the reaper thread to abort timed-out transactions. See linked forum issue for more details",,,
+3161,MODE-2668,"When a series of JCR operations take place within a user transaction and this transaction expires before the operations can complete, instead of rolling back all the operations and raising an exception, a {{TimeoutException}} is raised.
+
+See linked forum discussion for more detailed information.",,,
+3166,MODE-2666,"When using a query with order by I get an error on query.execute()
+
+{code}
+java.io.NotSerializableException: org.modeshape.jcr.query.Tuples$Tuple3TypeFactory$1
+	at org.mapdb.SerializerPojo.assertClassSerializable(SerializerPojo.java:324)
+	at org.mapdb.SerializerPojo.serializeUnknownObject(SerializerPojo.java:394)
+	at org.mapdb.SerializerBase.serialize2(SerializerBase.java:531)
+	at org.mapdb.SerializerBase.serialize(SerializerBase.java:150)
+	at org.mapdb.SerializerPojo.serializeUnknownObject(SerializerPojo.java:430)
+	at org.mapdb.SerializerBase.serialize2(SerializerBase.java:531)
+	at org.mapdb.SerializerBase.serialize(SerializerBase.java:150)
+	at org.mapdb.SerializerPojo.serializeUnknownObject(SerializerPojo.java:430)
+	at org.mapdb.SerializerBase.serialize2(SerializerBase.java:531)
+	at org.mapdb.SerializerBase.serialize(SerializerBase.java:150)
+	at org.mapdb.SerializerBase.serialize(SerializerBase.java:94)
+	at org.mapdb.SerializerPojo.serialize(SerializerPojo.java:700)
+	at org.mapdb.BTreeMap$NodeSerializer.serialize(BTreeMap.java:397)
+	at org.mapdb.BTreeMap$NodeSerializer.serialize(BTreeMap.java:288)
+	at org.mapdb.Store.serialize(Store.java:154)
+	at org.mapdb.StoreWAL.update(StoreWAL.java:371)
+	at org.mapdb.Caches$HashTable.update(Caches.java:270)
+	at org.mapdb.BTreeMap.put2(BTreeMap.java:746)
+	at org.mapdb.BTreeMap.put(BTreeMap.java:643)
+	at org.mapdb.DB.catPut(DB.java:105)
+	at org.mapdb.DB.createTreeMap(DB.java:845)
+	at org.mapdb.DB$BTreeMapMaker.make(DB.java:661)
+	at org.modeshape.jcr.query.BufferManager$MakeSortingWithDuplicatesBuffer.make(BufferManager.java:948)
+	at org.modeshape.jcr.query.engine.process.BufferingSequence.<init>(BufferingSequence.java:79)
+	at org.modeshape.jcr.query.engine.process.SortingSequence.<init>(SortingSequence.java:49)
+	at org.modeshape.jcr.query.engine.ScanningQueryEngine.createNodeSequence(ScanningQueryEngine.java:925)
+	at org.modeshape.jcr.query.engine.ScanningQueryEngine.executeOptimizedQuery(ScanningQueryEngine.java:507)
+	at org.modeshape.jcr.query.engine.ScanningQueryEngine.execute(ScanningQueryEngine.java:325)
+	at org.modeshape.jcr.RepositoryQueryManager$1.execute(RepositoryQueryManager.java:192)
+	at org.modeshape.jcr.query.JcrQuery.execute(JcrQuery.java:118)
+	at org.modeshape.jcr.query.JcrQuery.execute(JcrQuery.java:43)
+	at com.assemblycms.core.cache.JCREmbeddedRepository.file(JCREmbeddedRepository.java:660)
+	at com.assemblycms.core.cache.FederatedWebCacheRepository.file(FederatedWebCacheRepository.java:21)
+	at com.assemblycms.core.URITemplateResolver.computeTemplateResource(URITemplateResolver.java:103)
+	at org.thymeleaf.templateresolver.AbstractTemplateResolver.resolveTemplate(AbstractTemplateResolver.java:356)
+	at org.thymeleaf.engine.TemplateManager.resolveTemplate(TemplateManager.java:840)
+	at org.thymeleaf.engine.TemplateManager.parseAndProcess(TemplateManager.java:608)
+	at org.thymeleaf.TemplateEngine.process(TemplateEngine.java:1087)
+	at org.thymeleaf.TemplateEngine.process(TemplateEngine.java:1048)
+	at com.assemblycms.core.RequestController.model(RequestController.java:440)
+	at com.assemblycms.core.RequestController.html(RequestController.java:254)
+	at com.assemblycms.core.RequestController.get(RequestController.java:132)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:221)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:136)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:114)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:827)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:738)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:85)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:897)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:970)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:861)
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:622)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:846)
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:729)
+	at com.assemblycms.commons.servlet.JspDispatcherServlet.service(JspDispatcherServlet.java:36)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:291)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.apache.catalina.filters.ExpiresFilter.doFilter(ExpiresFilter.java:1223)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:239)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at com.assemblycms.core.FrameworkFilter.doFilter(FrameworkFilter.java:63)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:239)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at com.assemblycms.core.ResourcePlaceholderFilter.doFilter(ResourcePlaceholderFilter.java:56)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:239)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at com.assemblycms.core.HtmlPageFilter.doFilter(HtmlPageFilter.java:53)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:239)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:317)
+	at org.springframework.security.web.access.intercept.FilterSecurityInterceptor.invoke(FilterSecurityInterceptor.java:127)
+	at org.springframework.security.web.access.intercept.FilterSecurityInterceptor.doFilter(FilterSecurityInterceptor.java:91)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:331)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:115)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:331)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:137)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:331)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:112)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:331)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:169)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:331)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:331)
+	at org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter.doFilter(AbstractAuthenticationProcessingFilter.java:206)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:331)
+	at org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter.doFilter(AbstractPreAuthenticatedProcessingFilter.java:121)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:331)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:121)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:331)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:66)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:107)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:331)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:56)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:107)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:331)
+	at org.springframework.security.web.session.ConcurrentSessionFilter.doFilter(ConcurrentSessionFilter.java:134)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:331)
+	at org.springframework.security.web.context.SecurityContextPersistenceFilter.doFilter(SecurityContextPersistenceFilter.java:106)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:331)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:214)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:177)
+	at org.springframework.security.web.debug.DebugFilter.invokeWithWrappedRequest(DebugFilter.java:90)
+	at org.springframework.security.web.debug.DebugFilter.doFilter(DebugFilter.java:77)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:346)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:262)
+	at com.assemblycms.commons.security.SecurityFilterProxy.doFilter(SecurityFilterProxy.java:63)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:239)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at com.assemblycms.commons.servlet.RequestContextFilter.doFilter(RequestContextFilter.java:22)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:239)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.springframework.session.web.http.ScopedSessionRepositoryFilter.doFilterInternal(ScopedSessionRepositoryFilter.java:141)
+	at org.springframework.session.web.http.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:65)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:346)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:262)
+	at com.assemblycms.commons.session.SessionFilterProxy.doFilter(SessionFilterProxy.java:63)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:239)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at com.assemblycms.core.BrowserFilter.doFilter(BrowserFilter.java:52)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:239)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:212)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:106)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:502)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:141)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:79)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:88)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:521)
+	at org.apache.coyote.http11.AbstractHttp11Processor.process(AbstractHttp11Processor.java:1096)
+	at org.apache.coyote.AbstractProtocol$AbstractConnectionHandler.process(AbstractProtocol.java:674)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1500)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.run(NioEndpoint.java:1456)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+	at java.lang.Thread.run(Thread.java:745)
+{code}",,,
+3169,MODE-2665,"I have multiple threads running the code below, calling into a cluster of the ModeShape repositories on an Oracle database:
+{code}
+session.getWorkspace().getLockManager().lock(parent.getPath(), ...);
+try {
+  parent.addNode(""child-"" + i);
+} finally {
+  session.getWorkspace().getLockManager().unlock(parent.getPath());
+}
+{code}
+
+I noticed the database deadlock when I was investigating hung threads. After going through the logs from the {{WritableSessionCache}}, it looks like the order of the database locks is determined by {{RepositoryLockManager.lock(...)}} and {{RepositoryLockManager.unlock(...)}}), and are contributing to the database deadlock.
+
+Here's the relevant output from {{WritableSessionCache}}'s logging that demonstrates the deadlock:
+{quote}
+2017-01-31 18:26:09,438-0600 \[add-node-parallel-10\] DEBUG org.modeshape.jcr.cache.document.WritableSessionCache - Locked the nodes: \[e60d4aa317f1e7mode:lock-e60d4aa7505d64e7751d4d-ff9a-45d3-8453-c51e87e4df36, e60d4aa317f1e7mode:locks\]
+...
+2017-01-31 18:26:09,439-0600 \[add-node-parallel-6\] DEBUG org.modeshape.jcr.cache.document.WritableSessionCache - Locked the nodes: \[e60d4aa7505d64e7751d4d-ff9a-45d3-8453-c51e87e4df36\]
+...
+2017-01-31 18:26:09,448-0600 \[add-node-parallel-10\] DEBUG org.modeshape.jcr.cache.document.WritableSessionCache - Attempting to the lock nodes: \[e60d4aa7505d64e7751d4d-ff9a-45d3-8453-c51e87e4df36\]
+...
+2017-01-31 18:26:09,449-0600 \[add-node-parallel-6\] DEBUG org.modeshape.jcr.cache.document.WritableSessionCache - Attempting to the lock nodes: \[e60d4aa317f1e7mode:locks, e60d4aa317f1e7mode:lock-e60d4aa7505d64e7751d4d-ff9a-45d3-8453-c51e87e4df36\]
+...
+{quote}
+
+From looking through the source code in {{RepositoryLockManager}}, the lock(...) method [saves the lock in the system session first, then saves the node being lock.|https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/java/org/modeshape/jcr/RepositoryLockManager.java#L382]
+
+While unlock(...) [saves the node being locked first, then deletes the lock itself|https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/java/org/modeshape/jcr/RepositoryLockManager.java#L478].
+
+This means that when lock(...) and unlock(...) are called at around the same time, lock(...) would acquire a db lock for the JCR lock itself, and waits for the db lock to be released for the JCR node being locked.
+unlock(...) would hold a db lock for the JCR node being locked and waits to acquire a db lock for the JCR lock itself.
+
+*Proposed solution*:
+I believe that changing the save order in {{RepositoryLockManager}}'s unlock(...) would resolve the deadlock. I forked ModeShape, made the change and wasn't seeing any more deadlocks or hung threads. I don't know enough context around why the save order is the way it is, so I am not sure if this is the best/correct solution.
+",,,
+3170,MODE-2664,"See community post relating to the error ModeShape 5.3 / 5.4 and SQL Server|https://developer.jboss.org/message/968016#968016]
+
+Two problems were observed.
+# *problem 1* The schema DDL script needs to be updated in sqlserver_database.properties, 
+## Create_table,  CONTENT's  type should be changed from VARBINARY to VARBINARY(MAX).  Otherwise, the content table is getting created in SQL Server 2014 as VARBINARY(1)  which is too small to store almost anything. See revised file.
+# *problem 2* When ModeShape starts up against a SQL Server database, it tries to create the necessary tables.  If it fails because the object already exists,  SQL Server's exception is not caught and the whole application exits.  We need similar changes to what were make for Oracle, to gracefully catch and ignore the exceptions when trying to create an object that already exists or trying to a delete a non-existent object / or permissions error. 
+## Creation of a new class SQLServerStatements.java which handles the two exceptions in SQL Server.   This is modeled after OracleStatements.java
+## ## RelationalDb,  to call SQLServerStatements if the database type is SQL Server.
+
+When I applied these changes to the 5.3.0.Final modeshape-persistence-relational code, I was able to start up ModeShape against a SQL Server database, without exceptions stopping the application, on initial database creation, or subsequent startups.   The modeshape-persistence-relational 5.3.0.Final is identical to the 5.4 master branch, as of Feb 3, 2017, so this revised version could be applied to 5.4 w/o problem.  
+
+I have not performed testing on the flow where it tries to delete a non-existent object or where the database user does not have permissions to do so.
+
+ModeShape w/ SQL Server should ignore (or treat errors as warnings)  for these exceptions
+2714/* object already exists*/,
+3701/* object doesn't exist or cannot drop due to permissions*/
+
+
+Error before bug fix
+
+*Current errors*
+09:12:10,024 DEBUG Looking for JBoss Standalone JTA...
+09:12:10,027 DEBUG Looking for Atomikos JTA...
+09:12:10,032 DEBUG No javax.transaction.TransactionManager was found; falling back to LocalTransactionManager. Enable DEBUG logging for more information.
+09:12:10,087 DEBUG Creating table MODESHAPE_REPOSITORY...
+09:12:10,105 DEBUG Shutting down locking service...
+09:12:10,119 ERROR Cannot load the names of the available repositories.
+javax.jcr.RepositoryException: org.modeshape.persistence.relational.RelationalProviderException: com.microsoft.sqlserver.jdbc.SQLServerException: There is already an object named 'MODESHAPE_REPOSITORY' in the database.       
+at org.modeshape.jcr.JcrRepositoriesContainer$UrlRepositoryLookup.repository(JcrRepositoriesContainer.java:228)
+
+",,,
+3181,MODE-2663,When a MongoDB replicaset is used as binary storage than data can get corrupted when the replicaset changes the primary node. The corruption is caused in the {{org.modeshape.jcr.value.binary.MongodbBinaryStore}} file in the {{ChunkInputStream}} and {{ChunkOutputStream}} classes. The OutputStream creates small chunks from the bigger binary files. These chunks are stored and than read without any given sorting. If you don't give a sort than the order of the returned chunks is undefined. In my tests this was working for the primary node since MongoDB returned the chunks in the way they where written. However when we switched the primary node the former secondary returned the chunks in a different order and the files get corrupted. ,,,
+3182,MODE-2658,"When the same input node (i.e. the same JCR path) is sequenced multiple times, ModeShape should remove each time the previous sequencing output. In other words, the expected behavior is for ModeShape to overwrite the sequencing output each time.
+
+At the moment this is not happening, which results in {{same name siblings}} being created each time.
+
+",,,
+3187,MODE-2654,"When you have a parent node with locked child node and then you copy parent node, you will be not able to lock or unlock new copy of child node.
+
+I was able to reproduce this defect with unit tests. Please find them in the attachments.",,,
+3191,MODE-2649,NoData,,,
+3192,MODE-2645,"Using Elasticsearch index provider, each time the engine is started indexes are dropped and rebuilt from scratch.
+The correct behaviour should be not to drop indexes, but reuse existing ones.",,,
+3195,MODE-2644,"Although runtime index configuration using index manager is correctly persisted inside repository, after restart of the engine, they are not recognized and enabled.
+Even recreating them programmatically upon restart doesn't work.
+
+This bug affects each of the three default index providers (local, Lucene, Elasticsearch)
+
+A test case can be found at [https://github.com/lucapino/modeshape-indexes|https://github.com/lucapino/modeshape-indexes].",,,
+3198,MODE-2643,"Reading files from git through Modeshape with help from the git connector is working fine for small files but for big files this is failing with the following error:
+{code}
+Caused by: org.modeshape.persistence.file.FileProviderException: An active transaction is required, but wasn't detected
+  at org.modeshape.persistence.file.FileDb.transactionalContent(FileDb.java:251)
+  at org.modeshape.persistence.file.FileDb.editContent(FileDb.java:131)
+  at org.modeshape.jcr.cache.document.LocalDocumentStore.edit(LocalDocumentStore.java:178)
+  at org.modeshape.jcr.federation.FederatedDocumentStore.edit(FederatedDocumentStore.java:348)
+  at org.modeshape.jcr.cache.document.DocumentTranslator.incrementBinaryReferenceCount(DocumentTranslator.java:1249)
+  at org.modeshape.jcr.cache.document.DocumentTranslator.valueToDocument(DocumentTranslator.java:1222)
+  at org.modeshape.jcr.cache.document.DocumentTranslator.setProperty(DocumentTranslator.java:425)
+  at org.modeshape.jcr.federation.FederatedDocumentWriter.addProperty(FederatedDocumentWriter.java:131)
+  at org.modeshape.connector.git.GitTree.addInformationForPath(GitTree.java:239)
+  at org.modeshape.connector.git.GitTree.execute(GitTree.java:128)
+  at org.modeshape.connector.git.GitConnector.getDocumentById(GitConnector.java:233)
+{code}
+
+What I have seen in the source from the git connector is that it handles huge files differently from small files. Line 230 found here: [https://github.com/ModeShape/modeshape/blob/master/connectors/modeshape-connector-git/src/main/java/org/modeshape/connector/git/GitTree.java#L230]
+I haven't found out what Git considers a huge file and what not. So far I have had it working with a 46MB file but not with a 126MB file.
+
+The method values.binaryFrom(fileLoader.openStream()); attempts to create & store a ModeShape binary value for that particular Git value without an existing transaction (the entire flow is simply reading stuff from Git).",,,
+3200,MODE-2642,NoData,,,
+3209,MODE-2641,For an open-scoped lock which is created with timeout hint less than Long.MAX_VALUE Lock.getSecondsRemaining() returns Long.MAX_VALUE (for a Lock object obtained via the session that created the lock) or negative value (for a Lock object obtained via another session).,,,
+3212,MODE-2639,"When enabling debug logging for the Elastic Search index provider, this fails to start with:
+{code}
+java.lang.IllegalArgumentException: 1 parameter supplied, but 2 parameters required: ""Elasticsearch index provider for repository '{1}' is trying to connect to cluster"" => ""Elasticsearch index provider for repository '{1}"" at org.modeshape.common.util.StringUtil.createString(StringUtil.java:188) ~[modeshape-common-5.2.0.Final.jar:5.2.0.Final] at org.modeshape.common.logging.slf4j.SLF4JLoggerImpl.debug(SLF4JLoggerImpl.java:102) ~[modeshape-common-5.2.0.Final.jar:5.2.0.Final] at org.modeshape.jcr.ExtensionLogger.debug(ExtensionLogger.java:50) ~[modeshape-jcr-5.2.0.Final.jar:5.2.0.Final] at org.modeshape.jcr.index.elasticsearch.EsIndexProvider.doInitialize(EsIndexProvider.java:51) ~[modeshape-elasticsearch-index-provider-5.2.0.Final.jar:5.2.0.Final]
+{code}",,,
+3213,MODE-2637,"I encounter the following exception when copying nodes in the Workspace :
+ 
+{code}
+javax.jcr.RepositoryException: java.lang.NullPointerException
+  at org.modeshape.jcr.JcrSession.save(JcrSession.java:1190) ~[modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+  at org.modeshape.jcr.JcrWorkspace.copy(JcrWorkspace.java:240) ~[modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+  at org.modeshape.jcr.JcrWorkspace.copy(JcrWorkspace.java:121) ~[modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+  at com.dooapp.dsdk.persistence.clone.JcrEntityDuplicator.duplicateNode(JcrEntityDuplicator.java:99) ~[classes/:na]
+  at com.dooapp.dsdk.persistence.clone.JcrEntityDuplicator.duplicate(JcrEntityDuplicator.java:76) ~[classes/:na]
+  at com.dooapp.dsdk.core.persistence.JcromServiceEntityDuplicator.duplicate(JcromServiceEntityDuplicator.java:41) [classes/:na]
+  at com.dooapp.dsdk.core.persistence.JcromService.doDuplicate(JcromService.java:451) [classes/:na]
+  at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_92]
+  at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_92]
+  at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_92]
+  at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_92]
+  at org.jrebirth.af.core.service.ServiceTaskBase.call(ServiceTaskBase.java:156) [core-8.0.5.jar:na]
+  at javafx.concurrent.Task$TaskCallable.call(Task.java:1423) [jfxrt.jar:na]
+  at java.util.concurrent.FutureTask.run(FutureTask.java:266) [na:1.8.0_92]
+  at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) [na:1.8.0_92]
+  at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) [na:1.8.0_92]
+  at java.lang.Thread.run(Thread.java:745) [na:1.8.0_92]
+Caused by: java.lang.NullPointerException: null
+  at java.util.Objects.requireNonNull(Objects.java:203) ~[na:1.8.0_92]
+  at java.util.Arrays$ArrayList.<init>(Arrays.java:3813) ~[na:1.8.0_92]
+  at java.util.Arrays.asList(Arrays.java:3800) ~[na:1.8.0_92]
+  at org.modeshape.jcr.spi.index.provider.IndexChangeAdapters$NodeTypesChangeAdapter.modifyProperties(IndexChangeAdapters.java:822) ~[modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+  at org.modeshape.jcr.cache.change.ChangeSetAdapter.firePropertyChanges(ChangeSetAdapter.java:228) ~[modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+  at org.modeshape.jcr.cache.change.ChangeSetAdapter.notify(ChangeSetAdapter.java:99) ~[modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+  at org.modeshape.jcr.spi.index.provider.IndexProvider$AtomicIndex.notify(IndexProvider.java:1493) ~[modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+  at org.modeshape.jcr.bus.RepositoryChangeBus.notify(RepositoryChangeBus.java:190) ~[modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+  at org.modeshape.jcr.cache.document.WorkspaceCache.changed(WorkspaceCache.java:333) ~[modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+  at org.modeshape.jcr.txn.SynchronizedTransactions.updateCache(SynchronizedTransactions.java:223) ~[modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+  at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:751) ~[modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+  at org.modeshape.jcr.JcrSession.save(JcrSession.java:1171) ~[modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+  ... 16 common frames omitted
+{code}
+ 
+This exception is due to an empty multi-value ""jcr:mixinTypes"" property in one of the copied nodes (this happened after removing a mixin from this node using removeMixin on this node). The call to getValuesAsArray on this property returns a null value which leads to this exception.",,,
+3216,MODE-2636,"The attribute ""table-name"" in the ""db-persistence"" repository configuration for the JBOSS subsystem isn't set properly during startup. The DB persistence always uses the default table name ""MODESHAPE_REPOSITORY"".
+
+The cause of this bug is in the class org.modeshape.jboss.subsystem.AddDatabasePersistence in modeshape-jbossas-subsystem.
+Within the method ""performRuntime"" all ModelAttributes for DatabasePersistence are set for the persistenceConfig - except TABLE_NAME.
+
+The following code should be inserted to record the ModelAttributes.TABLE_NAME property:
+{code:java}
+ModelNode tableName = TABLE_NAME.resolveModelAttribute(context, operation);
+if (tableName.isDefined()) {
+      persistenceConfig.setString(TABLE_NAME.getFieldName(), tableName.asString());
+}
+{code}
+ 
+",,,
+3220,MODE-2633,"Based on the comment \[1], it appears that the following scenario should not result in errors:
+# Obtain a shallow open-scoped lock on a node and set timeout hint to {{1 second}}.
+# Wait for {{1 minute}} to ensure that the lock is expired.
+# Lock the node without any errors.
+
+However, the steps outlined above would result in the exception that looks like this:
+{noformat}
+Caused by: javax.jcr.lock.LockException: The node at '/6269cc6c-9253-4db8-bd16-b319a1bc779f' is already locked
+	at org.modeshape.jcr.JcrLockManager.lock(JcrLockManager.java:267)
+	at org.modeshape.jcr.JcrLockManager.lock(JcrLockManager.java:238)
+{noformat}
+
+If this is indeed a valid problem and it is addressed, it would effectively eliminate the need for \[2] and \[3].
+
+\[1] [https://developer.jboss.org/message/963202#963202]
+\[2] [https://issues.jboss.org/browse/MODE-2631]
+\[3] [https://github.com/ModeShape/modeshape/pull/1596]",,,
+3223,MODE-2629,"h3. Repository Layout
+
+The layout of the test repository is presented below. Note, that {{appRoot}} and all its child nodes are versionable. By the way, I do understand that this kind of topology is far less than desirable, but unfortunately we have to maintain a repository (formerly running on Jackrabbit 1.x) which has some nodes with a ton of direct children.
+
+{noformat}
+- jcrRoot
+-- appRoot
+--- node1
+---- child1
+---- child2
+---- ...
+---- childN
+--- node2
+--- ...
+--- nodeN
+{noformat}
+
+h4. Problem Creating a Node
+
+Every time a new node, i.e. direct child, gets added to the {{appRoot}}, a certain SQL query receives more input parameters. Eventually, the number of parameters exceeds the limit allowed by the Oracle 11g DBMS and the query becomes syntactically incorrect. The table below represents the aforementioned query, where ""Node Index"" indicates the order in which nodes are added.
+
+|| Node Index || SQL Query ||
+| 1 | {code:sql}SELECT CONTENT FROM MODESHAPE_REPOSITORY WHERE ID IN (?,?,?,?,?,?){code}
+| 2 | {code:sql}SELECT CONTENT FROM MODESHAPE_REPOSITORY WHERE ID IN (?,?,?,?,?,?,?,?){code}
+| 3 | {code:sql}SELECT CONTENT FROM MODESHAPE_REPOSITORY WHERE ID IN (?,?,?,?,?,?,?,?,?,?){code}
+
+As you can see, the {{SELECT}} query that is issued to create the first node has {{6}} parameters in the {{IN}} clause. The second query adds {{2}} more parameters. The third one adds yet another {{2}} and so on. It appears that we have an arithmetic progression here. In Oracle 11g, the {{IN}} clause cannot have more than {{1000}} arguments. So, to count how many nodes we need to add to reach the limit, we can do the following:
+
+{noformat}
+a1 + (n - 1) * d = 6 + (498 - 1) * 2 = 1000
+{noformat}
+
+As a result, if we have more than {{498}} direct child nodes, the Oracle 11g refuses to invoke the constructed query. Here is a stack trace:
+
+{noformat}
+org.modeshape.persistence.relational.RelationalProviderException: java.sql.SQLSyntaxErrorException: ORA-01795: maximum number of expressions in a list is 1000
+
+  at org.modeshape.persistence.relational.RelationalDb.runWithConnection(RelationalDb.java:370)
+  at org.modeshape.persistence.relational.RelationalDb.load(RelationalDb.java:187)
+  at org.modeshape.jcr.cache.document.LocalDocumentStore.load(LocalDocumentStore.java:83)
+  at org.modeshape.jcr.cache.document.WorkspaceCache.loadFromDocumentStore(WorkspaceCache.java:335)
+  at org.modeshape.jcr.cache.document.WritableSessionCache.lockNodes(WritableSessionCache.java:1613)
+  at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:712)
+  at org.modeshape.jcr.cache.SessionCacheWrapper.save(SessionCacheWrapper.java:96)
+  at org.modeshape.jcr.JcrSession$SystemSessionCache.save(JcrSession.java:2482)
+  at org.modeshape.jcr.JcrVersionManager.checkin(JcrVersionManager.java:373)
+  at org.modeshape.jcr.JcrVersionManager.checkin(JcrVersionManager.java:295)
+  
+  ...
+
+Caused by: java.sql.SQLSyntaxErrorException: ORA-01795: maximum number of expressions in a list is 1000
+
+  at oracle.jdbc.driver.T4CTTIoer.processError(T4CTTIoer.java:450)
+  at oracle.jdbc.driver.T4CTTIoer.processError(T4CTTIoer.java:399)
+  at oracle.jdbc.driver.T4C8Oall.processError(T4C8Oall.java:1059)
+  at oracle.jdbc.driver.T4CTTIfun.receive(T4CTTIfun.java:522)
+  at oracle.jdbc.driver.T4CTTIfun.doRPC(T4CTTIfun.java:257)
+  at oracle.jdbc.driver.T4C8Oall.doOALL(T4C8Oall.java:587)
+  at oracle.jdbc.driver.T4CPreparedStatement.doOall8(T4CPreparedStatement.java:225)
+  at oracle.jdbc.driver.T4CPreparedStatement.doOall8(T4CPreparedStatement.java:53)
+  at oracle.jdbc.driver.T4CPreparedStatement.executeForDescribe(T4CPreparedStatement.java:774)
+  at oracle.jdbc.driver.OracleStatement.executeMaybeDescribe(OracleStatement.java:925)
+  at oracle.jdbc.driver.OracleStatement.doExecuteWithTimeout(OracleStatement.java:1111)
+  at oracle.jdbc.driver.OraclePreparedStatement.executeInternal(OraclePreparedStatement.java:4798)
+  at oracle.jdbc.driver.OraclePreparedStatement.executeQuery(OraclePreparedStatement.java:4845)
+  at oracle.jdbc.driver.OraclePreparedStatementWrapper.executeQuery(OraclePreparedStatementWrapper.java:1501)
+  at com.zaxxer.hikari.pool.ProxyPreparedStatement.executeQuery(ProxyPreparedStatement.java:52)
+  at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeQuery(HikariProxyPreparedStatement.java)
+  at org.modeshape.persistence.relational.DefaultStatements.loadIDs(DefaultStatements.java:138)
+  at org.modeshape.persistence.relational.DefaultStatements.lambda$load$0(DefaultStatements.java:123)
+  at org.modeshape.persistence.relational.DefaultStatements.runBatchOperation(DefaultStatements.java:261)
+  at org.modeshape.persistence.relational.DefaultStatements.load(DefaultStatements.java:121)
+  at org.modeshape.persistence.relational.RelationalDb.lambda$load$12(RelationalDb.java:187)
+  at org.modeshape.persistence.relational.RelationalDb.runWithConnection(RelationalDb.java:362)
+  ...
+{noformat}
+
+*Possible Solution*
+
+Before sending the query for execution, it _may_ be possible to format it in a way that Oracle 11g will understand, e.g.:
+{code:sql}
+SELECT CONTENT
+FROM MODESHAPE_REPOSITORY
+WHERE ID IN ('entry-0', 'entry-1', ... 'entry-999')
+   OR ID IN ('entry-1000', 'entry-1001', ... 'entry-1999')
+   OR ID IN (...)
+{code}
+
+h4. Problem Deleting a Node 
+
+Similarly to the problem related to node creation, we can get an invalid query when removing a node with a lot of children. The table below represents some of the queries that get sent to the DBMS upon request to delete a node, where ""Node Count"" represents the overall number of direct child nodes for a node to be deleted.
+
+|| Node Count || SQL Query ||
+| 1 | {code:sql}DELETE FROM MODESHAPE_REPOSITORY WHERE ID IN (?,?){code}
+|   | {code:sql}SELECT CONTENT FROM MODESHAPE_REPOSITORY WHERE ID IN (?,?,?,?,?,?,?){code}
+| 2 | {code:sql}DELETE FROM MODESHAPE_REPOSITORY WHERE ID IN (?,?,?){code}
+|   | {code:sql}SELECT CONTENT FROM MODESHAPE_REPOSITORY WHERE ID IN (?,?,?,?,?,?,?,?,?,?){code}
+| 3 | {code:sql}DELETE FROM MODESHAPE_REPOSITORY WHERE ID IN (?,?,?,?){code}
+|   | {code:sql}SELECT CONTENT FROM MODESHAPE_REPOSITORY WHERE ID IN (?,?,?,?,?,?,?,?,?,?,?,?,?){code}
+
+Based on the results above (considering arithmetic progression {{a1 + (n - 1) * d}}):
+* The {{SELECT}} query will fail on an attempt to delete a node with {{332}} child nodes, i.e. {{7 + (332 - 1) * 3 = 1000}}
+* The {{DELETE}} query will fail on an attempt to delete a node with {{999}} child nodes, i.e. {{2 + (999 - 1) * 1 = 1000}}
+
+h4. Questions
+
+If an issue described here is a known problem, is there a possibility to release a fix for it in {{5.2}} version of the ModeShape? And if so, is {{5.2}} still targeted for this month, i.e. September, 2016? Thank you.
+
+h4. Notes
+
+* The queries provided here were obtained with YourKit profiling tool.
+* A sample project that allows to demonstrate a problem is located [here|https://github.com/dnillia/modeshape-cluster-test#junit-tests-for-limitations]. By the way, it takes a while to create a lot of direct child nodes ({{~ 2h}} to get {{~ 490}} nodes).",,,
+3240,MODE-2628,"When attempting to configure a Mongo binary store in Wildfly, the following exception is raised:
+{code}
+18:10:01,882 ERROR [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0013: Operation (""add"") failed - address:
+([
+    (""subsystem"" => ""modeshape""),
+    (""repository"" => ""demo"")
+]) - failure description: {
+    ""WFLYCTL0080: Failed services"" => {""jboss.modeshape.demo.repository"" => ""org.jboss.msc.service.StartException in service jboss.modesha
+pe.demo.repository: org.modeshape.jcr.ConfigurationException: The configuration for the 'demo' repository has problems: ERROR: Error at
+storage.binaryStorage.type : The 'type' field on 'storage.binaryStorage' has a value of 'cassandra' that is not part of the enumeration: [s3
+]
+{code}",,,
+3243,MODE-2627,"getPolicies returns empty array, but acl was set before.",,,
+3245,MODE-2626,"When attempting to configure a custom binary store via the Wildfly kit, this fails with an exception similar to:
+{code}
+11:35:01,154 ERROR [org.jboss.msc.service.fail] (MSC service thread 1-8) MSC000001: Failed to start service jboss.modeshape.customBinaryStorage.repository: org.jboss.msc.service.StartException in serv
+ice jboss.modeshape.customBinaryStorage.repository: org.modeshape.jcr.ConfigurationException: The configuration for the 'customBinaryStorage' repository has problems: ERROR: Error at storage.binarySto
+rage.type : The 'type' field on 'storage.binaryStorage' has a value of 'custom' that is not part of the enumeration: [transient]
+ERROR: Error at storage.binaryStorage.minimum-binary-size : The 'minimum-binary-size' field on 'storage.binaryStorage' is not defined in the schema and the schema does not allow additional properties.
+
+ERROR: Error at storage.binaryStorage.minimum-string-size : The 'minimum-string-size' field on 'storage.binaryStorage' is not defined in the schema and the schema does not allow additional properties.
+
+ERROR: Error at storage.binaryStorage.classname : The 'classname' field on 'storage.binaryStorage' is not defined in the schema and the schema does not allow additional properties.
+ERROR: Error at storage.binaryStorage.classloader : The 'classloader' field on 'storage.binaryStorage' is not defined in the schema and the schema does not allow additional properties.
+ERROR: Error at storage.binaryStorage.store-name : The 'store-name' field on 'storage.binaryStorage' is not defined in the schema and the schema does not allow additional properties.
+ERROR: Error at storage.binaryStorage.mime-type-detection : The 'mime-type-detection' field on 'storage.binaryStorage' is not defined in the schema and the schema does not allow additional properties.
+
+        at org.modeshape.jboss.service.RepositoryService.start(RepositoryService.java:221)
+        at org.jboss.msc.service.ServiceControllerImpl$StartTask.startService(ServiceControllerImpl.java:1948)
+        at org.jboss.msc.service.ServiceControllerImpl$StartTask.run(ServiceControllerImpl.java:1881)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+        at java.lang.Thread.run(Thread.java:745)
+Caused by: org.modeshape.jcr.ConfigurationException: The configuration for the 'customBinaryStorage' repository has problems: ERROR: Error at storage.binaryStorage.type : The 'type' field on 'storage.
+binaryStorage' has a value of 'custom' that is not part of the enumeration: [transient]
+{code}",,,
+3255,MODE-2623,NodeNotFoundInParentException is thrown when unlocking a node in transactional environment,,,
+3262,MODE-2622,"Multiple unit tests in the modeshape-jcr fail at the same line.  The problem appears to be related to the fact that system property  {{java.net.preferIPv6Addresses}} is returning true, but none of the available addresses are Inet6Addresss objects thus leading to the assertion failure below.
+
+Tests run: 5, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 2.621 sec <<< FAILURE! - in org.modeshape.jcr.value.binary.CassandraBinaryStoreTest
+{code}
+shoudlRemoveExpiredContent(org.modeshape.jcr.value.binary.CassandraBinaryStoreTest)  Time elapsed: 0 sec  <<< FAILURE!
+java.lang.AssertionError
+	at org.modeshape.jcr.ClusteringHelper.getLocalHost(ClusteringHelper.java:59)
+	at org.modeshape.jcr.value.binary.CassandraBinaryStoreTest.setUp(CassandraBinaryStoreTest.java:69)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:483)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:24)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:367)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:274)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:238)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:161)
+	at org.apache.maven.surefire.booter.ForkedBooter.invokeProviderInSameClassLoader(ForkedBooter.java:290)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:242)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:121)
+{code}
+",,,
+3263,MODE-2620,"Repository configured with DB persistence and separated binary storage. Create node {{A}} under root node. Using FederationManager create external projection {{F}} under node {{A}}. Verify that parent of the node {{F}} is node {{A}}. Restart repository. All nodes are in place however {{F.getParent()}} throws {{NullPointerException}}
+
+If database will be used as store for binary values as well the exception will be not thrown.
+",,,
+3275,MODE-2617,"*Setup*
+
+Consider the following layout where all nodes except for {{<jcrRepositoryRoot>}} are versionable:
+{noformat}
+<jcrRepositoryRoot>
+- <applicationRoot>
+-- <parentNode1>
+--- <childNode1>
+-- <parentNode2>
+--- <childNode2>
+
+...
+
+-- <parentNodeN>
+--- <childNodeN>
+{noformat}
+
+The ModeShape is running in a clustered mode and there are two members in JGroups cluster (there is a custom JGroups configuration file, which is used in the test project \[1]). The members can reside either in a single JVM (as multiple {{javax.jcr.Repository}} instances deployed to the {{org.modeshape.jcr.ModeShapeEngine}}) or in multiple JVMs (i.e. one {{javax.jcr.Repository}} per JVM).
+
+*Problem*
+
+Say we have {{N}} {{java.util.concurrent.Callable<V>}} instances. When called, each one obtains a {{javax.jcr.Session}} from the first member of the cluster and updates a single {{<childNodeN>}} which exists under corresponding {{<parentNodeN>}} (i.e. no two instances are configured to update the same child or parent node). Now, an {{java.util.concurrent.ExecutorService}} gets to invoke all previously created tasks in parallel using {{N}} threads in the pool, which results in an exception that looks like this:
+
+{noformat}
+Caused by: org.modeshape.jcr.cache.NodeNotFoundInParentException: Cannot locate child node: 497b1b6317f1e7209d1359-9d56-4a28-8dd0-59749b1ea35c within parent: 497b1b6317f1e7135adb68-36ac-4057-a084-650ce1cf274a
+	at org.modeshape.jcr.cache.document.SessionNode.getSegment(SessionNode.java:435)
+	at org.modeshape.jcr.cache.document.SessionNode.getPath(SessionNode.java:466)
+	at org.modeshape.jcr.JcrSession.node(JcrSession.java:553)
+	at org.modeshape.jcr.JcrSession.node(JcrSession.java:518)
+	at org.modeshape.jcr.JcrVersionManager.checkin(JcrVersionManager.java:378)
+	at org.modeshape.jcr.JcrVersionManager.checkin(JcrVersionManager.java:295)
+{noformat}
+
+The problem does not happen if:
+* there is only one member in the cluster
+* having two cluster members, only one thread of execution performs the update using the first member of the cluster
+
+Note, that any kind of write operation results in the same error (every child node is unique and exists under a unique parent):
+* updating all child nodes in parallel
+* creating all child nodes in parallel
+
+*Possible Cause*
+
+Potentially, the JGroups configuration file used to recreate the problem has some invalid configuration options. For what it is worth, when {{TRACE}} log level is enabled, I can see that members of the cluster communicate with each other, i.e. there are send/receive entries.
+
+*How to Recreate the Failure*
+
+I have created a test project \[1] that can be used to consistently cause the previously described problem. Please, read the documentation \[2] that should explain how to use the tools available in the project and it should also provide a better explanation of the problem and exact steps to take to reproduce it.
+
+\[1] https://github.com/dnillia/modeshape-cluster-test
+\[2] https://github.com/dnillia/modeshape-cluster-test/blob/master/README.md",,,
+3279,MODE-2616,"If {{ModeShapeEngine.undeploy()}} on a repository using the local index provider is called from a JVM shutdown hook, e.g. in the case of a spring managed scenario, then sometimes MapDB throws an IllegalArgumentException ""already done"".
+
+The problem is that it is possible that the shutdown hook registered via MapDB  by LocalIndexProvider's use of {{DBMaker.closeOnJvmShutdown()}} will be called prior to the call to {{undeploy()}} and subsequently {{LocalIndexProvider.postShutdown()}}.
+
+This should be as simple as adding a guard using db.isClosed() to postShutdown().
+
+Thrown exception:
+{code}
+java.util.concurrent.ExecutionException: java.lang.IllegalAccessError: already closed
+	at java.util.concurrent.FutureTask.report(Unknown Source)
+	at java.util.concurrent.FutureTask.get(Unknown Source)
+	at com.lavastorm.lae.repository2.jcr.modeshape.impl.SimpleModeshapeRepositoryProvider.destroyJcrRepository(SimpleModeshapeRepositoryProvider.java:183)
+	at com.lavastorm.lae.repository2.jcr.impl.AbstractJcrRepositoryProvider.destroyRepository(AbstractJcrRepositoryProvider.java:147)
+	at com.lavastorm.lae.repository2.jcr.impl.AbstractJcrRepositoryProvider.destroyRepositories(AbstractJcrRepositoryProvider.java:139)
+	at com.lavastorm.lae.repository2.jcr.impl.AbstractJcrRepositoryProvider.destroy(AbstractJcrRepositoryProvider.java:133)
+	at com.lavastorm.lae.repository2.jcr.modeshape.impl.SimpleModeshapeRepositoryProvider.destroy(SimpleModeshapeRepositoryProvider.java:173)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+	at java.lang.reflect.Method.invoke(Unknown Source)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleElement.invoke(InitDestroyAnnotationBeanPostProcessor.java:349)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMetadata.invokeDestroyMethods(InitDestroyAnnotationBeanPostProcessor.java:314)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeDestruction(InitDestroyAnnotationBeanPostProcessor.java:153)
+	at org.springframework.beans.factory.support.DisposableBeanAdapter.destroy(DisposableBeanAdapter.java:239)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.destroyBean(DefaultSingletonBeanRegistry.java:578)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.destroySingleton(DefaultSingletonBeanRegistry.java:554)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.destroySingleton(DefaultListableBeanFactory.java:907)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.destroySingletons(DefaultSingletonBeanRegistry.java:523)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.destroySingletons(DefaultListableBeanFactory.java:914)
+	at org.springframework.context.support.AbstractApplicationContext.destroyBeans(AbstractApplicationContext.java:908)
+	at org.springframework.context.support.AbstractApplicationContext.doClose(AbstractApplicationContext.java:884)
+	at org.springframework.context.support.AbstractApplicationContext$1.run(AbstractApplicationContext.java:804)
+Caused by: java.lang.IllegalAccessError: already closed
+	at org.mapdb.EngineWrapper$1.commit(EngineWrapper.java:502)
+	at org.mapdb.EngineWrapper.commit(EngineWrapper.java:94)
+	at org.mapdb.DB.commit(DB.java:1643)
+	at org.modeshape.jcr.index.local.LocalIndexProvider.postShutdown(LocalIndexProvider.java:183)
+	at org.modeshape.jcr.spi.index.provider.IndexProvider.shutdown(IndexProvider.java:362)
+	at org.modeshape.jcr.RepositoryIndexManager.shutdown(RepositoryIndexManager.java:255)
+	at org.modeshape.jcr.RepositoryQueryManager.shutdown(RepositoryQueryManager.java:144)
+	at org.modeshape.jcr.JcrRepository$RunningState.shutdown(JcrRepository.java:1652)
+	at org.modeshape.jcr.JcrRepository.doShutdown(JcrRepository.java:398)
+	at org.modeshape.jcr.JcrRepository.lambda$shutdown$1(JcrRepository.java:311)
+	at java.util.concurrent.FutureTask.run(Unknown Source)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+	at java.lang.Thread.run(Unknown Source)
+{code}
+",,,
+3280,MODE-2615,"We've been having the exception: {{java.nio.charset.MalformedInputException: Input length = 1}} come up in our application recently. It has been difficult to reproduce but after some digging I believe it is related to the position of some Unicode characters in our content. We have some very long strings translated to French. When this started showing up I found that simply adding a space (anywhere, randomly) would resolve the issue.
+
+It seems to centre around the chunking that's done between the byte buffer and char buffer. If (in the above unit test) I increase the size of the string to 2 times the buffers min size and step through the readUTF method I can see the char buffer ends up with 1 remaining slot but is never filled. This goes on and on until the length is 0, at this point the decoder flags it as malformed input.
+
+Any feedback on this would be great!",,,
+3282,MODE-2611,"When creating a backup from our Modeshape-Datastore (it's postgres as db in the background) the system-node is written twice into the backup-file. 
+Creating the backup file works like a charm.
+
+But if we want to restore the backup, our database complains about a duplicate key, coming from the double system-node entry. 
+
+If we now delete the second system-node entry in the backup file, we can restore the backup without any errors.
+
+
+This issue can easily be fixed with removing the ""PHASE2"" in BackupService.execute() due to the system-node is already saved in ""PHASE1"".
+[If you can see it, here is the commit in our fork|https://github.com/data-experts/modeshape/commit/dc6ca728c5ea009c5ab17d406858c1f49ac154c8]",,,
+3285,MODE-2610,"0) Create node and add child node to it
+
+Then in another transaction and in brand new session:
+1) Load child node;
+2) Update parent node;
+3) Call session.save();
+4) Remove child node;
+5) Call session.save() and you will get exception.
+
+This issue is really similar to https://issues.jboss.org/browse/MODE-2608, but fix for that issue didn't resolve this one. I'm still able to reproduce this issue using test, please see attachment.
+
+Exception:
+{code}
+javax.jcr.InvalidItemStateException: This session tried to save changes to node with key 'Cannot locate child node: dbb11dd7505d64c117ec3f-18ae-4eb2-9d65-d762209e3b01 within parent: dbb11dd7505d642bdf0eb7-7e89-4a39-b3bd-287b6ebdf6fd', but it was removed by another session.
+	at org.modeshape.jcr.JcrSession.save(JcrSession.java:1171)
+Caused by: org.modeshape.jcr.cache.NodeNotFoundInParentException: Cannot locate child node: dbb11dd7505d64c117ec3f-18ae-4eb2-9d65-d762209e3b01 within parent: dbb11dd7505d642bdf0eb7-7e89-4a39-b3bd-287b6ebdf6fd
+	at org.modeshape.jcr.cache.document.LazyCachedNode.parentReferenceToSelf(LazyCachedNode.java:238)
+	at org.modeshape.jcr.cache.document.LazyCachedNode.getSegment(LazyCachedNode.java:282)
+	at org.modeshape.jcr.cache.document.LazyCachedNode.getPath(LazyCachedNode.java:308)
+	at org.modeshape.jcr.cache.PathCache.getPath(PathCache.java:41)
+	at org.modeshape.jcr.cache.document.WritableSessionCache.persistChanges(WritableSessionCache.java:1002)
+	at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:716)
+	at org.modeshape.jcr.JcrSession.save(JcrSession.java:1162)
+	... 31 more 
+{code}",,,
+3290,MODE-2609,"*Background*
+
+There is a project that runs on {{Jackrabbit 2.x}}. Due to concurrency issues even with explicit locking (and some others), it has been decided to migrate to {{ModeShape 5.x}}. So far, almost everything looks great and the problems we experienced with Jackrabbit before no longer happen with ModeShape, based on initial testing. However, there are some test cases that fail due to unexpected exception from ModeShape when working with the version history for a given frozen node. It is possible that the JCR API is misued in the project I am working on, but that specific functionality used to work when Jackrabbit was the implementation of the {{JCR 2.0}}.
+
+*Problem*
+
+Basically, what happens is that {{javax.jcr.PathNotFoundException}} gets thrown on a call like this:
+
+{code:java}
+VersionHistory versionHistory = (VersionHistory) child.getProperty(""jcr:childVersionHistory"").getNode();
+{code}
+
+The stack trace looks like this:
+{noformat}
+javax.jcr.ItemNotFoundException: No node exists at path 'dbb11dd317f1e7587ac6a4-441a-4cdb-a4b9-32bfe41cf9a9' in workspace ""default""
+	at org.modeshape.jcr.AbstractJcrProperty.valueToNode(AbstractJcrProperty.java:397)
+	at org.modeshape.jcr.JcrSingleValueProperty.getNode(JcrSingleValueProperty.java:122)
+	
+  ...
+  
+Caused by: javax.jcr.PathNotFoundException: No node exists at path 'dbb11dd317f1e7587ac6a4-441a-4cdb-a4b9-32bfe41cf9a9' in workspace ""default""
+	at org.modeshape.jcr.JcrSession.cachedNode(JcrSession.java:617)
+	at org.modeshape.jcr.JcrSession.node(JcrSession.java:649)
+	at org.modeshape.jcr.AbstractJcrProperty.valueToNode(AbstractJcrProperty.java:391)
+	... 29 more
+{noformat}
+
+*Test Case*
+
+The aforementioned problem can be consistently re-created using the attached test project (see {{modeshape-version-test.zip}}). To run a project, unpack it and execute the following command:
+{noformat}
+mvn clean verify
+{noformat}
+
+Here are the versions of OS, Maven and Java in use:
+{noformat}
+Apache Maven 3.3.3 (7994120775791599e205a5524ec3e0dfe41d4a06; 2015-04-22T06:57:37-05:00)
+Java version: 1.8.0_60, vendor: Oracle Corporation
+OS name: ""mac os x"", version: ""10.10.4"", arch: ""x86_64"", family: ""mac""
+{noformat}
+
+*Questions*
+
+Could someone take a look at the attached test project and provide feedback as to whether the behavior I see is expected? If ModeShape behaves according to the design, would you be able to point to a place in the test project where the JCR API is misused (and if so, give a hint on how to use it properly)? Thanks a lot.",,,
+3293,MODE-2607,"When you try to update parent node in one session and remove child node in another session within same transaction, you will get exception while saving second session.
+
+Exception:
+{code}
+Caused by: javax.jcr.InvalidItemStateException: This session tried to save changes to node with key 'Cannot locate child node: c0812dd7505d645b6e581e-3081-4488-92d8-f8152c3646ee within parent: c0812dd7505d6410124ee4-50c3-4d7f-850b-be55cc2851e5', but it was removed by another session.
+	at org.modeshape.jcr.JcrSession.save(JcrSession.java:1171) 
+Caused by: org.modeshape.jcr.cache.NodeNotFoundInParentException: Cannot locate child node: c0812dd7505d645b6e581e-3081-4488-92d8-f8152c3646ee within parent: c0812dd7505d6410124ee4-50c3-4d7f-850b-be55cc2851e5
+	at org.modeshape.jcr.cache.document.LazyCachedNode.parentReferenceToSelf(LazyCachedNode.java:238)
+	at org.modeshape.jcr.cache.document.LazyCachedNode.getSegment(LazyCachedNode.java:282)
+	... 5 skipped due to configuration 
+{code}",,,
+3296,MODE-2604,"[StandardDdlParser] isTableConstraint already handles PK, FK and UNIQUE constraints with optional constraint names, but only handles CHECK with constraint name present.
+
+according to Oracle docs (https://docs.oracle.com/cd/B28359_01/server.111/b28286/clauses002.htm#CJAGIICD)
+- ""... CONSTRAINT sth_name CHECK (check expr) ..."" is handled correctly
+- ""... CHECK (check expr) ..."" is NOT handled correctly
+
+If the same applies to other DB dialects this should be fixed in StandardDdlParser otherwise the method should be overloaded in OracleDdlParser.
+
+",,,
+3303,MODE-2603,"When running ModeShape at various times, I notice that during some hours in the evening (U.S. Eastern time) ModeShape5 will not start up. The issue appears to be coming from the updated logic in this commit:
+https://github.com/ModeShape/modeshape/commit/bc574455aa7e0e7fa6f7a6e4820f5b777bfda3f1#diff-0bfcd93b5cc4efa01e1328b6fcb4c8c4L1987
+
+..in JcrRepository.determineInitialDelay().
+
+For example, with my local system clock set to EDT, running the following build command in the Modeshape codebase (73086b7289270827c2e5d95ddec8fc4107a8a3f1), produces the following results:
+-----cmd
+while true; do echo -n `date` >> compile.out; mvn clean test -s settings.xml -pl modeshape-jcr -Dtest=JcrRepositoryTest | grep ""\[INFO\] BUILD"" >> compile.out; sleep 1h; done
+-----
+-----results
+Wed May 18 15:21:31 EDT 2016[INFO] BUILD SUCCESS
+Wed May 18 16:22:25 EDT 2016[INFO] BUILD SUCCESS
+Wed May 18 17:23:14 EDT 2016[INFO] BUILD SUCCESS
+Wed May 18 18:24:07 EDT 2016[INFO] BUILD SUCCESS
+Wed May 18 19:25:01 EDT 2016[INFO] BUILD SUCCESS
+Wed May 18 20:25:48 EDT 2016[INFO] BUILD FAILURE
+Wed May 18 21:26:47 EDT 2016[INFO] BUILD FAILURE
+Wed May 18 22:27:35 EDT 2016[INFO] BUILD FAILURE
+Wed May 18 23:28:15 EDT 2016[INFO] BUILD FAILURE
+Thu May 19 00:28:54 EDT 2016[INFO] BUILD SUCCESS
+Thu May 19 01:29:41 EDT 2016[INFO] BUILD SUCCESS
+Thu May 19 02:30:28 EDT 2016[INFO] BUILD SUCCESS
+Thu May 19 03:31:13 EDT 2016[INFO] BUILD SUCCESS
+Thu May 19 04:31:58 EDT 2016[INFO] BUILD SUCCESS
+Thu May 19 05:32:44 EDT 2016[INFO] BUILD SUCCESS
+Thu May 19 06:33:28 EDT 2016[INFO] BUILD SUCCESS
+Thu May 19 07:34:15 EDT 2016[INFO] BUILD SUCCESS
+Thu May 19 08:35:01 EDT 2016[INFO] BUILD SUCCESS
+-----
+
+See attached build-error.txt for full build output of one failure run.
+
+The following pull-request includes a unit test that demonstrates one error and includes a fix.
+https://github.com/ModeShape/modeshape/pull/1561
+",,,
+3305,MODE-2597,"The https://github.com/ModeShape/modeshape/blob/master/modeshape-jca-rar/src/main/assembly/COPYRIGHT.txt file incorrectly mentions the LGPL license, even though we've moved to the Apache License 2.0 years ago.
+
+This needs to be fixed, and we need to verify that LGPL is no longer referenced in any other files.",,,
+3320,MODE-2596,"I am calling org.modeshape.jcr.JcrSession.nodeExists. When the repository is empty I very often get this error:
+
+{code:java}
+Caused by: javax.jcr.ItemNotFoundException: The node with key 44804707505d64/ no longer exists.
+        at org.modeshape.jcr.AbstractJcrNode.node(AbstractJcrNode.java:207)
+        at org.modeshape.jcr.JcrSession.node(JcrSession.java:667)
+        at org.modeshape.jcr.JcrSession.nodeExists(JcrSession.java:942)
+{code}
+I never saw this with ModeShape 4.2.0.Final (from which I am trying to migrate).
+
+Is this a known issue? Is the workaround to catch this exception and treat this as though the node does not exist?",,,
+3330,MODE-2594,"I've been playing around with modeshape, mostly hitting the rest API. I've discovered two problems with the results which i get from the rest API. In both cases, i'm making an ajax request (via jquery if its relevant) and accepting json.
+
+First case (custom properties of objects):
+consider a node which have the following custom properties:
+{code:javascript}
+property1: ""some string""
+property2: { subObjectProperty1: ""some string2"", ...}
+{code}
+If i GET this node, the json which is returned to me is something like the following:
+{code:javascript}
+{
+...
+""property1"": ""some string"",
+""property2"": ""{\""subObjectProperty1\"":\""some string2\""...}"",
+...
+}
+{code}
+
+the first property is what i would expect but not the second one. For the second, i'd expect the json to treat property two value as an object, not a string value ie
+{code:javascript}
+""property2"": { ""subObjectProperty1"": ""some string2""....},
+{code}
+
+this isn't that big of a deal as i can cleanup the code on the client side. it's fairly predictable. I looked into the modeshape source for a bit but the error seems like it may perhaps be with the json library which modeshape uses. 
+
+Second case (query over property which is array):
+Consider that I have a node with a property as follows:
+{code:javascript}
+""property1"": [""value1"", ""value2""]
+{code}
+If i invoke a GET on the rest API, i will get the expected JSON. However, if i return this column as a part of a query, I only get the first value. say i select the query as so:
+{code:sql}
+SELECT property1 from [nt:unstructured] WHERE [jcr:path] = '(put the path here)'. 
+{code}
+The resulting row will have the following json:
+{code:javascript}
+""rows"":[{""property1"":""value1"", ""mode:uri""...}]
+{code}
+
+as you can see, it does not return an array but rather a string value with the first element in the array. Digging into the code, {{RestQueryHandler.createRestRow}} gets the values for individual rows. it eventually calls {{.getString}} on the value which in fact returns just a string of the first element and not a string of the full array or anything else. 
+
+The first issue is only slightly annoying. The second is actually problematic as I can't use the query functionality to retrieve node properties which are arrays. If i need these values, i'm forced to execute the query to get the relevant nodes and then perform an actual GET on each one.",,,
+3334,MODE-2592,"When Oracle-based persistent repository is configured in WildFly, it doesn't survive WildFly restart with the following exception:
+
+{noformat}
+12:47:46,871 ERROR [stderr] (ServerService Thread Pool -- 75) javax.jcr.RepositoryException: Error while starting 'ora' repository: 1 parameter supplied, but 2 parameters required: ""Ignoring Oracle SQL exception for database {0} with error code {1}"" => ""Ignoring Oracle SQL exception for database 955 with error code {1}""
+12:47:46,872 ERROR [stderr] (ServerService Thread Pool -- 75)  at org.modeshape.jcr.JcrRepository.login(JcrRepository.java:634)
+12:47:46,872 ERROR [stderr] (ServerService Thread Pool -- 75)  at org.modeshape.jcr.JcrRepository.login(JcrRepository.java:598)
+12:47:46,872 ERROR [stderr] (ServerService Thread Pool -- 75)  at org.modeshape.jcr.JcrRepository.login(JcrRepository.java:135)
+...
+12:47:46,886 ERROR [stderr] (ServerService Thread Pool -- 75) Caused by: java.lang.IllegalArgumentException: 1 parameter supplied, but 2 parameters required: ""Ignoring Oracle SQL exception for database {0} with error code {1}"" => ""Ignoring Oracle SQL exception for database 955 with error code {1}""
+12:47:46,886 ERROR [stderr] (ServerService Thread Pool -- 75)  at org.modeshape.common.util.StringUtil.createString(StringUtil.java:188)
+12:47:46,886 ERROR [stderr] (ServerService Thread Pool -- 75)  at org.modeshape.common.logging.slf4j.SLF4JLoggerImpl.debug(SLF4JLoggerImpl.java:126)
+12:47:46,886 ERROR [stderr] (ServerService Thread Pool -- 75)  at org.modeshape.persistence.relational.OracleStatements.createTable(OracleStatements.java:45)
+12:47:46,886 ERROR [stderr] (ServerService Thread Pool -- 75)  at org.modeshape.persistence.relational.RelationalDb.runWithConnection(RelationalDb.java:358)
+12:47:46,886 ERROR [stderr] (ServerService Thread Pool -- 75)  at org.modeshape.persistence.relational.RelationalDb.start(RelationalDb.java:85)
+12:47:46,887 ERROR [stderr] (ServerService Thread Pool -- 75)  at org.modeshape.jcr.JcrRepository$RunningState.<init>(JcrRepository.java:1064)
+12:47:46,887 ERROR [stderr] (ServerService Thread Pool -- 75)  at org.modeshape.jcr.JcrRepository$RunningState.<init>(JcrRepository.java:936)
+12:47:46,887 ERROR [stderr] (ServerService Thread Pool -- 75)  at org.modeshape.jcr.JcrRepository.doStart(JcrRepository.java:367)
+12:47:46,887 ERROR [stderr] (ServerService Thread Pool -- 75)  at org.modeshape.jcr.JcrRepository.login(JcrRepository.java:632)
+12:47:46,887 ERROR [stderr] (ServerService Thread Pool -- 75)  ... 66 more
+{noformat}
+because of an attempt to create tables already created during first start with _ORA-00955 name is already used by an existing object_ Oracle response.",,,
+3337,MODE-2589,"Attempt to rename zero-length file via WebDAV fails at least with ojdbc6.jar driver with the following log messages:
+
+{noformat}
+2016-04-05 10:19:31,662 ERROR [io.undertow.request] (default task-50) UT005023: Exception handling request to /modeshape-webdav/sample/default/a: javax.servlet.ServletException: org.modeshape.webdav.exceptions.WebdavException
+            at org.modeshape.webdav.WebDavServletBean.service(WebDavServletBean.java:209) [modeshape-webdav-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.web.jcr.webdav.ModeShapeWebdavServlet.service(ModeShapeWebdavServlet.java:121) [modeshape-web-jcr-webdav-4.6.0.Final.jar:4.6.0.Final]
+            at javax.servlet.http.HttpServlet.service(HttpServlet.java:790) [jboss-servlet-api_3.1_spec-1.0.0.Final.jar:1.0.0.Final]
+            at io.undertow.servlet.handlers.ServletHandler.handleRequest(ServletHandler.java:85) [undertow-servlet-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.servlet.handlers.security.ServletSecurityRoleHandler.handleRequest(ServletSecurityRoleHandler.java:61) [undertow-servlet-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.servlet.handlers.ServletDispatchingHandler.handleRequest(ServletDispatchingHandler.java:36) [undertow-servlet-1.1.0.Final.jar:1.1.0.Final]
+            at org.wildfly.extension.undertow.security.SecurityContextAssociationHandler.handleRequest(SecurityContextAssociationHandler.java:78)
+            at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43) [undertow-core-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.servlet.handlers.security.SSLInformationAssociationHandler.handleRequest(SSLInformationAssociationHandler.java:131) [undertow-servlet-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler.handleRequest(ServletAuthenticationCallHandler.java:56) [undertow-servlet-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.server.handlers.DisableCacheHandler.handleRequest(DisableCacheHandler.java:33) [undertow-core-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43) [undertow-core-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.security.handlers.AuthenticationConstraintHandler.handleRequest(AuthenticationConstraintHandler.java:51) [undertow-core-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.security.handlers.AbstractConfidentialityHandler.handleRequest(AbstractConfidentialityHandler.java:45) [undertow-core-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler.handleRequest(ServletConfidentialityConstraintHandler.java:63) [undertow-servlet-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.servlet.handlers.security.ServletSecurityConstraintHandler.handleRequest(ServletSecurityConstraintHandler.java:56) [undertow-servlet-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.security.handlers.AuthenticationMechanismsHandler.handleRequest(AuthenticationMechanismsHandler.java:58) [undertow-core-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.servlet.handlers.security.CachedAuthenticatedSessionHandler.handleRequest(CachedAuthenticatedSessionHandler.java:70) [undertow-servlet-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.security.handlers.SecurityInitialHandler.handleRequest(SecurityInitialHandler.java:76) [undertow-core-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43) [undertow-core-1.1.0.Final.jar:1.1.0.Final]
+            at org.wildfly.extension.undertow.security.jacc.JACCContextIdHandler.handleRequest(JACCContextIdHandler.java:61)
+            at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43) [undertow-core-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43) [undertow-core-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.servlet.handlers.SessionRestoringHandler.handleRequest(SessionRestoringHandler.java:119) [undertow-servlet-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.servlet.handlers.ServletInitialHandler.handleFirstRequest(ServletInitialHandler.java:261) [undertow-servlet-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.servlet.handlers.ServletInitialHandler.dispatchRequest(ServletInitialHandler.java:247) [undertow-servlet-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.servlet.handlers.ServletInitialHandler.access$000(ServletInitialHandler.java:76) [undertow-servlet-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.servlet.handlers.ServletInitialHandler$1.handleRequest(ServletInitialHandler.java:166) [undertow-servlet-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.server.Connectors.executeRootHandler(Connectors.java:197) [undertow-core-1.1.0.Final.jar:1.1.0.Final]
+            at io.undertow.server.HttpServerExchange$1.run(HttpServerExchange.java:759) [undertow-core-1.1.0.Final.jar:1.1.0.Final]
+            at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145) [rt.jar:1.7.0_80]
+            at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615) [rt.jar:1.7.0_80]
+            at java.lang.Thread.run(Thread.java:745) [rt.jar:1.7.0_80]
+    Caused by: org.modeshape.webdav.exceptions.WebdavException
+            at org.modeshape.web.jcr.webdav.ModeShapeWebdavServlet.translateError(ModeShapeWebdavServlet.java:146) [modeshape-web-jcr-webdav-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.web.jcr.webdav.ModeShapeWebdavServlet.translate(ModeShapeWebdavServlet.java:129) [modeshape-web-jcr-webdav-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.webdav.WebDavServletBean.service(WebDavServletBean.java:197) [modeshape-webdav-4.6.0.Final.jar:4.6.0.Final]
+            ... 32 more
+    Caused by: java.lang.NullPointerException
+            at org.modeshape.jcr.value.binary.Database$DatabaseBinaryStream.read(Database.java:537) [modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.common.util.SelfClosingInputStream.read(SelfClosingInputStream.java:111) [modeshape-common-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.common.util.SecureHash$HashingInputStream.read(SecureHash.java:380) [modeshape-common-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.common.util.IoUtil.write(IoUtil.java:331) [modeshape-common-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.jcr.value.binary.FileSystemBinaryStore.storeValue(FileSystemBinaryStore.java:109) [modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.jcr.value.binary.DatabaseBinaryStore.storeValue(DatabaseBinaryStore.java:171) [modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.jcr.value.binary.BinaryStoreValueFactory.create(BinaryStoreValueFactory.java:244) [modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.jcr.value.binary.BinaryStoreValueFactory.create(BinaryStoreValueFactory.java:49) [modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.jcr.JcrValueFactory.createBinary(JcrValueFactory.java:141) [modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.jcr.JcrValueFactory.createBinary(JcrValueFactory.java:41) [modeshape-jcr-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.web.jcr.webdav.DefaultContentMapper.setContent(DefaultContentMapper.java:203) [modeshape-web-jcr-webdav-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.web.jcr.webdav.ModeShapeWebdavStore.setResourceContent(ModeShapeWebdavStore.java:446) [modeshape-web-jcr-webdav-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.webdav.methods.DoCopy.copy(DoCopy.java:227) [modeshape-webdav-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.webdav.methods.DoCopy.copyResource(DoCopy.java:173) [modeshape-webdav-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.webdav.methods.DoMove.execute(DoMove.java:79) [modeshape-webdav-4.6.0.Final.jar:4.6.0.Final]
+            at org.modeshape.webdav.WebDavServletBean.service(WebDavServletBean.java:157) [modeshape-webdav-4.6.0.Final.jar:4.6.0.Final]
+            ... 32 more
+{noformat}
+
+",,,
+3339,MODE-2588,"ElasticSearch index provider cannot work under load because of http/socket limitations
+
+Configuration:
+{noformat}
+        EditableDocument indexProviders =     editor.getOrCreateDocument(FieldName.INDEX_PROVIDERS);
+        indexProviders.getOrCreateDocument(""local"")
+                .set(""directory"", ""/modeshape/index"")
+                .set(""classname"", ""org.modeshape.jcr.index.elasticsearch.EsIndexProvider"")
+                .set(""host"", ""localhost"")
+                .set(""port"", ""9200"")
+                .set(""cacheLRUEnable"", true)
+                .set(""mmapFileEnable"", true)
+                .set(""commitFileSyncDisable"", true)
+                .set(""transactionDisable"", true)
+                .set(""asyncWrite"", true)
+                .set(""cacheSize"", 1000000);
+{noformat}
+
+Under some load (many session.save calls) the exception occurs:
+{noformat}
+org.modeshape.jcr.index.elasticsearch.EsIndexException: java.net.BindException: Address already in use: connect
+at org.modeshape.jcr.index.elasticsearch.EsIndex.commit(EsIndex.java:249)
+...
+{noformat}",,,
+3343,MODE-2584,"When a repository is restored from a backup, making a new backup of it results in a zip file where no binaries are included.",,,
+3346,MODE-2583,Removing indexes definitions form WildFly configuration file doesn't give an effect - indexes are still in use.,,,
+3355,MODE-2580,"When {{jcr:data}} property of {{nt:resource}} is set with the same value it already has, the property changed event is fired despite of there is no change. Probably this wrong behavior affects all {{BINARY}} properties, nor only the jar:data.",,,
+3357,MODE-2579,Nodes containing multi-valued properties are not searched correctly (i.e. they are not returned as part of the search results) when using full-text-search if no indexes are defined.,,,
+3360,MODE-2577,"The documentation for configuring Elastic Search as an Index provider is incorrect when using WIldfly.
+
+The example does not work and should actually be
+
+{code:xml}
+<index-provider name=""elastic"" classname=""org.modeshape.jcr.index.elasticsearch.EsIndexProvider"" module=""org.modeshape.index-provider.elasticsearch"" host=""localhost"" port=""9300"" />
+{code}
+
+
+
+There are also some formatting errors on the page.
+
+It would also help to document the supported version(s) that the integration works with. After looking through the Modeshape code base I believe it is 2.1.0. I can confirm it does not work with Elastic Search 1.5.
+
+It would also be nice if an alias was added to org.modeshape.jcr.RepositoryConfiguration.java as per local and lucene providers so you don't need to provide the full classname.",,,
+3363,MODE-2573,"When running a query against an index which has more than 100 entries and using offset in that query to retrieve nodes that have an index greater than 99 in the result set, only nodes 0-99 will be returned i.e. offset 0 and offset 100 return the same node.",,,
+3366,MODE-2571,"The ModeShape [Spring example| https://github.com/ModeShape/modeshape-examples/tree/master/modeshape-spring-example] uses an repository configuration file which is {{3.x}} compatible, not {{4.x}} causing the WAR file to fail when deployed.
+
+The {{query}} element should be removed from the repository configuration.",,,
+3369,MODE-2567,"The Lucene index provider fails to find nodes that match the following LIKE constraints:
+
+- LIKE '% &%'
+- LIKE '%& %'
+
+If there is no space it works correctly
+
+- LIKE '%&%'
+
+or if there is no & it works correctly
+
+- LIKE '% %'
+
+If the index is disabled then the query works as expected.
+",,,
+3372,MODE-2565,The Lucene Index provider will re-index the entire repository when-ever the repository is restarted even if there are no changes to the repository. This does NOT happen when using the Local Index provider.,,,
+3383,MODE-2564,"(!) Seems to affect all of 4.x (and possibly 5.0.0-Alpha1) versions.
+
+{{org.modeshape.jcr.query.QueryBuilder}} does not register any LIMIT after the call to ""limit"" method. The same issue is with the ""offset"" method, as well.
+
+The code in the method should probably be something like this:
+
+
+{code:java}
+public QueryBuilder limit( int rowLimit ) {
+       // this.limit.withRowLimit(rowLimit);
+
+this.limit = this.limit.withRowLimit(rowLimit);
+        return this;
+    }
+{code}
+
+
+This way LIMIT attribute of the builder is correctly reinitialized with the provided {{rowLimit}}.",,,
+3390,MODE-2562,"If you create and then restore a backup using org.modeshape.jcr.api.RepositoryManager, all string properties containing two backslashes '&#92;&#92;', are replaced to contain a single backslash '&#92;'.
+
+For example if you have a value ""foo&#92;&#92;bar"", after you backup and restore the value would be ""foo&#92;bar""
+
+Here's a simple program, which shows the effect.
+
+This is the output:
+{noformat}
+Jan 22, 2016 3:21:58 PM org.modeshape.common.logging.LogFactory <clinit>
+INFO: No custom logger, SLF4J implementation or Log4j located in the classpath. ModeShape will use the JDK logger for logging.
+Jan 22, 2016 3:21:59 PM org.modeshape.jcr.ModeShape <clinit>
+INFO: ModeShape version 4.5.0.Final
+Jan 22, 2016 3:22:00 PM org.infinispan.factories.GlobalComponentRegistry start
+INFO: ISPN000128: Infinispan version: Infinispan 'Insanely Bad Elf' 7.2.4.Final
+Jan 22, 2016 3:22:00 PM org.infinispan.transaction.lookup.GenericTransactionManagerLookup useDummyTM
+WARN: ISPN000104: Falling back to DummyTransactionManager from Infinispan
+Values before creating backup:
+The value of 'oneBackslash' is 'one\backslash'
+The value of 'twoBackslashes' is 'two\\backslashes'
+The value of 'threeBackslashes' is 'three\\\backslashes'
+Values after restoring backup:
+The value of 'oneBackslash' is 'one\backslash'
+The value of 'twoBackslashes' is 'two\backslashes'
+The value of 'threeBackslashes' is 'three\\backslashes'
+{noformat}
+
+And here is the program itself
+{code:java}
+import java.io.File;
+import java.net.URL;
+import java.nio.file.Files;
+
+import javax.jcr.Repository;
+import javax.jcr.Session;
+
+import org.infinispan.schematic.document.ParsingException;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.jcr.ModeShapeEngine;
+import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.api.RepositoryManager;
+
+public class ModeShapeBug {
+    private static final String REPO_CONFIG_FILE = ""repo-config.json"";
+    private static final String WORKSPACE_NAME = ""configuration"";
+
+    private static URL repositoryUrl;
+    private static ModeShapeEngine engine;
+    private static RepositoryConfiguration config;
+
+    public static void main(String[] args) throws Exception {
+        repositoryUrl = ModeShapeBug.class.getClassLoader().getResource(REPO_CONFIG_FILE);
+        engine = new ModeShapeEngine();
+
+        engine.start();
+        try {
+            config = readConfig(repositoryUrl);
+            engine.deploy(config);
+            File tempDir = Files.createTempDirectory(""modeshape-restore-bug-"").toFile();
+
+            String oneBackslash = ""oneBackslash"";
+            String twoBackslashes = ""twoBackslashes"";
+            String threeBackslashes = ""threeBackslashes"";
+
+            setPropertyValue(oneBackslash, ""one\\backslash"");
+            setPropertyValue(twoBackslashes, ""two\\\\backslashes"");
+            setPropertyValue(threeBackslashes, ""three\\\\\\backslashes"");
+
+            System.out.printf(""Values before creating backup:\n"");
+            printPropertyValue(oneBackslash);
+            printPropertyValue(twoBackslashes);
+            printPropertyValue(threeBackslashes);
+
+            createBackup(tempDir);
+            restoreBackup(tempDir);
+
+            System.out.printf(""Values after restoring backup:\n"");
+            printPropertyValue(oneBackslash);
+            printPropertyValue(twoBackslashes);
+            printPropertyValue(threeBackslashes);
+        } finally {
+            engine.shutdown().get();
+        }
+    }
+
+    private static String printPropertyValue(String property) throws Exception {
+        Session session = startSession();
+        try {
+            String value = session.getRootNode().getProperty(property).getString();
+            System.out.printf(""The value of '%s' is '%s'\n"", property, value);
+            return value;
+        } finally {
+            session.logout();
+        }
+    }
+
+    private static void setPropertyValue(String property, String value) throws Exception {
+        Session session = startSession();
+        try {
+            session.getRootNode().setProperty(property, value);
+            session.save();
+        } finally {
+            session.logout();
+        }
+    }
+
+    private static void createBackup(File tempDir) throws Exception {
+        Session session = startSession();
+        try {
+            RepositoryManager repositoryManager =
+                    ((org.modeshape.jcr.api.Session)session).getWorkspace().getRepositoryManager();
+            org.modeshape.jcr.api.Problems problems = repositoryManager.backupRepository(tempDir);
+            if (problems.hasProblems()){
+                throw new RuntimeException(""Problems creating backup: "" + problems);
+            }
+        } finally {
+            session.logout();
+        }
+    }
+
+    private static void restoreBackup(File tempDir) throws Exception {
+        Session session = startSession();
+        try {
+            RepositoryManager repositoryManager =
+                    ((org.modeshape.jcr.api.Session)session).getWorkspace().getRepositoryManager();
+            org.modeshape.jcr.api.Problems problems = repositoryManager.restoreRepository(tempDir);
+            if (problems.hasProblems()){
+                throw new RuntimeException(""Problems restoring backup: "" + problems);
+            }
+        } finally {
+            session.logout();
+        }
+    }
+
+    private static RepositoryConfiguration readConfig(URL repositoryUrl) throws ParsingException {
+        RepositoryConfiguration config = RepositoryConfiguration.read(repositoryUrl);
+        Problems problems = config.validate();
+        if (problems.hasErrors()) {
+            throw new RuntimeException(""Problems starting the engine: "" + problems);
+        }
+        return config;
+    }
+
+    private static Session startSession()
+            throws Exception {
+        Repository repository = engine.getRepository(config.getName());
+        Session session = repository.login(WORKSPACE_NAME);
+        return session;
+    }
+}
+{code}
+
+I'm also going to attach it as a maven project, so you can take a better look at it if needed.",,,
+3402,MODE-2560,As mentioned in https://developer.jboss.org/thread/267273 there is a failure if you try to delete all versions of a node with the which has been updated and copied. The copy has a strong reference to the versions of the original node.,,,
+3410,MODE-2558,"I have created a sample application https://github.com/lucasweb78/modeshape-test-app that demonstrates a concurrency issue when multiple threads modify the same node structure using User Transactions. 
+
+The issue only appears to happen when run inside of Wildfly, I have yet to re-create it outside of Wildfly.
+
+It appears that under concurrent load a child node can be created and committed with a reference to a parent node, but the parent node does *not* contain a reference to the child, most likely because it was overwritten in a different thread. Once this happens any attempt to access the node  results in a NodeNotFoundInParentException
+
+Strangely the issue only occurs if eviction is enabled in the Infinispan cache, even though the entry limit is not reached.",,,
+3413,MODE-2548,"One of the logging statements from the Lucene index provider {{MultiColumnIndex}} has an incorrect number of parameters passed, causing an exception when the logging level is set to DEBUG (see linked forum issue)",,,
+3477,MODE-2547,"Data corrupted when using JCR setProperty with BinaryValue.
+{code}
+node.setProperty (Property.JCR_DATA,session.getValueFactory().createBinary(file));
+{code}
+
+Putting db.requestStart()/db.requestDone() in     
+org.modeshape.jcr.value.binary.MongodbBinaryStore.storeValue( InputStream stream,boolean markAsUnused )
+surrounding the writing operation, could avoid the data corruption.
+
+Please see https://developer.jboss.org/thread/266829",,,
+3481,MODE-2539,"When attempting to restore a repository backup from {{3.8.1.Final}} into a {{4.5.0.Final}} repository which contains index definitions, the following exception is raised:
+{code:java}
+main 12:00:00,301  INFO SLF4J implementation located in the classpath. It will be used by ModeShape for logging.main 12:00:00,441  INFO ModeShape version 4.6-SNAPSHOT
+main 12:00:01,694  INFO ARJUNA012163: Starting service com.arjuna.ats.arjuna.recovery.ActionStatusService on port 51302
+main 12:00:01,697  INFO ARJUNA012337: TransactionStatusManagerItem host: 127.0.0.1 port: 51302
+main 12:00:01,703  INFO ARJUNA012170: TransactionStatusManager started on port 51302 and host 127.0.0.1 with service com.arjuna.ats.arjuna.recovery.ActionStatusService
+main 12:00:03,928 ERROR Error while refreshing index definitions for the ""Backup Repository"" repository
+java.lang.NullPointerException
+	at org.modeshape.jcr.SystemContent.indexesKey(SystemContent.java:154)
+	at org.modeshape.jcr.SystemContent.indexesNode(SystemContent.java:202)
+	at org.modeshape.jcr.SystemContent.readAllIndexDefinitions(SystemContent.java:565)
+	at org.modeshape.jcr.RepositoryIndexManager.readIndexDefinitions(RepositoryIndexManager.java:819)
+	at org.modeshape.jcr.RepositoryIndexManager.register(RepositoryIndexManager.java:325)
+	at org.modeshape.jcr.RepositoryIndexManager.<init>(RepositoryIndexManager.java:135)
+	at org.modeshape.jcr.RepositoryQueryManager.<init>(RepositoryQueryManager.java:101)
+	at org.modeshape.jcr.JcrRepository$RunningState.<init>(JcrRepository.java:1208)
+	at org.modeshape.jcr.JcrRepository$RunningState.<init>(JcrRepository.java:982)
+	at org.modeshape.jcr.JcrRepository.doStart(JcrRepository.java:388)
+	at org.modeshape.jcr.JcrRepository.start(JcrRepository.java:312)
+	at org.modeshape.jcr.JcrRepository.completeRestore(JcrRepository.java:543)
+	at org.modeshape.jcr.BackupService.restoreRepository(BackupService.java:161)
+	at org.modeshape.jcr.JcrRepositoryManager.restoreRepository(JcrRepositoryManager.java:87)
+	at org.modeshape.jcr.JcrRepositoryManager.restoreRepository(JcrRepositoryManager.java:81)
+	at org.modeshape.jcr.RepositoryBackupAndRestoreTest.shouldRestoreLegacy381_2Repository(RepositoryBackupAndRestoreTest.java:149)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:606)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:47)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:44)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+{code} ",,,
+3491,MODE-2537,"ModeShape spawns separate threads for a number of different things, including the repository statistics and the repository change bus. However, if an error occurs during the repository startup or while the repository attempts to initialize, some of the already started components & thread pools are not correctly shut down, leaving potential open resources.
+
+The repository should make sure it correctly cleans up any active components in case of an unorderly shutdown.",,,
+3500,MODE-2535,"I configure three users with roles :
+userread=connect,readonly
+userwrite=connect,readwrite
+useradmin=connect,admin
+
+userread is not allowed to read content through web explorer. We got this message in log :
+
+{code:java}
+javax.jcr.AccessDeniedException: Permission denied to perform actions ""[read]"" on path <unknown>
+	at org.modeshape.jcr.JcrSession.checkPermission(JcrSession.java:1577) ~[modeshape-jcr-4.4.0.Final.jar:4.4.0.Final]
+	at org.modeshape.jcr.JcrSession.checkWorkspacePermission(JcrSession.java:1582) ~[modeshape-jcr-4.4.0.Final.jar:4.4.0.Final]
+	at org.modeshape.jcr.JcrRepository.login(JcrRepository.java:706) ~[modeshape-jcr-4.4.0.Final.jar:4.4.0.Final]
+{code}
+And Web Explorer respond this message : ""Permission denied to perform actions ""read access control content"" on path /""
+
+With WebDav or Rest, my user ""userread"" has no problem to read the content. ",,,
+3502,MODE-2533,"Given a parent node type definition that allows SNS but is not a super-type of {{\[nt:unstructured\]}}, same name siblings are not correctly created under this parent, each child node with the same name having a non-indexed path. 
+
+In other words, in this case all SNS will appear to have the same path.",,,
+3507,MODE-2530,"There a two threads: 
+* Thread A creates new nodes as children of node P and marks the created nodes as versionable.
+* Thread B gets P and iterates over all children. For each child versionManager.getBaseVersion(child.getPath()) is called if the child is versionable.
+
+When Thread A and B are running at the same time, the following error might occur:
+
+{code}
+javax.jcr.version.VersionException: Cannot find the base version with the key 'a69d00a317f1e709b57fe2-f3cf-420e-a33a-c2c40e770f14' for the node '/uploads/test7'. Make sure that any checkin/checkout operations are atomic for that node.
+	at org.modeshape.jcr.AbstractJcrNode.getBaseVersion(AbstractJcrNode.java:3300)
+	at org.modeshape.jcr.JcrVersionManager.getBaseVersion(JcrVersionManager.java:282)
+	at de.doubleslash.modeshape.versionexceptionbug.impl.GetBaseVersionRunnable.run(GetBaseVersionRunnable.java:44)
+	at java.lang.Thread.run(Thread.java:744)
+Caused by: org.modeshape.jcr.cache.NodeNotFoundInParentException: Cannot locate child node: a69d00a317f1e710377623-b2bb-4808-ade4-c8730e8024aa within parent: a69d00a317f1e7jcr:versionStorage
+	at org.modeshape.jcr.cache.document.LazyCachedNode.parentReferenceToSelf(LazyCachedNode.java:247)
+	at org.modeshape.jcr.cache.document.LazyCachedNode.getSegment(LazyCachedNode.java:284)
+	at org.modeshape.jcr.cache.document.LazyCachedNode.getPath(LazyCachedNode.java:293)
+	at org.modeshape.jcr.cache.document.LazyCachedNode.getPath(LazyCachedNode.java:292)
+	at org.modeshape.jcr.cache.document.LazyCachedNode.getPath(LazyCachedNode.java:292)
+	at org.modeshape.jcr.cache.document.LazyCachedNode.getPath(LazyCachedNode.java:292)
+	at org.modeshape.jcr.cache.document.LazyCachedNode.getPath(LazyCachedNode.java:292)
+	at org.modeshape.jcr.JcrSession.node(JcrSession.java:562)
+	at org.modeshape.jcr.JcrSession.node(JcrSession.java:507)
+	at org.modeshape.jcr.JcrSession.node(JcrSession.java:485)
+	at org.modeshape.jcr.AbstractJcrNode.getBaseVersion(AbstractJcrNode.java:3296)
+	... 3 more
+{code}
+
+Might be similiar to MODE-2418.",,,
+3510,MODE-2520,"When using a multi-column Lucene index which is updated with values for its corresponding properties, the Lucene-backed document has to be deleted and recreated with the updated values (Lucene doesn't support updates)
+
+However, certain field information (e.g. whether a field was numeric or not) is not available when reading the existing document from the indexes. This means that when the update/merge logic is performed, certain field information may be lost which can affect indexing.",,,
+3512,MODE-2517,"When a reindexing operation is performed either at startup or via an API method call (for example {{workspace.reindex}}), the indexing framework should make sure that the changes are committed to each {{ProvidedIndex}} via the {{commit}} method.
+
+Otherwise it may happen in certain cases (see forum discussion) that the reindexed information is lost.",,,
+3540,MODE-2515,"When running a query against an index which has more than 100 entries and limiting that query via the {{setLimit}} method, the maximum number of results is always 100, even if the limit is higher than this value.",,,
+3542,MODE-2514,"When configuring a FS connector with a filter and preconfigured projection which doesn't match the file filter:
+{code:javascript}
+ ""json-filter"" : {
+            ""classname"" : ""filesystem"",
+            ""directoryPath"" : ""target/federation/files-json-filter"",
+            ""projections"" : [ ""default:/json_filter => /"" ],
+            ""enableEvents"" : true,
+            ""cacheTtlSeconds"" : 0,
+            ""inclusionPattern"" : "".+[.]json$""
+        }
+{code}
+the connector doesn't consider the preconfigured projection, failing with error messages like:
+{code:java}
+java.lang.AssertionError: Found a child reference in / to a non-existant child {}json_filter
+	at org.modeshape.jcr.JcrSession.cachedNode(JcrSession.java:629)
+	at org.modeshape.jcr.JcrSession.node(JcrSession.java:658)
+	at org.modeshape.jcr.JcrSession.node(JcrSession.java:677)
+	at org.modeshape.jcr.JcrSession.getNode(JcrSession.java:861)
+	at org.modeshape.jcr.JcrSession.getNode(JcrSession.java:844)
+	at org.modeshape.jcr.AbstractJcrRepositoryTest.assertNode(AbstractJcrRepositoryTest.java:119)
+{code}
+",,,
+3545,MODE-2511,"Calling {{orderBefore}} on children of node which supports ordering but disallows same name siblings causes {{session.save()}} to fail (NPE on WritableSessionCache:1033).
+
+The ""patch"" with test is attached.",,,
+3547,MODE-2510,"If {{\[jcr:path\]}} indexes are defined for an index provider and node type and that node type supports SNS, reordering those same name sibling children is not reflected in the path indexes.
+
+For example:
+{code}
+childA       (id=1)
+childB       (id=2)
+childC       (id=3)
+childB[2]    (id=4)
+childB[3]    (id=5)
+childD       (id=6)
+childE       (id=7)
+childB[4]    (id=8)
+{code}
+
+reordering childB\[4\] before childC would result in:
+
+{code}
+childA       (id=1)
+childB       (id=2)
+childB[2]    (id=8)
+childC       (id=3)
+childB[3]    (id=4)
+childB[4]    (id=5)
+childD       (id=6)
+childE       (id=7)
+{code}
+
+The current {{NodeReordered}} events do not contain enough information for an index to be able to perform the necessary changes, which affect not only the source and target node, but other nodes in the hierarchy as well.
+
+See the discussion on https://github.com/ModeShape/modeshape/pull/1469 for more information.",,,
+3557,MODE-2504,"When one calls {{orderBefore()}} on two separately imported nodes, the subsequent call of {{session.nodeExists()}} fails on non-existing siblings of these nodes:
+
+{code}
+java.lang.NullPointerException
+        at org.modeshape.jcr.cache.document.SessionChildReferences.getChild(SessionChildReferences.java:107)
+        at org.modeshape.jcr.cache.document.AbstractChildReferences.getChild(AbstractChildReferences.java:50)
+        at org.modeshape.jcr.JcrSession.cachedNode(JcrSession.java:622)
+        at org.modeshape.jcr.JcrSession.node(JcrSession.java:656)
+        at org.modeshape.jcr.JcrSession.node(JcrSession.java:675)
+        at org.modeshape.jcr.JcrSession.nodeExists(JcrSession.java:949)
+{code}
+
+Calling {{save()}} immediately after {{orderBefore()}} works as a workaround, but one we can't use in our (client) code.
+
+The code runs fine on Jackrabbit. The patch reproducing the issue is attached.",,,
+3564,MODE-2499,"When executing queries from ModeShape Explorer, the default dialect is JCR-SQL2. This works fine for a valid JCR-SQL2 query string. However, if after executing a JCR-SQL2 query the type of the query is changed from the drop-down and the same JCR-SQL2 string is run, the Explorer doesn't validate that the query string is actually a valid dialect.",,,
+3566,MODE-2498,"I'm running into an issue with the following example node types, indexes and query:
+
+{noformat}
+
+mix:custom > mix:title
+  - nt:a (string)
+mix:custom2 > mix:title
+  - nt:b (string)
+
+<index name=""custom_names"" provider-name=""local"" synchronous=""true"" node-type=""mix:custom"" columns=""jcr:name(NAME)"" />
+<index name=""custom2_names"" provider-name=""local"" synchronous=""true"" node-type=""mix:custom2"" columns=""jcr:name(NAME)"" />
+
+SELECT * FROM [mix:custom] as custom where custom.[jcr:name] = 'myFirstBook'
+
+{noformat}
+
+This fails to find any nodes even though one exists. If I remove the 'custom2_names' index the query works. 
+
+The plan for the failed query is
+
+{noformat}
+JCR-SQL2 -> SELECT * FROM [mix:custom] as custom where custom.[jcr:name] = 'myFirstBook'
+AQM -> SELECT * FROM [mix:custom] AS custom WHERE custom.[jcr:name] = 'myFirstBook'
+ plan -> Access [custom]
+  Project [custom] <PROJECT_COLUMNS=[custom.[jcr:title], custom.[jcr:description], custom.[mode:localName], custom.[mode:id], custom.[mode:depth], custom.[jcr:score], custom.[jcr:path], custom.[jcr:name]], PROJECT_COLUMN_TYPES=[STRING, STRING, STRING, STRING, LONG, DOUBLE, STRING, STRING]>
+    Select [custom] <SELECT_CRITERIA=NAME(custom) = 'myFirstBook'>
+      Select [custom] <SELECT_CRITERIA=custom.[jcr:mixinTypes] = 'mix:custom'>
+        Source [custom] <SOURCE_NAME=__ALLNODES__, SOURCE_ALIAS=custom, SOURCE_COLUMNS=[jcr:isCheckedOut(BOOLEAN), jcr:defaultPrimaryType(STRING), mode:uri(STRING), mode:lockingSession(STRING), jcr:etag(STRING), jcr:created(DATE), jcr:sameNameSiblings(BOOLEAN), jcr:encoding(STRING), jcr:workspace(STRING), jcr:activityTitle(STRING), jcr:mergeFailed(STRING), jcr:frozenMixinTypes(STRING), jcr:isQueryOrderable(BOOLEAN), jcr:lastModifiedBy(STRING), jcr:childVersionHistory(STRING), mode:synchronous(BOOLEAN), jcr:repository(STRING), mode:derivedAt(DATE), jcr:lastModified(DATE), jcr:successors(STRING), jcr:availableQueryOperators(STRING), mode:derivedFrom(STRING), jcr:primaryItemName(STRING), mode:isSessionScoped(BOOLEAN), jcr:frozenUuid(STRING), jcr:isFullTextSearchable(BOOLEAN), jcr:defaultValues(STRING), mode:sharedUuid(STRING), jcr:predecessors(STRING), jcr:content(STRING), mode:projectedNodeKey(STRING), jcr:language(STRING), jcr:valueConstraints(STRING), mode:sha1(STRING), jcr:activity(STRING), jcr:requiredPrimaryTypes(STRING), jcr:baseVersion(STRING), jcr:requiredType(STRING), jcr:autoCreated(BOOLEAN), jcr:isAbstract(BOOLEAN), mode:externalNodeKey(STRING), jcr:hasOrderableChildNodes(BOOLEAN), mode:lockToken(STRING), mode:kind(STRING), mode:alias(STRING), mode:columnTypeName(STRING), jcr:text(STRING), jcr:mimeType(STRING), mode:workspace(STRING), jcr:data(BINARY), jcr:port(STRING), jcr:protected(BOOLEAN), jcr:primaryType(STRING), mode:expirationDate(DATE), jcr:id(STRING), privileges(STRING), jcr:host(STRING), jcr:lifecyclePolicy(STRING), jcr:versionHistory(STRING), jcr:mixinTypes(STRING), jcr:isQueryable(BOOLEAN), jcr:mandatory(BOOLEAN), jcr:lockIsDeep(BOOLEAN), jcr:currentLifecycleState(STRING), jcr:nodeTypeName(STRING), jcr:isMixin(BOOLEAN), name(STRING), jcr:messageId(STRING), jcr:uuid(STRING), jcr:multiple(BOOLEAN), jcr:title(STRING), jcr:onParentVersion(STRING), mode:nodeTypeName(STRING), jcr:supertypes(STRING), jcr:protocol(STRING), mode:propertyName(STRING), jcr:frozenPrimaryType(STRING), jcr:lockOwner(STRING), jcr:createdBy(STRING), jcr:isDeep(BOOLEAN), jcr:hold(STRING), jcr:configuration(STRING), jcr:description(STRING), jcr:statement(STRING), mode:isHeldBySession(BOOLEAN), mode:workspaces(STRING), jcr:copiedFrom(STRING), jcr:retentionPolicy(STRING), jcr:root(STRING), jcr:versionableUuid(STRING), mode:generated(BOOLEAN), mode:localName(STRING), mode:id(STRING), mode:depth(LONG), jcr:score(DOUBLE), jcr:path(STRING), jcr:name(STRING)]>
+          Index [custom] <INDEX_SPECIFICATION=custom2_names, provider=local, cost~=100, cardinality~=0, selectivity~=NaN, constraints=[NAME(custom) = 'myFirstBook'], INDEX_USED=true>
+          Index [custom] <INDEX_SPECIFICATION=custom_names, provider=local, cost~=100, cardinality~=1, selectivity~=1.0, constraints=[NAME(custom) = 'myFirstBook']>
+
+Result columns: 
+ custom.[jcr:title]
+ custom.[jcr:description]
+ custom.[mode:localName]
+ custom.[mode:id]
+ custom.[mode:depth]
+ custom.[jcr:score]
+ custom.[jcr:path]
+ custom.[jcr:name]
+{noformat}
+
+As you can see the plan is selecting the custom2_names index even though it is not the best one.",,,
+3572,MODE-2497,"When performing SQL2 queries containing strings with the german ß symbol, the query is not parsed correctly.
+
+{noformat}
+Exception when handling request.: javax.jcr.query.InvalidQueryException: The JCR-SQL2 query ""SELECT metadatanode.*, document.'jcr:created' FROM [tresorxml:element] AS metadatanode INNER JOIN [tresorxml:document] AS document ON ISDESCENDANTNODE(metadatanode, document) WHERE NAME(metadatanode) = 'xaip:metaDataSection' AND PATH(document) LIKE '/tresorxml:vault[5]/My Folders/?/%' AND DEPTH(document) = CAST(4 AS LONG) ORDER BY document.'jcr:created' DESC"" is not well-formed: Unexpected token 'AND' at line 1, column 250
+{noformat}
+
+The reason for this is that the tokeniser parses queries in a case-insensitive manner, and the JVM converts ß to SS in upper-case (see e.g. http://www.the-interweb.com/serendipity/index.php?/archives/80-Converting-strings-to-upper-case-is-tricky.html ).
+
+The result is the upper-case string is longer than the lower-case version. This sends the indexes out of kilter within the TokenStream class when using case insensitive tokenising.
+
+The solution is to override the match method in the CaseInsensitiveToken to convert the current token to upper-case, rather than storing an upper-case version of the entire input string, which may not have the same indexes as the lower-case version.
+
+",,,
+3574,MODE-2495,"When using user transactions which are shared by multiple threads - i.e. one thread starts a transaction, makes some repository changes *but another thread* commits this transaction - the changes made by the ""owner"" thread are not visible to the outside.",,,
+3579,MODE-2494,"With particularly complex SQL2 queries (see example below), an assertion fails in ScanningQueryEngine:
+{code:java}
+java.lang.AssertionError
+	at org.modeshape.jcr.query.engine.ScanningQueryEngine.createNodeSequence(ScanningQueryEngine.java:688)
+	at org.modeshape.jcr.query.engine.ScanningQueryEngine.createNodeSequence(ScanningQueryEngine.java:801)
+	at org.modeshape.jcr.query.engine.ScanningQueryEngine.executeOptimizedQuery(ScanningQueryEngine.java:506)
+	at org.modeshape.jcr.query.engine.ScanningQueryEngine.execute(ScanningQueryEngine.java:324)
+	at org.modeshape.jcr.RepositoryQueryManager$1.execute(RepositoryQueryManager.java:181)
+	at org.modeshape.jcr.query.JcrQuery.execute(JcrQuery.java:118)
+	at org.modeshape.jcr.query.JcrQuery.execute(JcrQuery.java:43)
+	at org.modeshape.jcr.JcrQueryManagerTest.shouldBeAbleToCreateAndExecuteJcrSql2QueryWithTwoLeftOuterJoinsOnIsChildNodeWithSubsequentIsDescendantNode(JcrQueryManagerTest.java:2671)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:47)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:44)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at org.junit.rules.RunRules.evaluate(RunRules.java:20)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:271)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:70)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:50)
+	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:238)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:63)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:236)
+	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:53)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:229)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:309)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:160)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:78)
+	at com.intellij.rt.execution.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:212)
+	at com.intellij.rt.execution.junit.JUnitStarter.main(JUnitStarter.java:68)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at com.intellij.rt.execution.application.AppMain.main(AppMain.java:140)
+{code}
+An example query (using the test pack dataset) is:
+{code:sql}
+SELECT parent.[jcr:path], child1.[jcr:name], desc.[jcr:name] FROM [nt:unstructured] AS parent
+LEFT OUTER JOIN [nt:unstructured] AS child1 ON ISCHILDNODE(child1,parent) 
+INNER JOIN [nt:unstructured] AS desc on ISCHILDNODE(desc, child1) 
+LEFT OUTER JOIN [nt:unstructured] AS child2 ON ISCHILDNODE(child2,parent)
+WHERE ISCHILDNODE(parent,'/') 
+AND NAME(child2) = 'Hybrid' 
+AND NAME(desc) LIKE 'Nissan%'
+{code}
+
+I have narrowed it down to the case where two joins are made on the same child node ('child1' and 'child2' in the query above) and then a subsequent join is made on a child or descendant of one of these nodes (desc).
+
+The query works when the join on desc is not included, or when only one of the joins on child1 & child2 are included.
+
+It seems to be related to the query optimisation code which sometimes reverses the left and right side of the joins.
+
+Verified to be an issue since at least 4.1.0 and is currently still an issue on 4.4.",,,
+3581,MODE-2493,"ModeShape attempts to roll-back transactions whenever an unexpected exception is caught during a session save or during one of the operations executed at repository startup.
+
+When using ModeShape managed transactions, if such a transaction throws an exception during {{tx.commit}}, depending on the case (see linked issue for an example) some other party (most notably AS or ISPN) can rollback the transaction in response.
+ 
+If that is the case, ModeShape should not attempt to {{rollback}} the transaction again (which will fail) because this will hide the original cause of the failure. In such cases, ModeShape should make sure the original exception (which triggered the rollback in the first place) is sent back to the caller.",,,
+3582,MODE-2491,"Given a node with a multi-value property, the following query never returns any result.
+
+{code}
+SELECT * FROM [scheme:type] AS t WHERE LOWER(t.multiValue) = 'lowercase'
+{code}
+
+Query returns results as soon as LOWER operand is removed. 
+
+Example code 
+{code:java}
+
+class Runner {
+
+    public static void main(String[] args) throws Exception {
+        Session session = getSession();
+        prepareRepository(session);
+
+        createNode(new MyValueObject(""1"", new String[] {""A"", ""B""}), session);
+        createNode(new MyValueObject(""2"", new String[] {""C"", ""b""}), session);
+        session.save();
+        session.logout();
+
+        Session session2 = getSession();
+        javax.jcr.query.Query query = session2.getWorkspace().getQueryManager().createQuery(""select * from [namespace:mymixin] as m WHERE LOWER(m.titles) = 'b'"", javax.jcr.query.Query.JCR_SQL2);
+        QueryResult queryResult = query.execute();
+        assert queryResult.getRows().getSize() == 2;
+        session2.logout();
+    }
+
+    static private void prepareRepository(Session session) throws RepositoryException {
+        session.getWorkspace().getNamespaceRegistry().registerNamespace(""namespace"", ""http://blah.com/blah/blah"");
+        NodeTypeManager manager= session.getWorkspace().getNodeTypeManager();
+        NodeTypeTemplate template = manager.createNodeTypeTemplate();
+        template.setName(""namespace:mymixin"");
+        template.setQueryable(true);
+        template.setAbstract(false);
+        template.setMixin(true);
+        manager.registerNodeType(template, false);
+    }
+
+    static  private Node createNode(MyValueObject vo, Session session) throws RepositoryException {
+
+        final Node node;
+        node = session.getRootNode().addNode(vo.getId());
+        node.addMixin(""namespace:mymixin"");
+
+        node.setProperty(""titles"", vo.getTitles());
+        return node;
+    }
+
+    private static Session getSession() //Create new JCR Session
+
+    static class MyValueObject {
+        private final String id;
+
+        private final String[] titles;
+
+        public MyValueObject(String id, String[] titles) {
+            this.id = id;
+            this.titles = titles;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String[] getTitles() {
+            return titles;
+        }
+    }
+}
+{code}",,,
+3584,MODE-2490,"The following query causes a NullPointerException if one of the fields {{field1}} or {{field2}} holds a null value. Problem disappears when one of the fields is removed from order by clause. 
+
+{code}
+SELECT * FROM [scheme:type] AS t ORDER BY t.field1 ASC, t.field2 ASC
+{code}
+
+{code}
+java.lang.NullPointerException
+	at org.mapdb.DataOutput2.writeUTF(DataOutput2.java:147)
+	at org.mapdb.Serializer$1.serialize(Serializer.java:70)
+	at org.mapdb.Serializer$1.serialize(Serializer.java:67)
+	at org.modeshape.jcr.query.Tuples$Tuple2Serializer.serialize(Tuples.java:257)
+	at org.modeshape.jcr.query.Tuples$Tuple2Serializer.serialize(Tuples.java:238)
+	at org.modeshape.jcr.index.local.MapDB$UniqueKeyBTreeSerializer.serialize(MapDB.java:434)
+	at org.mapdb.BTreeMap$NodeSerializer.serialize(BTreeMap.java:385)
+	at org.mapdb.BTreeMap$NodeSerializer.serialize(BTreeMap.java:288)
+	at org.mapdb.Store.serialize(Store.java:154)
+	at org.mapdb.StoreWAL.update(StoreWAL.java:403)
+	at org.mapdb.Caches$HashTable.update(Caches.java:269)
+	at org.mapdb.BTreeMap.put2(BTreeMap.java:746)
+	at org.mapdb.BTreeMap.put(BTreeMap.java:643)
+	at org.modeshape.jcr.query.BufferManager$CloseableSortingBufferWithDuplicates.put(BufferManager.java:698)
+	at org.modeshape.jcr.query.BufferManager$CloseableSortingBufferWithDuplicates.put(BufferManager.java:673)
+	at org.modeshape.jcr.query.engine.process.BufferingSequence.loadAll(BufferingSequence.java:131)
+	at org.modeshape.jcr.query.engine.process.SortingSequence.initialize(SortingSequence.java:81)
+	at org.modeshape.jcr.query.engine.process.SortingSequence.nextBatch(SortingSequence.java:67)
+	at org.modeshape.jcr.query.NodeSequence$6.nextBatch(NodeSequence.java:672)
+	at org.modeshape.jcr.query.engine.process.DelegatingSequence.nextBatch(DelegatingSequence.java:48)
+	at org.modeshape.jcr.query.engine.process.SecureSequence.nextBatch(SecureSequence.java:46)
+	at org.modeshape.jcr.query.engine.process.RestartableSequence$1.nextBatch(RestartableSequence.java:84)
+	at org.modeshape.jcr.query.engine.process.RestartableSequence.nextBatch(RestartableSequence.java:119)
+	at org.modeshape.jcr.query.JcrQueryResult$QueryResultIterator.findNextBatch(JcrQueryResult.java:257)
+	at org.modeshape.jcr.query.JcrQueryResult$QueryResultIterator.hasNext(JcrQueryResult.java:241)
+
+{code}
+",,,
+3588,MODE-2485,"ModeShape uses several background GC tasks to cleanup repository data. One such task is the JCR lock garbage collector which cleans up orphaned locks from the repository. These tasks run periodically at either a preset or configured time interval. 
+
+When running in a cluster however, it can very well happen that these GC jobs fire all at the same time (or very close together) so that essentially all compete for the same ISPN data. In the case of the Lock GC collector, all of these tasks will attempt to lock the {{mode:locks}} root parent key first. If this happens, depending on how long a job takes, ISPN may fire {{TimeoutExceptions}} for the competing locks:
+
+{code:java}
+00:05:47,157 ERROR [org.modeshape.jcr.RepositoryLockManager] (modeshape-gc-8-thread-1) Error while cleaning up locks for the ""dv"" repository: org.modeshape.jcr.cache.WrappedException: org.modeshape.jcr.TimeoutException: Unable to acquire storage locks: [d7d2e6b317f1e7mode:locks]
+	at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:529) [modeshape-jcr-3.8.3.GA-redhat-3.jar:3.8.3.GA-redhat-3]
+	at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:421) [modeshape-jcr-3.8.3.GA-redhat-3.jar:3.8.3.GA-redhat-3]
+	at org.modeshape.jcr.RepositoryLockManager.cleanupLocks(RepositoryLockManager.java:179) [modeshape-jcr-3.8.3.GA-redhat-3.jar:3.8.3.GA-redhat-3]
+	at org.modeshape.jcr.JcrRepository$RunningState.cleanUpLocks(JcrRepository.java:1797) [modeshape-jcr-3.8.3.GA-redhat-3.jar:3.8.3.GA-redhat-3]
+	at org.modeshape.jcr.JcrRepository$LockGarbageCollectionTask.doRun(JcrRepository.java:2132) [modeshape-jcr-3.8.3.GA-redhat-3.jar:3.8.3.GA-redhat-3]
+	at org.modeshape.jcr.JcrRepository$BackgroundRepositoryTask.run(JcrRepository.java:2102) [modeshape-jcr-3.8.3.GA-redhat-3.jar:3.8.3.GA-redhat-3]
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:471) [rt.jar:1.7.0_75]
+	at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:304) [rt.jar:1.7.0_75]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$301(ScheduledThreadPoolExecutor.java:178) [rt.jar:1.7.0_75]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:293) [rt.jar:1.7.0_75]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145) [rt.jar:1.7.0_75]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615) [rt.jar:1.7.0_75]
+	at java.lang.Thread.run(Thread.java:745) [rt.jar:1.7.0_75]
+Caused by: org.modeshape.jcr.TimeoutException: Unable to acquire storage locks: [d7d2e6b317f1e7mode:locks]
+	at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:488) [modeshape-jcr-3.8.3.GA-redhat-3.jar:3.8.3.GA-redhat-3]
+	... 12 more
+Caused by: org.infinispan.util.concurrent.TimeoutException: Unable to acquire storage locks: [d7d2e6b317f1e7mode:locks]
+	at org.modeshape.jcr.cache.document.WritableSessionCache.lockNodes(WritableSessionCache.java:1449) [modeshape-jcr-3.8.3.GA-redhat-3.jar:3.8.3.GA-redhat-3]
+	at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:451) [modeshape-jcr-3.8.3.GA-redhat-3.jar:3.8.3.GA-redhat-3]
+	... 12 more
+{code}
+
+We should make sure that for the GC jobs, whenever a {{TimeoutException}} occurs due to ISPN not being able to lock an entry, the exception is only logged and does not break the underlying node. The GC job is then re-ran later on, based on the configured timing.",,,
+3614,MODE-2484,"When setting binary values on properties, ModeShape uses a reference counting mechanism to optimize multiple properties using the same value.
+This mechanism is implemented via ""special"" ISPN documents which hold the {{SHA1}} of the binary value and the {{BinaryKey}}. 
+
+Currently, whenever a binary usage changes, ModeShape will attempt to read & update this document from ISPN *within the context of an existing transaction*. When making a set of changes, ModeShape preemptively locks *the nodes* in ISPN which are part of those changes to ensure strong serializable consistency. Those locks are places only on node keys however, not on *binary keys*. The binary keys are locked later, one by one, during the logic which processes the node changes.
+
+The above means that there can be 2 transactions: T1 and T2, both operating on disjoint nodes keys which can intersect on the binary keys they lock later on. This intersection can lead to ISPN deadlocks, resulting in exceptions similar to:
+
+{code:java}
+00:00:01,117 ERROR [org.infinispan.interceptors.InvocationContextInterceptor] (OOB-6,shared=tcp) ISPN000136: Execution error: org.infinispan.util.concurrent.TimeoutException: Unable to acquire lock after [45 seconds] on key [9e504611ee3f17e8ab6265af313358d7ad487b5d-ref] for requestor [GlobalTransaction:<dvqe08:server08/modeshape>:288724:remote]! Lock held by [GlobalTransaction:<dvqe10:server10/modeshape>:59532:remote]
+	at org.infinispan.util.concurrent.locks.LockManagerImpl.lock(LockManagerImpl.java:213)
+	at org.infinispan.util.concurrent.locks.LockManagerImpl.acquireLock(LockManagerImpl.java:186)
+	at org.infinispan.interceptors.locking.AbstractTxLockingInterceptor.lockKeyAndCheckOwnership(AbstractTxLockingInterceptor.java:192)
+	at org.infinispan.interceptors.locking.AbstractTxLockingInterceptor.lockAndRegisterBackupLock(AbstractTxLockingInterceptor.java:129)
+	at org.infinispan.interceptors.locking.PessimisticLockingInterceptor.visitLockControlCommand(PessimisticLockingInterceptor.java:253)
+	at org.infinispan.commands.control.LockControlCommand.acceptVisitor(LockControlCommand.java:131)
+	at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:120)
+	at org.infinispan.interceptors.base.CommandInterceptor.handleDefault(CommandInterceptor.java:134)
+	at org.infinispan.commands.AbstractVisitor.visitLockControlCommand(AbstractVisitor.java:177)
+	at org.infinispan.commands.control.LockControlCommand.acceptVisitor(LockControlCommand.java:131)
+	at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:120)
+	at org.infinispan.interceptors.TxInterceptor.invokeNextInterceptorAndVerifyTransaction(TxInterceptor.java:128)
+	at org.infinispan.interceptors.TxInterceptor.visitLockControlCommand(TxInterceptor.java:186)
+	at org.infinispan.commands.control.LockControlCommand.acceptVisitor(LockControlCommand.java:131)
+	at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:120)
+	at org.infinispan.interceptors.base.CommandInterceptor.handleDefault(CommandInterceptor.java:134)
+{code}",,,
+3640,MODE-2478,"The following exception is thrown when trying to read data created by Modeshape 4.2.0 (WF Kit) using Modeshape 4.3.0 (WF Kit).
+
+{noformat}
+Caused by: org.infinispan.persistence.spi.PersistenceException: java.lang.ClassCastException: java.lang.String cannot be cast to org.jboss.marshalling.Externalizer  
+    at org.infinispan.marshall.core.MarshalledEntryImpl.unmarshall(MarshalledEntryImpl.java:116) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.marshall.core.MarshalledEntryImpl.getValue(MarshalledEntryImpl.java:61) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.persistence.PersistenceUtil.convert(PersistenceUtil.java:136) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.persistence.PersistenceUtil$4.compute(PersistenceUtil.java:106) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.container.DefaultDataContainer$EquivalentConcurrentExtendedMap$2.apply(DefaultDataContainer.java:477) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.container.DefaultDataContainer$EquivalentConcurrentExtendedMap$2.apply(DefaultDataContainer.java:474) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commons.util.concurrent.jdk8backported.EquivalentConcurrentHashMapV8.compute(EquivalentConcurrentHashMapV8.java:1899) [infinispan-commons.jar:7.2.0.Final]  
+    at org.infinispan.container.DefaultDataContainer$EquivalentConcurrentExtendedMap.compute(DefaultDataContainer.java:473) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.container.DefaultDataContainer.compute(DefaultDataContainer.java:255) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.persistence.PersistenceUtil.loadAndStoreInDataContainer(PersistenceUtil.java:90) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.CacheLoaderInterceptor.loadIfNeeded(CacheLoaderInterceptor.java:216) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.CacheLoaderInterceptor.visitDataCommand(CacheLoaderInterceptor.java:147) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.CacheLoaderInterceptor.visitGetKeyValueCommand(CacheLoaderInterceptor.java:101) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:97) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.EntryWrappingInterceptor.visitDataReadCommand(EntryWrappingInterceptor.java:130) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.EntryWrappingInterceptor.visitGetKeyValueCommand(EntryWrappingInterceptor.java:120) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:97) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.locking.PessimisticLockingInterceptor.visitDataReadCommand(PessimisticLockingInterceptor.java:70) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.locking.AbstractLockingInterceptor.visitGetKeyValueCommand(AbstractLockingInterceptor.java:70) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:97) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.base.CommandInterceptor.handleDefault(CommandInterceptor.java:111) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commands.AbstractVisitor.visitGetKeyValueCommand(AbstractVisitor.java:86) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:97) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.TxInterceptor.enlistReadAndInvokeNext(TxInterceptor.java:346) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.TxInterceptor.visitGetKeyValueCommand(TxInterceptor.java:318) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:97) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.base.CommandInterceptor.handleDefault(CommandInterceptor.java:111) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commands.AbstractVisitor.visitGetKeyValueCommand(AbstractVisitor.java:86) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:97) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.statetransfer.StateTransferInterceptor.handleTopologyAffectedCommand(StateTransferInterceptor.java:369) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.statetransfer.StateTransferInterceptor.handleDefault(StateTransferInterceptor.java:354) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commands.AbstractVisitor.visitGetKeyValueCommand(AbstractVisitor.java:86) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:97) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.CacheMgmtInterceptor.visitDataReadCommand(CacheMgmtInterceptor.java:103) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.CacheMgmtInterceptor.visitGetKeyValueCommand(CacheMgmtInterceptor.java:91) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:97) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.InvocationContextInterceptor.handleAll(InvocationContextInterceptor.java:102) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.InvocationContextInterceptor.handleDefault(InvocationContextInterceptor.java:71) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commands.AbstractVisitor.visitGetKeyValueCommand(AbstractVisitor.java:86) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.interceptors.InterceptorChain.invoke(InterceptorChain.java:336) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.cache.impl.CacheImpl.get(CacheImpl.java:430) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.cache.impl.CacheImpl.get(CacheImpl.java:422) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.schematic.internal.CacheSchematicDb.get(CacheSchematicDb.java:72) [modeshape-schematic-4.3.0.Final.jar:4.3.0.Final]  
+    at org.modeshape.jcr.cache.document.LocalDocumentStore.get(LocalDocumentStore.java:71) [modeshape-jcr-4.3.0.Final.jar:4.3.0.Final]  
+    at org.modeshape.jcr.cache.RepositoryCache.<init>(RepositoryCache.java:172) [modeshape-jcr-4.3.0.Final.jar:4.3.0.Final]  
+    at org.modeshape.jcr.JcrRepository$RunningState.<init>(JcrRepository.java:1136) [modeshape-jcr-4.3.0.Final.jar:4.3.0.Final]  
+    at org.modeshape.jcr.JcrRepository$RunningState.<init>(JcrRepository.java:978) [modeshape-jcr-4.3.0.Final.jar:4.3.0.Final]  
+    at org.modeshape.jcr.JcrRepository.doStart(JcrRepository.java:388) [modeshape-jcr-4.3.0.Final.jar:4.3.0.Final]  
+    at org.modeshape.jcr.JcrRepository.login(JcrRepository.java:651) [modeshape-jcr-4.3.0.Final.jar:4.3.0.Final]  
+    ... 105 more  
+Caused by: java.lang.ClassCastException: java.lang.String cannot be cast to org.jboss.marshalling.Externalizer  
+    at org.jboss.marshalling.river.RiverUnmarshaller.doReadClassDescriptor(RiverUnmarshaller.java:1012)  
+    at org.jboss.marshalling.river.RiverUnmarshaller.doReadNewObject(RiverUnmarshaller.java:1256)  
+    at org.jboss.marshalling.river.RiverUnmarshaller.doReadObject(RiverUnmarshaller.java:276)  
+    at org.jboss.marshalling.river.RiverUnmarshaller.doReadObject(RiverUnmarshaller.java:209)  
+    at org.jboss.marshalling.AbstractObjectInput.readObject(AbstractObjectInput.java:41)  
+    at org.infinispan.commons.marshall.jboss.AbstractJBossMarshaller.objectFromObjectStream(AbstractJBossMarshaller.java:135) [infinispan-commons.jar:7.2.0.Final]  
+    at org.infinispan.marshall.core.VersionAwareMarshaller.objectFromByteBuffer(VersionAwareMarshaller.java:101) [infinispan-core.jar:7.2.0.Final]  
+    at org.infinispan.commons.marshall.AbstractDelegatingMarshaller.objectFromByteBuffer(AbstractDelegatingMarshaller.java:80) [infinispan-commons.jar:7.2.0.Final]  
+    at org.infinispan.marshall.core.MarshalledEntryImpl.unmarshall(MarshalledEntryImpl.java:114) [infinispan-core.jar:7.2.0.Final]  
+    ... 162 more  
+- See more at: https://developer.jboss.org/thread/259024?sr=inbox&ru=93540#sthash.lYE127Yt.dpuf
+{noformat}
+
+This appears to be a result of the WF kit using the JBoss Marshalling 4.9.0 module shipped with Wildfly 8.2.0 instead of JBoss Marshalling 4.10.0 which is required by Infinispan 7.2.0.
+
+This is currently blocking migration of a 4.2.0 modeshape repo to 4.3.0.
+",,,
+3642,MODE-2477,"Sequencing of the attached VDB fails with:
+{code}
+08:48:04,412 ERROR [org.modeshape.jcr.SequencingRunner] (modeshape-sequencer-6-thread-1) The 'teiid-vdb-sequencer' sequencer of repository 'dv' had an error while processing '/files/QT_Vanilla_Hive_Push.vdb/jcr:content/jcr:data' in workspace 'default' and generating output '/derived/teiid/vdbs/QT_Vanilla_Hive_Push.vdb': javax.jcr.nodetype.ConstraintViolationException: The mandatory property named 'vdb:path' defined in type 'vdb:marker' is missing from the node at '/derived/teiid/vdbs/QT_Vanilla_Hive_Push.vdb/Source.xmi/vdb:markers/vdb:marker'
+{code}",,,
+3644,MODE-2476,"When trying to sequence second (and later) XMI files, the sequencing fails with [1]. Attaching two xmi files that can be used to reproduce the bug.
+
+Note no such problems arise with other sequencers (XML, CND etc.)
+
+{code}
+[1]
+08:40:10,294 ERROR [org.modeshape.jcr.SequencingRunner] (modeshape-sequencer-6-thread-1) The 'teiid-model-sequencer' sequencer of repository 'dv' had an error while processing '/files/BQT1.xmi/jcr:content/jcr:data' in workspace 'default' and generating output '/derived/teiid/models/BQT1.xmi': javax.jcr.RepositoryException: The session with an ID of '275407465' has been closed and can no longer be used.
+{code}
+
+A more complete stacktrace looks like:
+{code:java}
+17:39:19,807 ERROR [org.modeshape.sequencer.teiid.VdbSequencer] (modeshape-sequencer-6-thread-4) Error reading VDB file ""/files/teiid-ms/TopPartsVDB.vdb/jcr:content/jcr:data"": The session with an ID o
+f '2a8a8297f' has been closed and can no longer be used. : javax.jcr.RepositoryException: The session with an ID of '2a8a8297f' has been closed and can no longer be used.
+        at org.modeshape.jcr.JcrSession.checkLive(JcrSession.java:321) [modeshape-jcr-3.8.3.GA-redhat-3.jar:3.8.3.GA-redhat-3]
+        at org.modeshape.jcr.JcrSession.getValueFactory(JcrSession.java:1272) [modeshape-jcr-3.8.3.GA-redhat-3.jar:3.8.3.GA-redhat-3]
+        at org.modeshape.jcr.JcrSession.getValueFactory(JcrSession.java:135) [modeshape-jcr-3.8.3.GA-redhat-3.jar:3.8.3.GA-redhat-3]
+        at org.modeshape.sequencer.teiid.model.ModelNodeWriter.writeUnresolvedReferences(ModelNodeWriter.java:207)
+        at org.modeshape.sequencer.teiid.model.ModelNodeWriter.write(ModelNodeWriter.java:161)
+        at org.modeshape.sequencer.teiid.model.ModelSequencer.sequenceModel(ModelSequencer.java:187)
+        at org.modeshape.sequencer.teiid.model.ModelSequencer.sequenceVdbModel(ModelSequencer.java:217)
+        at org.modeshape.sequencer.teiid.VdbSequencer.execute(VdbSequencer.java:163)
+        at org.modeshape.jcr.SequencingRunner.run(SequencingRunner.java:196) [modeshape-jcr-3.8.3.GA-redhat-3.jar:3.8.3.GA-redhat-3]
+        at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:471) [rt.jar:1.7.0_40]
+        at java.util.concurrent.FutureTask.run(FutureTask.java:262) [rt.jar:1.7.0_40]
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145) [rt.jar:1.7.0_40]
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615) [rt.jar:1.7.0_40]
+        at java.lang.Thread.run(Thread.java:724) [rt.jar:1.7.0_40]
+{code}",,,
+3651,MODE-2474,"When defining a binary store as follows in the WildFly configuration:
+
+{code}
+<file-binary-storage min-value-size=""40"" path=""data/odm"" relative-to=""/"" store-name=""default""/>
+{code}
+
+The configuration does not pick up on the binary store:
+
+{code}
+[standalone@localhost:9990 /] /subsystem=modeshape/repository=sample/configuration=binary-storage:read-resource
+{
+    ""outcome"" => ""success"",
+    ""result"" => {""storage-type"" => {""file-binary-storage"" => undefined}}
+}
+{code}
+
+Resulting in binaries being stored in /tmp/modeshape-binary-store
+
+If the store-name is left out it works fine.",,,
+3655,MODE-2473,"Hello modeshape team, 
+
+since we've upgraded to modeshape 4.3 we're experiencing troubles using QueryResultIterator.skip(...), i.e. we get the following exception:
+
+{code}
+java.util.NoSuchElementException
+	at org.modeshape.jcr.query.JcrQueryResult$QueryResultIterator.moveToNextRow(JcrQueryResult.java:249)
+	at org.modeshape.jcr.query.JcrQueryResult$QueryResultIterator.skip(JcrQueryResult.java:270)
+{code}
+	
+Originally our source looked like this (sql, offset, and maxResults are passed as parameters):
+{code}
+	final QueryManager queryManager = getSession().getWorkspace().getQueryManager();
+	final Query query = queryManager.createQuery(sql, Query.JCR_SQL2);
+	final QueryResult result = query.execute();
+
+	final NodeIterator nodeIterator = result.getNodes();
+	if (nodeIterator.getSize() > offset) {
+		nodeIterator.skip(offset);
+	}
+	for (int i = 0; i < maxResults && nodeIterator.hasNext(); i++) {
+		final Node node = (Node) nodeIterator.next();
+		...
+	}
+{code}
+
+Everything worked fine with modeshape 4.2, but with 4.3 we're getting a java.util.NoSuchElementException when calling nodeIterator.skip (not every time but in most of the cases). 
+
+With some debugging we've identified the cause within org.modeshape.jcr.query.engine.process.new Batch().hasNext() which has been changed according to MODE-2435. 
+{code}
+@Override
+    public boolean hasNext() {
+-   	return remainingRowCount.get() > 0 && rows.hasNext();
++       return rowsLeftInBatch.get() > 0 && rows.hasNext();
+    }
+{code}
+Currently we've implemented the following workaround which works as intended:
+{code}
+	final NodeIterator nodeIterator = result.getNodes();
+	if (nodeIterator.getSize() > offset) {
+		for (int i = 0; i < offset; i++) {
+			if (nodeIterator.hasNext()) {
+				nodeIterator.nextNode();
+			}
+		}
+	}
+	for (int i = 0; i < maxResults && nodeIterator.hasNext(); i++) {
+		final Node node = (Node) nodeIterator.next();
+		...
+	}
+{code}
+It looks like currentBatch is not set to null by QueryResultIterator.hasNext() as org.modeshape.jcr.query.engine.process.new Batch().hasNext() is not using the variable 'remainingRowCount' anymore but  'rowsLeftInBatch' instead. 
+",,,
+3662,MODE-2467,"In the latest build of Modeshape 4.3-SNAPSHOT (commit aa7398f283b55ae2d5e40b07b84ef05fc383723c)
+
+I am getting an ""Add mixin"" dialog when refreshing. Using Mozilla Firefox 38.0 on Ubuntu 15.04",,,
+3663,MODE-2465,"DDL parser should treat dollar sign (""$"") as a valid name character.
+
+This issue has been partialy addressed in MODE-1939 but id did not add dollar sign as a valid character in case of colum names.",,,
+3665,MODE-2463,"The following scenario causes a disparity between String path = node.getPath() and session.getNode(path).
+
+* Create a new session (session1)
+* Add 'testNode' as a child of root
+* Save the session
+* Logout of the session
+
+* Create a new session (session2)
+* Get the node at the path '/testNode'
+* Remove testNode
+* Re-add the node as a child of root (effectively restoring it but lets call it newTestNode for clarity), using rootNode.addNode('testNode')
+
+Observations:
+* Calling newTestNode.getPath() should return '/testNode' but in fact returns '/testNode[2]'
+* Calling session2.getNode('/testNode[2]') throws a PathNotFoundException
+* Calling session2.getNode('/testNode') returns the newTestNode
+
+It appears that the calculation for the newTestNode.getPath() is not correct for a mid-session use-case. Everything is sorted out if the session is saved after the removal and prior to the creation of newTestNode.
+
+
+
+
+
+
+
+",,,
+3667,MODE-2462,"Line 231 on org.modeshape.jboss.service.RepositoryService
+
+{code}
+                Problems problems = repositoryConfiguration.validate();
+                if (problems.isEmpty()) {
+                    LOG.debugv(""Problems with configuration for '{0}' repository: {1}"", repositoryName, problems);
+                }
+{code}",,,
+3668,MODE-2460,"The {{modeshape-web-explorer}} artifact, which produces a web fragement jar, should list the gwt-servlet dependency as well since it cannot be run in any container without it. 
+Currently this dependency is only listed for the explorer-war artifacts.",,,
+3675,MODE-2457,"I am trying to copy a locked node using session.getWorkspace().copy(). From the documentation of copy, it is stated that:
+
+{code:java}
+* @throws LockException                if a lock prevents the copy.
+{code}
+It is not entirely clear to me what that means, but looking into the code for copy, I have deduced that you need to add the lock token (to the lock manager) of the node you wish to copy.
+
+Not doing this, results in a NullPointerException (and not a LockException) because the token is not there:
+{code:java}
+Caused by: java.lang.NullPointerException
+        at java.util.concurrent.ConcurrentHashMap.hash(ConcurrentHashMap.java:333) [rt.jar:1.7.0_65]
+        at java.util.concurrent.ConcurrentHashMap.containsKey(ConcurrentHashMap.java:1016) [rt.jar:1.7.0_65]
+        at java.util.Collections$SetFromMap.contains(Collections.java:3901) [rt.jar:1.7.0_65]
+        at org.modeshape.jcr.JcrLockManager.hasLockToken(JcrLockManager.java:56) [modeshape-jcr-4.2.0.Final.jar:4.2.0.Final]
+        at org.modeshape.jcr.JcrWorkspace.copy(JcrWorkspace.java:192) [modeshape-jcr-4.2.0.Final.jar:4.2.0.Final]
+        at org.modeshape.jcr.JcrWorkspace.copy(JcrWorkspace.java:121) [modeshape-jcr-4.2.0.Final.jar:4.2.0.Final]
+{code}
+Adding the token still results in a NullPointerException and I believe it is because of this code in the copy method:
+{code:java}
+   /*
+    * Find the source node and check if it is locked
+    */
+    JcrSession sourceSession = session.spawnSession(srcWorkspace, true);
+    AbstractJcrNode sourceNode = sourceSession.node(srcPath);
+    if (session.lockManager().isLocked(sourceNode) && !session.lockManager().hasLockToken(sourceNode.getLock().getLockToken())) {
+      throw new LockException(srcAbsPath);
+    }
+{code}
+The session.lockManager() has indeed the lock token. But sourceNode.getLock().getLockToken() is still null since its lock manager is associated to the spawned session (sourceSession).
+
+So maybe the problem is that lock tokens in the lock manager of a spawned session are not inherited from the lock manager of the session it was spawned from?
+
+",,,
+3678,MODE-2456,"JcrSession.JcrPresave.aclMetadataRefresh might inadvertently disable ACL check even though nodes with ACLs still exist.
+
+1. Create a node with two ACLs (ModeShapeLexicon.ACL_COUNT is now 2)
+2. Make a copy of the node using session.getWorkspace().copy (ModeShapeLexicon.ACL_COUNT is now 2)
+3. Remove the two ACLs of the copied node (ModeShapeLexicon.ACL_COUNT is now 0)
+4. aclMetadataRefresh now disables ACL checks globally (repository().repositoryCache().setAccessControlEnabled(false))
+
+This means that no ACL check will be done on the node created in step 1 even though the node still has ACLs. I do not know if other operations than copy exhibit similar behaviour.
+",,,
+3680,MODE-2448,"Hello modeshape team, 
+
+we're having troubles with full-text search in combination with umlauts. 
+
+Generally full-text search is case insensitive, but it looks like it's case sensitive for umlauts contained in the search text. 
+
+Let's assume we have a content having a property called title with the value 'Änderung'. 
+
+Here is our example query: 
+  select * from [content] where CONTAINS(title, $searchText) 
+
+If searchText is replaced with 'änderung' then the query doesn't return any results. 
+If we change the searchText to uppercase ('ÄNDERUNG') or remove the umlaut ('nderung', 'NDERUNG') the query returns the expected results. 
+",,,
+3682,MODE-2447,"The removal of the public modeshape-distribution artifact (see https://issues.jboss.org/browse/MODE-2383 ) removed the possibility to automate download and installation of jboss-wf8-dist.zip. The public jboss-wf8-dist classifier should be reintroduced to simplify automatic download and installation of ModeShape in WildFly.
+See https://developer.jboss.org/message/921526",,,
+3695,MODE-2438,"*Short:* Method createPatternsFor(String...) in org.modeshape.jcr.AbstractJcrNode does not escape the ""+"" character.
+
+*Full:* 
+There are the nodes: 
+/folder/node+1 
+/folder/node+2 
+
+The result of calling 
+
+{code}
+folder.getNodes(""node+*"")
+{code} 
+
+will be an empty iterator because createPatternsFor(String...) does not escape the ""+"" and the resulting regular expression would be 
+{code}node+.*{code}
+Instead it has to be {code}node\\+.*{code}",,,
+3697,MODE-2436,"When using a /tree/<branch>/<path-to-commit> style path, then <branch> should be used and not HEAD. As long as <path-to-commit> exists in <branch> it should be returned.
+
+I have encountered an issue that violates the above acceptance criteria. I have a commit that exists in branch A but not branch B.  Attempting to access a file added in this commit with branch A checked out working fine, however attempting to access the file with branch B checked out causes an exception.
+
+{quote}
+17:35:14,931 WARN  [org.modeshape.connector.git.GitConnector] (default task-22) Cannot read commit ""src/lib/jquery.min.js""
+17:35:14,932 ERROR [stderr] (default task-22) javax.jcr.PathNotFoundException: The child ""jcr:content"" could not be found under ""/nogece/tree/master/src/lib/jquery.min.js"" in workspace ""default""
+{quote}",,,
+3698,MODE-2435,"JCR-SQL2 queries that contain both an order by clause and a limit (with offset) clause are incorrectly returning results when the offset exceeds the total result set size.
+
+If the order by clause is excluded the offset clause works as expected.
+
+For example assuming a queries total result set size is 10, the following query correctly returns an empty result set
+
+{noformat}
+SELECT [jcr:path] FROM [car:Car] LIMIT 10 OFFSET 15
+{noformat}
+
+but this query incorrectly returns a result set with 10 rows
+
+{noformat}
+SELECT [jcr:path] FROM [car:Car] ORDER BY [jcr:path] LIMIT 10 OFFSET 15
+{noformat}",,,
+3702,MODE-2430,"We are using ModeShape 4.1.0.Final and Infinispan 6.0.2.Final to build out our content repository. After enabled eviction with maxEntries using singleFile store, I notice that some contents within JCR properties are truncated when number of JCR nodes are exceeded the maxEntries. I don't notice any issues if the number of JCR nodes are less than the eviction maxEntries.",,,
+3707,MODE-2428,"When a property is updated (with property.setValue), the credentials are never checked. AbstractJcrProperty (or its set of sub-classes) seems to be missing any credential check.
+ 
+I'm assuming this is by design, but this seems to be a security loophole.",,,
+3711,MODE-2426,"I am having an issue where the GIT connector isn't showing changes to a federated GIT repository.
+
+{code}
+            <cache-container name=""modeshape"">
+                <local-cache name=""nogece"">
+                    <transaction mode=""NON_XA""/>
+                    <file-store passivation=""false"" purge=""false"" relative-to=""jboss.server.data.dir"" path=""modeshape/store/nogece""/>
+                </local-cache>
+                <local-cache name=""carroll"">
+                    <transaction mode=""NON_XA""/>
+                    <file-store passivation=""false"" purge=""false"" relative-to=""jboss.server.data.dir"" path=""modeshape/store/carroll""/>
+                </local-cache>
+                <local-cache name=""zing"">
+                    <transaction mode=""NON_XA""/>
+                    <file-store passivation=""false"" purge=""false"" relative-to=""jboss.server.data.dir"" path=""modeshape/store/zing""/>
+                </local-cache>
+            </cache-container>
+{code}
+
+{code}
+            <repository name=""carroll"">
+                <external-sources>
+                    <source name=""git"" classname=""org.modeshape.connector.git.GitConnector"" directoryPath=""C:\\CHP\\git\\carroll"">
+                        <projection>
+                            default:/carroll =&gt; /
+                        </projection>
+                    </source>
+                </external-sources>
+            </repository>
+            <repository name=""nogece"">
+                <external-sources>
+                    <source name=""git"" classname=""org.modeshape.connector.git.GitConnector"" directoryPath=""C:\\CHP\\git\\nogece"" cacheTtlSeconds=""60"">
+                        <projection>
+                            default:/nogece =&gt; /
+                        </projection>
+                    </source>
+                </external-sources>
+            </repository>
+            <repository name=""zing"">
+                <external-sources>
+                    <source name=""git"" classname=""org.modeshape.connector.git.GitConnector"" directoryPath=""C:\\CHP\\git\\zing"">
+                        <projection>
+                            default:/zing =&gt; /
+                        </projection>
+                    </source>
+                </external-sources>
+            </repository>
+{code}
+",,,
+3715,MODE-2425,"Should a repository contains the following nodes:
+
+{code}
+/myvdb1 [vdb:virtualDatabase]
+/myvdb2 [vdb:virtualDatabase]
+/myvdb3 [vdb:virtualDatabase]
+{code}
+
+In Modeshape 3.8, I can do the following query and find 3 results:
+{code}
+SELECT * FROM [nt:base] WHERE PATH() IN ('/myvdb1', '/myvbd2', 'myvdb3')
+{code}
+
+In Modeshape 4.1, this query returns 0 results.
+
+If I run the following query, I can get back 3 results (1 for each query) as expected:
+{code}
+SELECT * FROM [nt:base] WHERE PATH() = '/myvdb1'
+SELECT * FROM [nt:base] WHERE PATH() = '/myvdb2'
+SELECT * FROM [nt:base] WHERE PATH() = '/myvdb3'
+{code}
+
+Therefore, it seems the IN keyword no longer works with the PATH function if the values are simple strings. I note that there are no explicit tests for this in the modeshape codebase.
+
+Additionally, queries like the following that use PATH/IN with a subquery do return the correct result.
+{code}
+SELECT * FROM [nt:base] WHERE PATH() IN (
+    SELECT * FROM [vdb:virtualDatabase]
+)
+{code}",,,
+3717,MODE-2424,"Locking a node and trying to add a new mixin type while the node is locked results in a ConstraintViolationException.
+
+There are a lock check in the addMixin(String mixinName) method which consider the lockowner and a lock check in the canAddMixin(String mixinName) method which only looks if the node is locked or not and returns false.
+
+The lock check in the canAddMixin methods should also consider the lockowner.",,,
+3722,MODE-2444,"When importing from an SAP HANA DB using the Teiid Connection importer in Designer, I get an ""Unparsable table body constraint error"". The highlighted row is: 
+
+{code:sql}
+INDEX string(1024) NOT NULL OPTIONS (NAMEINSOURCE '""INDEX""', NATIVE_TYPE 'NVARCHAR'),
+{code}
+
+for the CREATE statement:
+{code:sql}
+CREATE FOREIGN TABLE ""_SYS_STATISTICS.GLOBAL_COLUMN_TABLES_SIZE"" (
+	SNAPSHOT_ID timestamp NOT NULL OPTIONS (NAMEINSOURCE '""SNAPSHOT_ID""', CHAR_OCTET_LENGTH 16, NATIVE_TYPE 'TIMESTAMP'),
+	INDEX string(1024) NOT NULL OPTIONS (NAMEINSOURCE '""INDEX""', NATIVE_TYPE 'NVARCHAR'),
+	SERVER_TIMESTAMP timestamp OPTIONS (NAMEINSOURCE '""SERVER_TIMESTAMP""', CHAR_OCTET_LENGTH 16, NATIVE_TYPE 'TIMESTAMP'),
+	DATA_SEQ integer OPTIONS (NAMEINSOURCE '""DATA_SEQ""', CHAR_OCTET_LENGTH 4, NATIVE_TYPE 'INTEGER'),
+	ESTIMATED_MAX_MEMORY_SIZE_IN_TOTAL long OPTIONS (NAMEINSOURCE '""ESTIMATED_MAX_MEMORY_SIZE_IN_TOTAL""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	LAST_COMPRESSED_RECORD_COUNT long OPTIONS (NAMEINSOURCE '""LAST_COMPRESSED_RECORD_COUNT""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	MEMORY_SIZE_IN_DELTA long OPTIONS (NAMEINSOURCE '""MEMORY_SIZE_IN_DELTA""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	MEMORY_SIZE_IN_HISTORY_DELTA long OPTIONS (NAMEINSOURCE '""MEMORY_SIZE_IN_HISTORY_DELTA""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	MEMORY_SIZE_IN_HISTORY_MAIN long OPTIONS (NAMEINSOURCE '""MEMORY_SIZE_IN_HISTORY_MAIN""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	MEMORY_SIZE_IN_MAIN long OPTIONS (NAMEINSOURCE '""MEMORY_SIZE_IN_MAIN""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	MEMORY_SIZE_IN_TOTAL long OPTIONS (NAMEINSOURCE '""MEMORY_SIZE_IN_TOTAL""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	PART_COUNT long OPTIONS (NAMEINSOURCE '""PART_COUNT""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	RAW_RECORD_COUNT_IN_DELTA long OPTIONS (NAMEINSOURCE '""RAW_RECORD_COUNT_IN_DELTA""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	RAW_RECORD_COUNT_IN_HISTORY_DELTA long OPTIONS (NAMEINSOURCE '""RAW_RECORD_COUNT_IN_HISTORY_DELTA""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	RAW_RECORD_COUNT_IN_HISTORY_MAIN long OPTIONS (NAMEINSOURCE '""RAW_RECORD_COUNT_IN_HISTORY_MAIN""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	RAW_RECORD_COUNT_IN_MAIN long OPTIONS (NAMEINSOURCE '""RAW_RECORD_COUNT_IN_MAIN""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	RECORD_COUNT long OPTIONS (NAMEINSOURCE '""RECORD_COUNT""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	SCHEMA_NAME string(256) OPTIONS (NAMEINSOURCE '""SCHEMA_NAME""', NATIVE_TYPE 'NVARCHAR'),
+	TABLE_COLUMN_COUNT long OPTIONS (NAMEINSOURCE '""TABLE_COLUMN_COUNT""', CHAR_OCTET_LENGTH 20, NATIVE_TYPE 'BIGINT'),
+	TABLE_NAME string(256) OPTIONS (NAMEINSOURCE '""TABLE_NAME""', NATIVE_TYPE 'NVARCHAR')
+) OPTIONS (NAMEINSOURCE '""_SYS_STATISTICS"".""GLOBAL_COLUMN_TABLES_SIZE""', UPDATABLE TRUE); 
+{code}",,,
+3728,MODE-2416,"For some weird reason, the SmartGWT dependency used by the {{web-explorer}} application uses the {{smartgwt}} groupId:
+{code:xml}
+<dependency>
+  <groupId>smartgwt</groupId>
+  <artifactId>smartgwt</artifactId>
+  <version>${smartgwt.version}</version>
+   <type>jar</type>
+</dependency>
+{code}
+
+This is only available in the public JBoss Nexus via the Third-party uploads repository, but it's not the official/correct dependency (based on Maven Central).  The correct version should use the {{com.smartgwt}} groupId.",,,
+3732,MODE-2414,"I create a subnode to a given major node with ""restrictive"" ACLs, so nobody (except the creator) should be allowed to read the node. Still any user can check the existence of the node via
+
+node.hasNode(""foo"")
+
+since the hasNode operation never actually checks the ACLs. See the attached forum reference.",,,
+3734,MODE-2413,"The following exception is thrown when attempting {{session.exportSystemView()}} that includes a federated node which uses the {{FileSystemConnector}} and {{ignoreBinary}} is false.
+{code}
+javax.jcr.RepositoryException: java.io.IOException: Stream closed
+	at org.modeshape.jcr.JcrSystemViewExporter.emitValue(JcrSystemViewExporter.java:281)
+	at org.modeshape.jcr.JcrSystemViewExporter.emitProperty(JcrSystemViewExporter.java:239)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportProperty(JcrSystemViewExporter.java:185)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:146)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:156)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:156)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:156)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:156)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:156)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:156)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:156)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:156)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:156)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:156)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:156)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:156)
+	at org.modeshape.jcr.JcrSystemViewExporter.exportNode(JcrSystemViewExporter.java:86)
+	at org.modeshape.jcr.AbstractJcrExporter.exportView(AbstractJcrExporter.java:170)
+	at org.modeshape.jcr.AbstractJcrExporter.exportView(AbstractJcrExporter.java:200)
+	at org.modeshape.jcr.JcrSession.exportSystemView(JcrSession.java:1713)
+	at org.modeshaope.connector.filesystem.FilsystemConnectorTest.shouldExportSystemView(FilsystemConnectorTest.java:24)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:47)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:44)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at org.junit.rules.RunRules.evaluate(RunRules.java:20)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:271)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:70)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:50)
+	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:238)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:63)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:236)
+	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:53)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:229)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:309)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:160)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:74)
+	at com.intellij.rt.execution.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:211)
+	at com.intellij.rt.execution.junit.JUnitStarter.main(JUnitStarter.java:67)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at com.intellij.rt.execution.application.AppMain.main(AppMain.java:134)
+Caused by: java.io.IOException: Stream closed
+	at java.io.BufferedInputStream.getBufIfOpen(BufferedInputStream.java:170)
+	at java.io.BufferedInputStream.fill(BufferedInputStream.java:214)
+	at java.io.BufferedInputStream.read(BufferedInputStream.java:265)
+	at org.modeshape.common.util.SelfClosingInputStream.read(SelfClosingInputStream.java:129)
+	at org.modeshape.common.util.Base64$InputStream.read(Base64.java:1673)
+	at org.modeshape.common.util.Base64$InputStream.read(Base64.java:1774)
+	at java.io.FilterInputStream.read(FilterInputStream.java:107)
+	at org.modeshape.jcr.JcrSystemViewExporter.emitValue(JcrSystemViewExporter.java:274)
+	... 51 more
+{code}
+
+",,,
+3744,MODE-2409,"Invoking checkin() in clustered mode throws an org.modeshape.jcr.cache.NodeNotFoundInParentException
+
+Added two test cases to reproduce this bug:
+
+https://github.com/ModeShape/modeshape/pull/1370",,,
+3765,MODE-2401,"After defining a node type, let's say 
+
+[nt:noquery] > nt:folder noquery 
+
+in Compact Node Type definitions, nodes of type [nt:noquery] still show up when querying for nt:folder.",,,
+3828,MODE-2384,"When starting a single node using the default {{standalone-modeshape-ha.xml}} configuration (from the ModeShape Wildfly kit), the CMIS web-application shows no existing repositories when browsing or looking at endpoint configurations.
+
+There are no explicit errors at startup and the web application is deployed fine.",,,
+4272,MODE-2280,"When running the [ConcurrentNodeLoadTest|https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/test/java/org/modeshape/jcr/ConcurrentNodeLoadTest.java] will occasionally produce an exception like the following, and the test will fail:
+
+{code}
+javax.jcr.PathNotFoundException: No node exists at path '/customers/aaa/aaa0b380-d0c0-4d9a-9f10-d2c9cc3c4d59' in workspace ""load""
+	at org.modeshape.jcr.JcrSession.cachedNode(JcrSession.java:614)
+	at org.modeshape.jcr.JcrSession.node(JcrSession.java:646)
+	at org.modeshape.jcr.JcrSession.node(JcrSession.java:665)
+	at org.modeshape.jcr.JcrSession.getNode(JcrSession.java:849)
+	at org.modeshape.jcr.JcrSession.getNode(JcrSession.java:832)
+	at org.modeshape.jcr.JcrSession.getNode(JcrSession.java:125)
+	at org.modeshape.jcr.ConcurrentNodeLoadTest.addContentToCustomer(ConcurrentNodeLoadTest.java:239)
+	at org.modeshape.jcr.ConcurrentNodeLoadTest$CustomerModifier.call(ConcurrentNodeLoadTest.java:212)
+	at org.modeshape.jcr.ConcurrentNodeLoadTest$CustomerModifier.call(ConcurrentNodeLoadTest.java:193)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:262)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+	at java.lang.Thread.run(Thread.java:724)
+Saving  batch 80
+{code}
+
+We need to investigate why this occurs and find a fix.",,,
