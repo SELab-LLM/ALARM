@@ -1,4 +1,4 @@
-# RAPT-replication-package
+# ALARM-replication-package
 
 This repository contains source code that we used to perform experiment in paper titled "A Refactoring-Aware Large Language Model for Bug Localization".
 
