@@ -1,0 +1,3339 @@
+,issue_id,issue_comments,issue_desc,created_at,closed_at
+464,JBTM-2511,"The REST-AT benchmark tests are failing:
+
+http://albany.eng.hst.ams2.redhat.com/view/Narayana/job/narayana-benchmarks/37/
+
+and the failure is:
+bq. Caused by: javax.ws.rs.ServiceUnavailableException: HTTP 503 Service Unavailable
+
+whilst sending a request to a JAX-RS service.",,,
+1350,JBTM-1922,ANDIAMO-7 says that all error and warning messages should have a unique code that can be used to identify them. RTS does not conform with this requirement.,,,
+1599,JBTM-1715,"The following error occurs if an injected CompensationManager is invoked within the scope of a compensation-based transaction that was in-flowed via a WS-BA transaction.
+
+{quote}
+16:17:09,879 ERROR [org.jboss.as.ejb3.invocation] (default task-18) JBAS014134: EJB Invocation failed on component TestServiceService for method public void org.jboss.narayana.compensations.functiona[617/9100]
+ted.TestServiceService.saveDataCancelOnFailure(java.lang.Boolean): javax.ejb.EJBException: java.lang.NullPointerException
+        at org.jboss.as.ejb3.tx.CMTTxInterceptor.handleExceptionInOurTx(CMTTxInterceptor.java:166) [wildfly-ejb3-8.0.0.Alpha2-SNAPSHOT.jar:8.0.0.Alpha2-SNAPSHOT]
+        at org.jboss.as.ejb3.tx.CMTTxInterceptor.invokeInOurTx(CMTTxInterceptor.java:251) [wildfly-ejb3-8.0.0.Alpha2-SNAPSHOT.jar:8.0.0.Alpha2-SNAPSHOT]
+        at org.jboss.as.ejb3.tx.CMTTxInterceptor.required(CMTTxInterceptor.java:316) [wildfly-ejb3-8.0.0.Alpha2-SNAPSHOT.jar:8.0.0.Alpha2-SNAPSHOT]
+        at org.jboss.as.ejb3.tx.CMTTxInterceptor.processInvocation(CMTTxInterceptor.java:215) [wildfly-ejb3-8.0.0.Alpha2-SNAPSHOT.jar:8.0.0.Alpha2-SNAPSHOT]
+        at org.jboss.invocation.InterceptorContext.proceed(InterceptorContext.java:289)
+        at org.jboss.as.ejb3.component.interceptors.CurrentInvocationContextInterceptor.processInvocation(CurrentInvocationContextInterceptor.java:41) [wildfly-ejb3-8.0.0.Alpha2-SNAPSHOT.jar:8.0.0.Alpha2-SNAPS
+HOT]
+
+{quote}",,,
+2171,JBTM-3790,"Birthdate is written/read to/from ObjectStore files without being available via API. Actually, it is only used for trace logging. I would suggest to:
+ # Add creationTimeMillis as long property in StateManager class
+ # Initialize with System.currentTimeMillis() on bean creation
+ # Make creationTimeMillis available via getter method
+
+Such an enhancement would make it possible to evaluate the ""real"" age of open transactions to e.g. improve ExpiryScanners.",,,
+2172,JBTM-3781,Not sure how we missed this but we didn't implement https://download.eclipse.org/microprofile/microprofile-lra-2.0/microprofile-lra-spec-2.0.html#config-parameters. Since there was no TCK test added for mp.lra.propagation.active property we are safe and still implementing the spec.,,,
+2176,JBTM-3778,The narayana-bom needs the nexus-staging-maven-plugin in order to release the artifact.,,,
+2177,JBTM-3777,"As QA uses ant as building environment, the dependencies (i.e. jars) downloaded through Maven need to be supported with transitive dependencies. For example, `artemis-journal` depends on `netty-buffer` and `netty-common` thus these two jars have to be included in ant's classpath when `artemis-journal` is in used. To overcome this issue, Maven should be instructed to copy transitive dependencies as well.",,,
+2181,JBTM-3769,"Client throws error: 
+{code:java}
+java.net.ConnectException: Connection refused (Connection refused)
+2023-03-24 10:05:03,452 err: 	at java.base/java.net.PlainSocketImpl.socketConnect(Native Method)
+2023-03-24 10:05:03,452 err: 	java.base/java.net.Socket.<init>(Socket.java:231)
+2023-03-24 10:05:03,453 err: 	at org.jboss.jbossts.qa.Utils.CrashRecoveryDelays.doRecovery(CrashRecoveryDelays.java:105)
+2023-03-24 10:05:03,453 err: 	at org.jboss.jbossts.qa.Utils.CrashRecoveryDelays.awaitRecoveryArjunaCore(CrashRecoveryDelays.java:39)
+2023-03-24 10:05:03,453 err: 	at org.jboss.jbossts.qa.ArjunaCore.LockManager.CrashRecovery.client.Client001a.Test(Client001a.java:48)
+2023-03-24 10:05:03,453 err: 	at org.jboss.jbossts.qa.ArjunaCore.Utils.BaseTestClient.<init>(BaseTestClient.java:45)
+2023-03-24 10:05:03,453 err: 	at org.jboss.jbossts.qa.ArjunaCore.LockManager.CrashRecovery.client.Client001a.<init>(Client001a.java:37)
+2023-03-24 10:05:03,453 err: 	at org.jboss.jbossts.qa.ArjunaCore.LockManager.CrashRecovery.client.Client001a.main(Client001a.java:32) {code}
+and in the log:
+{code:java}
+err: Mar 24, 2023 10:05:03 AM com.arjuna.ats.txoj.LockManager setlock
+2023-03-24 10:05:03,549 err: WARN: ARJUNA015034: LockManager::setlock() cannot activate object
+2023-03-24 10:05:03,549 err: Mar 24, 2023 10:05:03 AM com.arjuna.ats.internal.arjuna.objectstore.ShadowingStore read_state
+2023-03-24 10:05:03,549 err: INFO: Object state 0:ffffac1f07a1:a611:641d75cf:1 for type /StateManager/LockManager/BasicLockRecord has changed on disk from what was expected. {code}
+ ",,,
+2182,JBTM-3760,"The current 6.0.1-SNAPSHOT narayana-jta installed pom is missing jboss-transaction-spi. I think it could be related to introduce the narayan-bom recently. The jboss-transaction-spi in narayana-bom is marked as {*}""provieded""{*}. And the maven-shade-plugin rewrite the pom.xml as dependency-reduced-pom.xml which excludes jboss-transaction-spi artifact.
+
+ 
+
+This casues the quarkus-narayana-jta build failing and missing the classes from ""org.jboss.tm"" package.",,,
+2183,JBTM-3759,"The narayana bom introduced in JBTM-3740 does not define a version for the dependency `org.apache.logging.log4j:log4j-core`.
+
+Version numbers are defined in the top level pom.",,,
+2184,JBTM-3756,"We are using  bean-discovery-mode ""all"" in the lra-client module (maven modules `org.jboss.narayana.rts:lra-client`) and the lra-proxy-test modules but we only require ""annotated"". I've raised this issue since the use of ""all"" generates warnings when using Quarkus ArC.",,,
+2190,JBTM-3749,I've implemented a fully passing LRA integration into WildFly which currently requires a few changes in Narayana. Individual changes can be discussed on the PR.,,,
+2194,JBTM-3729,"I cannot find any https://github.com/jbosstm/quickstart/releases (https://github.com/jbosstm/narayana/blob/main/narayana-full/readme.txt#LL62C9-L62C9)
+
+We could either start to create GitHub releases or change this to be a URL like:
+https://github.com/jbosstm/quickstart/archive/refs/tags/<VERSION>.zip",,,
+2195,JBTM-3664,"It looks like a typo to set `AS_TEST=0` as I don't think AS_TEST is handled. On the other hand AS_TESTS is.
+
+I don't expect this would cause a functional change right now as the AS_TESTS is initialized to zero if it is not already set.",,,
+2196,JBTM-3658,"The artifact `lra-coordinator-quarkus:org.jboss.narayana.rts` fails to deploy producing the error:
+
+[ERROR] Nexus Staging Rules Failure Report
+[ERROR] ==================================
+[ERROR] 
+[ERROR] Repository ""jboss_releases_staging_profile-19431"" failures
+[ERROR]   Rule ""sources-staging"" failures
+[ERROR]     * Missing: no main jar artifact found in folder '/org/jboss/narayana/rts/lra-coordinator-quarkus/5.13.0.Final'
+
+Martin, I have assigned this one to you since you are doing the work of moving it into its own repo. If you don't have time to do then just clear the assignee field.",,,
+2204,JBTM-3655,I have a passing LRA TCK with Quarkus https://github.com/xstefank/quarkus/tree/mp-lra-tck but it requires a few small tweaks in narayana LRA code.,,,
+2210,JBTM-3654,"register custom JAX-RS resource (https://github.com/jbosstm/quickstart/blob/master/rts/lra-examples/cdi-embedded/src/main/java/io/narayana/rts/lra/CdiBasedResource.java) together with manually registered JAX-RS   lra-coordinator resource ([https://github.com/jbosstm/narayana/blob/master/rts/lra/coordinator/src/main/java/io/narayana/lra/coordinator/api/Coordinator.java#L139-L144] ) is not working.
+
+quickstart error:
+
+```
+
+===== testing service
++ curl -4 -X PUT -I http://localhost:8082/cdi
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 404 Not Found
+Narayana-LRA-API-version: 1.0
+content-length: 0
+
+++ timeout_adjust 1
+++ echo 1
++ sleep 1
+++ curl -4 http://localhost:8082/cdi
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
++ '[' '' = '1 completed and 0 compensated' ']'
++ return 1
++ res=1
++ test_recovery
++ echo '===== CdiBasedResource halt the service on pid 548390'
+===== CdiBasedResource halt the service on pid 548390
++ curl -4 -X PUT -I 'http://localhost:8082/cdi?fault=haltcdiduring'
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 404 Not Found
+Narayana-LRA-API-version: 1.0
+content-length: 0
+
+```
+
+job link: [http://narayanaci1.eng.hst.ams2.redhat.com/job/btny-pulls-narayana-quickstart-matrix/jdk=jdk11.latest,label=linux/31/consoleFull]",,,
+2213,JBTM-3648,"Since version 5.12.1.Final LRA deployed in user deployment stopped working - https://github.com/xstefank/learning-tests/blob/master/lra-user-config/pom.xml#L16..L44. I found out that it's because of this commit https://github.com/jbosstm/narayana/commit/88899ad530eafcf57c82abf402899acc007df267. 
+
+It makes the user's LRA endpoint undiscoverable (404) but there is nothing else that I can find out why this happens. For the time being, it would be safer to revert this commit if it won't break anything.",,,
+2215,JBTM-3647,"The {{BeforeBeanDiscovery.addAnnotatedType(AnnotatedType)}} was deprecated in CDI 1.1 and removed in CDI 4.0. The {{*-jakarta}} variants where these extensions are used will fail for Jakarta EE 10.
+
+It looks like the currently affected extensions are:
+* {{CompensationsCDIExtension}}
+* {{TXFrameworkCDIExtension}}",,,
+2220,JBTM-3624,"The versions of JacORB are not defined or used consistently. You can find references to jacorb and org.jacorb and versions 2.3.1jboss.patch01-brew, 2.3.2-jbossorg-5 and 3.7",,,
+2233,JBTM-3562,"Following fields shadow their parent class field:
+* [com.arjuna.ats.internal.jdbc.DirectRecoverableConnection#L161|https://github.com/jbosstm/narayana/blob/5.12.4.Final/ArjunaJTA/jdbc/classes/com/arjuna/ats/internal/jdbc/DirectRecoverableConnection.java#L161]
+* [com.arjuna.ats.internal.arjuna/abstractrecords.DisposeRecord#L271|https://github.com/jbosstm/narayana/blob/5.12.4.Final/ArjunaCore/arjuna/classes/com/arjuna/ats/internal/arjuna/abstractrecords/DisposeRecord.java#L271]
+
+Refers to [RSPEC-2387|https://rules.sonarsource.com/java/tag/confusing/RSPEC-2387]
+
+Fix: Remove, use parent.",,,
+2235,JBTM-3553,"The procedure to configure Oracle DB needs to be updated. Currently, when CREATE USER dtf11 IDENTIFIED BY dtf11; is executed, Oracle DB throws the error ORA-65096 invalid common user or role name. This seems to be related to the database we are connected to. In fact, to create users in a Oracle DB > 12c, sysdba has to be connected to a pluggable database.
+",,,
+2238,JBTM-3543,"The CDI interceptor com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorNever generates a confusing message when a transaction is present
+{code:java}
+@Message(id = 16110, value = ""Transaction is required for invocation"", format = MESSAGE_FORMAT){code}
+This needs changing to something more sensible such as
+{code:java}
+ ""Transaction is not allowed for invocation""{code}
+ ",,,
+2240,JBTM-3542,"The released artefact org.jboss.narayana.rts:lra-test-arquillian-extension is unusable because its parent org.jboss.narayana.rts:lra-test is not released.
+
+ 
+
+This needs fixing because the galleon feature pack for LRA requires it.",,,
+2241,JBTM-3534,"The arquillian xml configuration used for running LRA integration tests with WildFly does not pass the configuration with lra timeout factor to WildFly runtime, i.e.
+{code}
+-Dlra.tck.timeout.factor=${lra.tck.timeout.factor}
+{code}
+
+https://github.com/jbosstm/narayana/blob/master/rts/lra/test/tck/src/test/resources/arquillian-thorntail.xml
+->
+https://github.com/jbosstm/narayana/blob/master/rts/lra/test/tck/src/test/resources/arquillian-wildfly.xml#L30",,,
+2242,JBTM-3530,"The `lra/test/basic` module hides an hidden exception[1]. Whatever test which extends the `TestBase` class gets the warning.
+
+From what I can see this is not a functionality trouble as the test archive is not used for testing as the all is running `@RunAsClient`. Still the Weld class loading issue is not good to be part of the testing log and we should avoid it.
+
+[1]
+{code}
+2021-08-31 06:18:29,424 WARN  [org.jboss.modules.define] (Weld Thread Pool -- 6) Failed to define class io.narayana.lra.arquillian.FailedLRAIT in Module ""deployment.FailedLRAIT.war"" from Service Module Loader: java.lang.NoClassDefFoundError: Failed to link io/narayana/lra/arquillian/FailedLRAIT (Module ""deployment.FailedLRAIT.war"" from Service Module Loader): io/narayana/lra/arquillian/TestBase
+	at java.lang.ClassLoader.defineClass1(Native Method)
+	at java.lang.ClassLoader.defineClass(ClassLoader.java:756)
+	at java.lang.ClassLoader.defineClass(ClassLoader.java:832)
+	at org.jboss.modules.ModuleClassLoader.doDefineOrLoadClass(ModuleClassLoader.java:424)
+	at org.jboss.modules.ModuleClassLoader.defineClass(ModuleClassLoader.java:555)
+	at org.jboss.modules.ModuleClassLoader.loadClassLocal(ModuleClassLoader.java:339)
+	at org.jboss.modules.ModuleClassLoader$1.loadClassLocal(ModuleClassLoader.java:126)
+	at org.jboss.modules.Module.loadModuleClass(Module.java:753)
+	at org.jboss.modules.ModuleClassLoader.findClass(ModuleClassLoader.java:247)
+	at org.jboss.modules.ConcurrentClassLoader.performLoadClassUnchecked(ConcurrentClassLoader.java:410)
+	at org.jboss.modules.ConcurrentClassLoader.performLoadClass(ConcurrentClassLoader.java:398)
+	at org.jboss.modules.ConcurrentClassLoader.loadClass(ConcurrentClassLoader.java:116)
+	at org.jboss.as.weld.WeldModuleResourceLoader.classForName(WeldModuleResourceLoader.java:68)
+	at org.jboss.weld.bootstrap.AnnotatedTypeLoader.loadClass(AnnotatedTypeLoader.java:83)
+	at org.jboss.weld.bootstrap.AnnotatedTypeLoader.loadAnnotatedType(AnnotatedTypeLoader.java:63)
+	at org.jboss.weld.bootstrap.FastAnnotatedTypeLoader.loadAnnotatedType(FastAnnotatedTypeLoader.java:108)
+	at org.jboss.weld.bootstrap.BeanDeployer.addClass(BeanDeployer.java:87)
+	at org.jboss.weld.bootstrap.ConcurrentBeanDeployer$1.doWork(ConcurrentBeanDeployer.java:55)
+	at org.jboss.weld.bootstrap.ConcurrentBeanDeployer$1.doWork(ConcurrentBeanDeployer.java:52)
+	at org.jboss.weld.executor.IterativeWorkerTaskFactory$1.call(IterativeWorkerTaskFactory.java:62)
+	at org.jboss.weld.executor.IterativeWorkerTaskFactory$1.call(IterativeWorkerTaskFactory.java:55)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+	at org.jboss.threads.JBossThread.run(JBossThread.java:513)
+{code}",,,
+2243,JBTM-3527,"On deployment of the LRA application the verification of the LRA compatibility deployment is done within the LRA extension {{io.narayana.lra.client.internal.proxy.nonjaxrs.LRACDIExtension}} (https://github.com/jbosstm/narayana/blob/5.12.0.Final/rts/lra/proxy/api/src/main/java/io/narayana/lra/client/internal/proxy/nonjaxrs/LRACDIExtension.java).
+
+That checks if the deployment follows the LRA spec rules (e.g. any {{@LRA}} annotated class requires one or both {{@AfterLRA}} and {{@Compensate}} annotations). When such rule is broken then deployment exception is thrown.
+
+The extension looks for classes with context class loader in indexer ({{Thread.currentThread().getContextClassLoader()}}(https://github.com/jbosstm/narayana/blob/5.12.0.Final/rts/lra/proxy/api/src/main/java/io/narayana/lra/client/internal/proxy/nonjaxrs/ClassPathIndexer.java#L92) but later the class definition is not loaded with the context class loader but just by the class classloader (https://github.com/jbosstm/narayana/blob/5.12.0.Final/rts/lra/proxy/api/src/main/java/io/narayana/lra/client/internal/proxy/nonjaxrs/ClassPathIndexer.java#L85).
+
+The context classloader should be considered in the call as well.",,,
+2244,JBTM-3526,"When I ran a reproducer for JBTM-3513
+{code:java}
+git clone https://github.com/jbosstm/narayana.git && cd narayana; WORKSPACE=pwd PROFILE=LRA ./scripts/hudson/narayana.sh {code}
+the results of the run that used wildfly were overwritten by the results that used thorntail. Since the second run was successful the wildfly failures were suppressed.",,,
+2245,JBTM-3505,"The release script https://github.com/jbosstm/narayana/blob/master/narayana-release-process.sh (on release process see https://github.com/jbosstm/narayana/wiki/Narayana-Release-Process) uses Python scripts which verifies status of CI and process some other checks.
+
+The current python scripts requires Python in version `2`. The scripts need to be changed to be runnable on Python 3 (maybe we don't need for them being runnable on Python 2 at `master` branch at all).
+
+All Python scripts needs to be verified (at https://github.com/jbosstm/narayana/tree/master/scripts/release) but in particular the `/scripts/release/pre_release.py` fails on Python 3.",,,
+2249,JBTM-3503,"Hi,
+
+We are upgrading from WF23.0.2.Final (Narayana 5.10.6) to WF24.0.0.Final (Narayana 5.12) and we stumbled on the following NPE
+{noformat}
+Caused by: java.lang.NullPointerException
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.getTransactional(TransactionalInterceptorBase.java:112)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.invokeInOurTx(TransactionalInterceptorBase.java:203)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorRequiresNew.doIntercept(TransactionalInterceptorRequiresNew.java:54)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.intercept(TransactionalInterceptorBase.java:90)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorRequiresNew.intercept(TransactionalInterceptorRequiresNew.java:47){noformat}
+ 
+
+The issue seems somewhat linked to the very recent change in Narayana:
+
+https://github.com/jbosstm/narayana/commit/ced7cdf7431a051457202b204378e7a1a321281e#diff-bd6a83433b5079cb87b9cad6b099d1d62d6e7a2678849ab9b8973b6ff21cebd7
+
+ 
+
+I've attached a very simple reproducer to this issue. Let me know if I can help in any way.
+
+ 
+
+Thank you!",,,
+2253,JBTM-3498,"The links [1,2] in the right hand column of the narayana.io web site are broken:
+
+ 
+
+[1] Latest forum discussions
+
+[2] Latest news",,,
+2254,JBTM-3496,"Latest JDBC driver for Postgres Plus DB return different driver name than is expected by Narayana.
+
+expected: ""EDB .*""
+actual: ""EnterpriseDB JDBC Driver""
+
+Customer impact:
+Customers can not use Postgres Plus DB with latest JDBC driver as JDBC object store.
+
+More details:
+Narayana has classes for JDBC drivers defined at [https://github.com/jbosstm/narayana/tree/master/ArjunaCore/arjuna/classes/com/arjuna/ats/internal/arjuna/objectstore/jdbc/drivers]
+
+These driver classes get loaded in https://github.com/jbosstm/narayana/blob/master/ArjunaCore/arjuna/classes/com/arjuna/ats/internal/arjuna/objectstore/jdbc/JDBCStore.java#L217-L253
+
+IOW - it reads the first word in DatabaseMetaData.getDriverName() as lowercase, append `_driver` and try to load such class from [https://github.com/jbosstm/narayana/tree/master/ArjunaCore/arjuna/classes/com/arjuna/ats/internal/arjuna/objectstore/jdbc/drivers]
+
+For Postgres Plus DB it means there is `edb_driver` class.
+This was fine because at the time of adding this functionallty by JBEAP-16408, the driver name string was ""EDB Postgres Advanced Server Native Driver"", hence `edb_driver` class would be properly identified as the one to use.
+
+In latest JDBC driver for Postgres Plus DB (version 42.2.12.3), this string is now ""EnterpriseDB JDBC Driver"" which results in searching for driver class `enterprisedb_driver` which is obviously missing as one can see at server-side exception when trying to use Postgres Plus 13.1 as JDBC object store:
+{code:java}
+23:37:39,189 FATAL [com.arjuna.ats.arjuna] (MSC service thread 1-7) ARJUNA012260: Received exception for com.arjuna.ats.internal.arjuna.objectstore.jdbc.accessors.DataSourceJDBCAccess:JASDTJBossTSTxTable: java.lang.ClassNotFoundException: com.arjuna.ats.internal.arjuna.objectstore.jdbc.drivers.enterprisedb_driver from [Module ""org.jboss.jts"" from local module loader @4883b407 (finder: local module finder @7d9d1a19 (roots: /tmp/jboss-eap-7.4/modules,/tmp/jboss-eap-7.4/modules/system/layers/base))]
+	at org.jboss.modules.ModuleClassLoader.findClass(ModuleClassLoader.java:255)
+	at org.jboss.modules.ConcurrentClassLoader.performLoadClassUnchecked(ConcurrentClassLoader.java:410)
+	at org.jboss.modules.ConcurrentClassLoader.performLoadClass(ConcurrentClassLoader.java:398)
+	at org.jboss.modules.ConcurrentClassLoader.loadClass(ConcurrentClassLoader.java:116)
+	at java.lang.Class.forName0(Native Method)
+	at java.lang.Class.forName(Class.java:264)
+	at com.arjuna.ats.internal.arjuna.objectstore.jdbc.JDBCStore.<init>(JDBCStore.java:251)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at com.arjuna.common.internal.util.ClassloadingUtility.loadAndInstantiateClass(ClassloadingUtility.java:129)
+	at com.arjuna.ats.arjuna.objectstore.StoreManager.initStore(StoreManager.java:152)
+	at com.arjuna.ats.arjuna.objectstore.StoreManager.getActionStore(StoreManager.java:111)
+	at com.arjuna.ats.arjuna.objectstore.StoreManager.getRecoveryStore(StoreManager.java:68)
+	at com.arjuna.ats.internal.jta.recovery.arjunacore.CommitMarkableResourceRecordRecoveryModule.<init>(CommitMarkableResourceRecordRecoveryModule.java:156)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at java.lang.Class.newInstance(Class.java:442)
+	at com.arjuna.common.internal.util.ClassloadingUtility.loadAndInstantiateClass(ClassloadingUtility.java:135)
+	at com.arjuna.common.internal.util.ClassloadingUtility.loadAndInstantiateClassesWithInit(ClassloadingUtility.java:192)
+	at com.arjuna.ats.arjuna.common.RecoveryEnvironmentBean.getRecoveryModules(RecoveryEnvironmentBean.java:465)
+	at com.arjuna.ats.internal.arjuna.recovery.PeriodicRecovery.loadModules(PeriodicRecovery.java:888)
+	at com.arjuna.ats.internal.arjuna.recovery.PeriodicRecovery.<init>(PeriodicRecovery.java:121)
+	at com.arjuna.ats.internal.arjuna.recovery.RecoveryManagerImple.<init>(RecoveryManagerImple.java:107)
+	at com.arjuna.ats.arjuna.recovery.RecoveryManager.<init>(RecoveryManager.java:481)
+	at com.arjuna.ats.arjuna.recovery.RecoveryManager.manager(RecoveryManager.java:132)
+	at com.arjuna.ats.arjuna.recovery.RecoveryManager.manager(RecoveryManager.java:112)
+	at com.arjuna.ats.jbossatx.jta.RecoveryManagerService.create(RecoveryManagerService.java:54)
+	at org.jboss.as.txn.service.ArjunaRecoveryManagerService.start(ArjunaRecoveryManagerService.java:132)
+	at org.jboss.msc.service.ServiceControllerImpl$StartTask.startService(ServiceControllerImpl.java:1739)
+	at org.jboss.msc.service.ServiceControllerImpl$StartTask.execute(ServiceControllerImpl.java:1701)
+	at org.jboss.msc.service.ServiceControllerImpl$ControllerTask.run(ServiceControllerImpl.java:1559)
+	at org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
+	at org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1990)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1486)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1377)
+	at java.lang.Thread.run(Thread.java:748)
+{code}
+
+
+Proposed solution:
+add new driver class `enterprisedb_driver` (which could simply inherit from `edb_driver`)",,,
+2255,JBTM-3494,"[ServerLRAFilter.java|https://github.com/jbosstm/narayana/blob/master/rts/lra/jaxrs/src/main/java/io/narayana/lra/filter/ServerLRAFilter.java] creates a NarayanaLRAClient helper in its constructor. NarayanaLRAClient then checks a system property in order to locate a coordinator. 
+
+However, on some runtimes (such as a quarkus extension), ServerLRAFilter is constructed before the runtime has an opportunity to set the system property.
+
+ ",,,
+2256,JBTM-3489,"The [SRA demo|https://github.com/jbosstm/narayana/blob/master/rts/sra/README.md] invokes the following endpoint:
+{quote}curl -XPOST http://localhost:8081/trip/book?hotelName=Rex
+{quote}
+and this should result the creation of a REST-AT transaction followed by a commit, [see the book trip method|https://github.com/jbosstm/narayana/blob/master/rts/sra/src/main/java/io/narayana/sra/demo/api/TripController.java#L114].
+
+However the output produced by the service (target/sra-participant-runner.jar) prints:
+{quote}SRA: 0_ffffc0a8000e_7f15c5a4_60b8e98f_18: Updating hotel participant state to: TransactionPreparedSRA: 0_ffffc0a8000e_7f15c5a4_60b8e98f_18: Updating hotel participant state to: TransactionRolledBackSRA: 0_ffffc0a8000e_7f15c5a4_60b8e98f_18: Updating trip participant state to: TransactionRolledBack
+{quote}
+which seems to indicate that the transaction was rolled back.",,,
+2257,JBTM-3487,NoData,,,
+2258,JBTM-3476,"Both JACOCO and BLACKTIE profiles fail because of the maven-checkstyle-plugin dependency
+{code:java}
+[INFO] Downloaded from narayanaci1: http://narayanaci1.eng.hst.ams2.redhat.com:8081/nexus/content/repositories/central/org/apache/commons/commons-lang3/3.5/commons-lang3-3.5.jar (480 kB at 2.5 MB/s)
+[WARNING] Error injecting: org.apache.maven.report.projectinfo.CiManagementReport
+java.lang.NoClassDefFoundError: org/apache/maven/doxia/siterenderer/DocumentContent
+    at java.lang.Class.getDeclaredConstructors0 (Native Method)
+    at java.lang.Class.privateGetDeclaredConstructors (Class.java:2671)
+    at java.lang.Class.getDeclaredConstructors (Class.java:2020)
+    at com.google.inject.spi.InjectionPoint.forConstructorOf (InjectionPoint.java:245)
+    at com.google.inject.internal.ConstructorBindingImpl.create (ConstructorBindingImpl.java:115)
+    at com.google.inject.internal.InjectorImpl.createUninitializedBinding (InjectorImpl.java:706)
+    at com.google.inject.internal.InjectorImpl.createJustInTimeBinding (InjectorImpl.java:930)
+    at com.google.inject.internal.InjectorImpl.createJustInTimeBindingRecursive (InjectorImpl.java:852)
+    at com.google.inject.internal.InjectorImpl.getJustInTimeBinding (InjectorImpl.java:291)
+    at com.google.inject.internal.InjectorImpl.getBindingOrThrow (InjectorImpl.java:222)
+    at com.google.inject.internal.InjectorImpl.getProviderOrThrow (InjectorImpl.java:1040)
+    at com.google.inject.internal.InjectorImpl.getProvider (InjectorImpl.java:1071)
+    at com.google.inject.internal.InjectorImpl.getProvider (InjectorImpl.java:1034)
+    at com.google.inject.internal.InjectorImpl.getInstance (InjectorImpl.java:1086)
+    at org.eclipse.sisu.space.AbstractDeferredClass.get (AbstractDeferredClass.java:48)
+    at com.google.inject.internal.ProviderInternalFactory.provision (ProviderInternalFactory.java:85)
+    at com.google.inject.internal.InternalFactoryToInitializableAdapter.provision (InternalFactoryToInitializableAdapter.java:57)
+    at com.google.inject.internal.ProviderInternalFactory$1.call (ProviderInternalFactory.java:66)
+    at com.google.inject.internal.ProvisionListenerStackCallback$Provision.provision (ProvisionListenerStackCallback.java:112)
+    at com.google.inject.internal.ProvisionListenerStackCallback$Provision.provision (ProvisionListenerStackCallback.java:127)
+    at com.google.inject.internal.ProvisionListenerStackCallback.provision (ProvisionListenerStackCallback.java:66)
+    at com.google.inject.internal.ProviderInternalFactory.circularGet (ProviderInternalFactory.java:61)
+    at com.google.inject.internal.InternalFactoryToInitializableAdapter.get (InternalFactoryToInitializableAdapter.java:47)
+    at com.google.inject.internal.InjectorImpl$1.get (InjectorImpl.java:1050)
+    at org.eclipse.sisu.inject.Guice4$1.get (Guice4.java:162)
+    at org.eclipse.sisu.inject.LazyBeanEntry.getValue (LazyBeanEntry.java:81)
+    at org.eclipse.sisu.plexus.LazyPlexusBean.getValue (LazyPlexusBean.java:51)
+    at org.codehaus.plexus.DefaultPlexusContainer.lookup (DefaultPlexusContainer.java:263)
+    at org.codehaus.plexus.DefaultPlexusContainer.lookup (DefaultPlexusContainer.java:255)
+    at org.apache.maven.plugin.internal.DefaultMavenPluginManager.getConfiguredMojo (DefaultMavenPluginManager.java:520)
+    at org.apache.maven.reporting.exec.DefaultMavenReportExecutor.getConfiguredMavenReport (DefaultMavenReportExecutor.java:306)
+    at org.apache.maven.reporting.exec.DefaultMavenReportExecutor.buildReportPlugin (DefaultMavenReportExecutor.java:263)
+    at org.apache.maven.reporting.exec.DefaultMavenReportExecutor.buildMavenReports (DefaultMavenReportExecutor.java:154)
+    at org.apache.maven.plugins.site.AbstractSiteRenderingMojo.getReports (AbstractSiteRenderingMojo.java:235)
+    at org.apache.maven.plugins.site.SiteMojo.execute (SiteMojo.java:121)
+    at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo (DefaultBuildPluginManager.java:137)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:210)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:156)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:148)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:117)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:81)
+    at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build (SingleThreadedBuilder.java:56)
+    at org.apache.maven.lifecycle.internal.LifecycleStarter.execute (LifecycleStarter.java:128)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:305)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:192)
+    at org.apache.maven.DefaultMaven.execute (DefaultMaven.java:105)
+    at org.apache.maven.cli.MavenCli.execute (MavenCli.java:956)
+    at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:288)
+    at org.apache.maven.cli.MavenCli.main (MavenCli.java:192)
+    at sun.reflect.NativeMethodAccessorImpl.invoke0 (Native Method)
+    at sun.reflect.NativeMethodAccessorImpl.invoke (NativeMethodAccessorImpl.java:62)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke (DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke (Method.java:498)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:282)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:225)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:406)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:347)
+Caused by: java.lang.ClassNotFoundException: org.apache.maven.doxia.siterenderer.DocumentContent
+    at org.codehaus.plexus.classworlds.strategy.SelfFirstStrategy.loadClass (SelfFirstStrategy.java:50)
+    at org.codehaus.plexus.classworlds.realm.ClassRealm.unsynchronizedLoadClass (ClassRealm.java:271)
+    at org.codehaus.plexus.classworlds.realm.ClassRealm.loadClass (ClassRealm.java:247)
+    at org.codehaus.plexus.classworlds.realm.ClassRealm.loadClass (ClassRealm.java:239)
+    at java.lang.Class.getDeclaredConstructors0 (Native Method)
+    at java.lang.Class.privateGetDeclaredConstructors (Class.java:2671)
+    at java.lang.Class.getDeclaredConstructors (Class.java:2020)
+    at com.google.inject.spi.InjectionPoint.forConstructorOf (InjectionPoint.java:245)
+    at com.google.inject.internal.ConstructorBindingImpl.create (ConstructorBindingImpl.java:115)
+    at com.google.inject.internal.InjectorImpl.createUninitializedBinding (InjectorImpl.java:706)
+    at com.google.inject.internal.InjectorImpl.createJustInTimeBinding (InjectorImpl.java:930)
+    at com.google.inject.internal.InjectorImpl.createJustInTimeBindingRecursive (InjectorImpl.java:852)
+    at com.google.inject.internal.InjectorImpl.getJustInTimeBinding (InjectorImpl.java:291)
+    at com.google.inject.internal.InjectorImpl.getBindingOrThrow (InjectorImpl.java:222)
+    at com.google.inject.internal.InjectorImpl.getProviderOrThrow (InjectorImpl.java:1040)
+    at com.google.inject.internal.InjectorImpl.getProvider (InjectorImpl.java:1071)
+    at com.google.inject.internal.InjectorImpl.getProvider (InjectorImpl.java:1034)
+    at com.google.inject.internal.InjectorImpl.getInstance (InjectorImpl.java:1086)
+    at org.eclipse.sisu.space.AbstractDeferredClass.get (AbstractDeferredClass.java:48)
+    at com.google.inject.internal.ProviderInternalFactory.provision (ProviderInternalFactory.java:85)
+    at com.google.inject.internal.InternalFactoryToInitializableAdapter.provision (InternalFactoryToInitializableAdapter.java:57)
+    at com.google.inject.internal.ProviderInternalFactory$1.call (ProviderInternalFactory.java:66)
+    at com.google.inject.internal.ProvisionListenerStackCallback$Provision.provision (ProvisionListenerStackCallback.java:112)
+    at com.google.inject.internal.ProvisionListenerStackCallback$Provision.provision (ProvisionListenerStackCallback.java:127)
+    at com.google.inject.internal.ProvisionListenerStackCallback.provision (ProvisionListenerStackCallback.java:66)
+    at com.google.inject.internal.ProviderInternalFactory.circularGet (ProviderInternalFactory.java:61)
+    at com.google.inject.internal.InternalFactoryToInitializableAdapter.get (InternalFactoryToInitializableAdapter.java:47)
+    at com.google.inject.internal.InjectorImpl$1.get (InjectorImpl.java:1050)
+    at org.eclipse.sisu.inject.Guice4$1.get (Guice4.java:162)
+    at org.eclipse.sisu.inject.LazyBeanEntry.getValue (LazyBeanEntry.java:81)
+    at org.eclipse.sisu.plexus.LazyPlexusBean.getValue (LazyPlexusBean.java:51)
+    at org.codehaus.plexus.DefaultPlexusContainer.lookup (DefaultPlexusContainer.java:263)
+    at org.codehaus.plexus.DefaultPlexusContainer.lookup (DefaultPlexusContainer.java:255)
+    at org.apache.maven.plugin.internal.DefaultMavenPluginManager.getConfiguredMojo (DefaultMavenPluginManager.java:520)
+    at org.apache.maven.reporting.exec.DefaultMavenReportExecutor.getConfiguredMavenReport (DefaultMavenReportExecutor.java:306)
+    at org.apache.maven.reporting.exec.DefaultMavenReportExecutor.buildReportPlugin (DefaultMavenReportExecutor.java:263)
+    at org.apache.maven.reporting.exec.DefaultMavenReportExecutor.buildMavenReports (DefaultMavenReportExecutor.java:154)
+    at org.apache.maven.plugins.site.AbstractSiteRenderingMojo.getReports (AbstractSiteRenderingMojo.java:235)
+    at org.apache.maven.plugins.site.SiteMojo.execute (SiteMojo.java:121)
+    at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo (DefaultBuildPluginManager.java:137)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:210)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:156)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:148)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:117)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:81)
+    at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build (SingleThreadedBuilder.java:56)
+    at org.apache.maven.lifecycle.internal.LifecycleStarter.execute (LifecycleStarter.java:128)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:305)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:192)
+    at org.apache.maven.DefaultMaven.execute (DefaultMaven.java:105)
+    at org.apache.maven.cli.MavenCli.execute (MavenCli.java:956)
+    at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:288)
+    at org.apache.maven.cli.MavenCli.main (MavenCli.java:192)
+    at sun.reflect.NativeMethodAccessorImpl.invoke0 (Native Method)
+    at sun.reflect.NativeMethodAccessorImpl.invoke (NativeMethodAccessorImpl.java:62)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke (DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke (Method.java:498)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:282)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:225)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:406)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:347)
+{code}",,,
+2264,JBTM-3474,"The LRACDIExtension contains an invalid test that tests the presence of LRA in the Provider (Container*Filter) constructor when the dynamically created beans aren't available - ""LRA025021: CDI cannot be detected, non JAX-RS LRA participants will not be processed"". The JAX-RS specification clearly states that the CDI injection is available in the Provider classes so this warning is quite redundant.",,,
+2276,JBTM-3468,"Transaction reaper may be stuck on printing millions of messages
+
+{code}
+WARN  [com.arjuna.ats.arjuna] (Transaction Reaper) ARJUNA012117: TransactionReaper::check processing TX 0:ffffac110007:77656299:607e05c0:1910 in state  TRACE
+{code}
+
+This is caused by fact that 'Transaction Reaper' could stuck the processing thread and thus not roll-backing any transaction.
+
+When running the WildFly the server.log may be filling the disk space as the arjuna warning line may be emitted  every milisecond.",,,
+2277,JBTM-3458,"When working with `rts/at` module there is a trouble to pertain the checkstyle rules as the checkstyle is not enabled.
+
+It's possible to run it manually for the module with `mvn checkstyle:checkstyle -Dcheckstyle.skip=false` but as the module itself is not fully checkstyle compliant is really hard to differentiate what are the changes which need to be fixed and what are only checkstyle issues which were part of the codebase already.
+
+I checked the codebase and it seems the REST-AT module is pretty compliant with the WildFly checkstyle rules that we use
+https://github.com/jbosstm/narayana/blob/5.11.0.Final/pom.xml#L368
+and it would bee good to fix the sources and enable the checkstyle.
+
+It will make less troubles for any contributor in future.",,,
+2308,JBTM-3456,"The LRA uses the OpenAPI (SmallRye OpenAPI dependency) annotations to define the Schema of the coordinator.
+
+In the current state the API definition fails to be parsed as there are missing definition for API version which is referenced in the `@APIResponses` tags.
+This omission was cause by fact we were changing the {{Coorindator}} class to extend directly from {{Application}}.
+
+Errors are like
+
+{code}
+Semantic error at paths./lra-coordinator/lra-coordinator.get.parameters.1.$ref
+$refs must reference a valid location in the document
+Jump to line 26
+Semantic error at paths./lra-coordinator/lra-coordinator.get.responses.200.headers.Narayana-LRA-API-version.$ref
+$refs must reference a valid location in the document
+Jump to line 32
+...
+{code}",,,
+2311,JBTM-3454,"Currently when a {{@Transactional}} method throws an {{java.lang.Error}} the transaction is not rolled-back.
+But, the {{java.lang.Error}} is an un-checked exception and such behaviour is wrong and the transaction should be rolled-back.
+
+The JTA spec does not define the behaviour precisely for {{@Transactional}}. But from other spec or other parts of JTA spec we can consider the {{Error}} should rollback the transaction.
+
+The JTA spec says about exceptions for {{@Transactional}} annotation:
+
+{quote}
+By default checked exceptions do not result in the transactional interceptor marking
+the transaction for rollback and instances of RuntimeException and its subclasses do. 
+{quote}
+
+But from information about Synchronization at JTA spec
+
+{quote}
+An unchecked exception thrown by a registered Synchronization object
+causes the transaction to be aborted.
+{quote}
+
+or about transaction handling withing EJB spec
+
+{quote}
+all other exceptions [meant non-application-exceptions]
+should ""Mark the transaction for rollback.""
+{quote}",,,
+2316,JBTM-3443,"When building the Narayana then on module `coordinator-thorntail` we can experience dependency error to be show[1].
+It's the thorntail plugin trying to find `system` scope `orson` dependency (https://github.com/jbosstm/narayana/blob/5.9.11.Final/ArjunaJTA/narayana-jta/pom.xml#L223) at the repository. `orson` is not needed we should exclude that dependency from the throntail resolution.
+
+[1]
+{code}
+[INFO] --- thorntail-maven-plugin:2.6.0.Final:package (default) @ lra-coordinator-thorntail ---
+[INFO] Downloading from jboss-public-repository-group: https://repository.jboss.org/nexus/content/groups/public/orson/orson/0.5.0/orson-0.5.0.jar
+[INFO] Downloading from redhat-ga: https://maven.repository.redhat.com/ga/orson/orson/0.5.0/orson-0.5.0.jar
+[INFO] Downloading from download-java-net: https://download.java.net/maven/2/orson/orson/0.5.0/orson-0.5.0.jar
+[INFO] Downloading from central: https://repo1.maven.org/maven2/orson/orson/0.5.0/orson-0.5.0.jar
+[INFO] Downloading from jboss-public-releases-repository-group: https://repository.jboss.org/nexus/content/repositories/releases/orson/orson/0.5.0/orson-0.5.0.jar
+[INFO] Downloading from repo.eclipse.org-snapshots: https://repo.eclipse.org/content/repositories/microprofile-snapshots/orson/orson/0.5.0/orson-0.5.0.jar
+[INFO] Downloading from jbossThirdParty: https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/orson/orson/0.5.0/orson-0.5.0.jar
+org.eclipse.aether.resolution.ArtifactResolutionException: Failure to find orson:orson:jar:0.5.0 in https://repository.jboss.org/nexus/content/groups/public/ was cached in the local repository, resolution will not be reattempted until the update interval of jboss-public-repository-group has elapsed or updates are forced
+  at org.eclipse.aether.internal.impl.DefaultArtifactResolver.resolve(DefaultArtifactResolver.java:423)
+  at org.eclipse.aether.internal.impl.DefaultArtifactResolver.resolveArtifacts(DefaultArtifactResolver.java:225)
+  at org.eclipse.aether.internal.impl.DefaultArtifactResolver.resolveArtifact(DefaultArtifactResolver.java:202)
+  at org.wildfly.swarm.plugin.maven.MavenArtifactResolvingHelper.resolve(MavenArtifactResolvingHelper.java:109)
+  at java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:193)
+  at java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:193)
+  at java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:175)
+  at java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1382)
+  at java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:482)
+  at java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:472)
+  at java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:708)
+  at java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+  at java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:566)
+  at org.wildfly.swarm.plugin.maven.MavenArtifactResolvingHelper.resolveAll(MavenArtifactResolvingHelper.java:207)
+  at org.wildfly.swarm.tools.DefaultArtifactResolver.resolveAllArtifactsNonTransitively(DefaultArtifactResolver.java:50)
+  at org.wildfly.swarm.tools.DependencyManager.resolveDependencies(DependencyManager.java:201)
+  at org.wildfly.swarm.tools.DependencyManager.analyzeDependencies(DependencyManager.java:125)
+  at org.wildfly.swarm.tools.BuildTool.analyzeDependencies(BuildTool.java:321)
+  at org.wildfly.swarm.tools.BuildTool.build(BuildTool.java:254)
+  at org.wildfly.swarm.tools.BuildTool.build(BuildTool.java:201)
+  at org.wildfly.swarm.plugin.maven.PackageMojo.executeSpecific(PackageMojo.java:225)
+  at org.wildfly.swarm.plugin.maven.AbstractSwarmMojo.execute(AbstractSwarmMojo.java:129)
+  at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo(DefaultBuildPluginManager.java:137)
+  at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:210)
+  at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:156)
+  at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:148)
+  at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:117)
+  at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:81)
+  at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build(SingleThreadedBuilder.java:56)
+  at org.apache.maven.lifecycle.internal.LifecycleStarter.execute(LifecycleStarter.java:128)
+  at org.apache.maven.DefaultMaven.doExecute(DefaultMaven.java:305)
+  at org.apache.maven.DefaultMaven.doExecute(DefaultMaven.java:192)
+  at org.apache.maven.DefaultMaven.execute(DefaultMaven.java:105)
+  at org.apache.maven.cli.MavenCli.execute(MavenCli.java:956)
+  at org.apache.maven.cli.MavenCli.doMain(MavenCli.java:288)
+  at org.apache.maven.cli.MavenCli.main(MavenCli.java:192)
+  at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+  at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+  at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+  at java.lang.reflect.Method.invoke(Method.java:498)
+  at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced(Launcher.java:282)
+  at org.codehaus.plexus.classworlds.launcher.Launcher.launch(Launcher.java:225)
+  at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode(Launcher.java:406)
+  at org.codehaus.plexus.classworlds.launcher.Launcher.main(Launcher.java:347)
+Caused by: org.eclipse.aether.transfer.ArtifactNotFoundException: Failure to find orson:orson:jar:0.5.0 in https://repository.jboss.org/nexus/content/groups/public/ was cached in the local repository, resolution will not be reattempted until the update interval of jboss-public-repository-group has elapsed or updates are forced
+  at org.eclipse.aether.internal.impl.DefaultUpdateCheckManager.newException(DefaultUpdateCheckManager.java:219)
+  at org.eclipse.aether.internal.impl.DefaultUpdateCheckManager.checkArtifact(DefaultUpdateCheckManager.java:172)
+  at org.eclipse.aether.internal.impl.DefaultArtifactResolver.gatherDownloads(DefaultArtifactResolver.java:564)
+  at org.eclipse.aether.internal.impl.DefaultArtifactResolver.performDownloads(DefaultArtifactResolver.java:482)
+  at org.eclipse.aether.internal.impl.DefaultArtifactResolver.resolve(DefaultArtifactResolver.java:400)
+  ... 43 more
+org.eclipse.aether.resolution.ArtifactResolutionException: Failure to find orson:orson:jar:0.5.0 in https://repository.jboss.org/nexus/content/groups/public/ was cached in the local repository, resolution will not be reattempted until the update interval of jboss-public-repository-group has elapsed or updates are forced
+  at org.eclipse.aether.internal.impl.DefaultArtifactResolver.resolve(DefaultArtifactResolver.java:423)
+  at org.eclipse.aether.internal.impl.DefaultArtifactResolver.resolveArtifacts(DefaultArtifactResolver.java:225)
+  at org.eclipse.aether.internal.impl.DefaultArtifactResolver.resolveArtifact(DefaultArtifactResolver.java:202)
+  at org.wildfly.swarm.plugin.maven.MavenArtifactResolvingHelper.resolve(MavenArtifactResolvingHelper.java:109)
+  at java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:193)
+  at java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:193)
+  at java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:175)
+  at java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1382)
+  at java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:482)
+  at java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:472)
+  at java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:708)
+  at java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+  at java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:566)
+  at org.wildfly.swarm.plugin.maven.MavenArtifactResolvingHelper.resolveAll(MavenArtifactResolvingHelper.java:207)
+  at org.wildfly.swarm.tools.DefaultArtifactResolver.resolveAllArtifactsNonTransitively(DefaultArtifactResolver.java:50)
+  at org.wildfly.swarm.tools.DependencyManager.resolveDependencies(DependencyManager.java:211)
+  at org.wildfly.swarm.tools.DependencyManager.analyzeDependencies(DependencyManager.java:125)
+  at org.wildfly.swarm.tools.BuildTool.analyzeDependencies(BuildTool.java:321)
+  at org.wildfly.swarm.tools.BuildTool.build(BuildTool.java:254)
+  at org.wildfly.swarm.tools.BuildTool.build(BuildTool.java:201)
+  at org.wildfly.swarm.plugin.maven.PackageMojo.executeSpecific(PackageMojo.java:225)
+  at org.wildfly.swarm.plugin.maven.AbstractSwarmMojo.execute(AbstractSwarmMojo.java:129)
+  at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo(DefaultBuildPluginManager.java:137)
+  at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:210)
+  at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:156)
+  at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:148)
+  at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:117)
+  at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:81)
+  at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build(SingleThreadedBuilder.java:56)
+  at org.apache.maven.lifecycle.internal.LifecycleStarter.execute(LifecycleStarter.java:128)
+  at org.apache.maven.DefaultMaven.doExecute(DefaultMaven.java:305)
+  at org.apache.maven.DefaultMaven.doExecute(DefaultMaven.java:192)
+  at org.apache.maven.DefaultMaven.execute(DefaultMaven.java:105)
+  at org.apache.maven.cli.MavenCli.execute(MavenCli.java:956)
+  at org.apache.maven.cli.MavenCli.doMain(MavenCli.java:288)
+  at org.apache.maven.cli.MavenCli.main(MavenCli.java:192)
+  at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+  at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+  at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+  at java.lang.reflect.Method.invoke(Method.java:498)
+  at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced(Launcher.java:282)
+  at org.codehaus.plexus.classworlds.launcher.Launcher.launch(Launcher.java:225)
+  at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode(Launcher.java:406)
+  at org.codehaus.plexus.classworlds.launcher.Launcher.main(Launcher.java:347)
+Caused by: org.eclipse.aether.transfer.ArtifactNotFoundException: Failure to find orson:orson:jar:0.5.0 in https://repository.jboss.org/nexus/content/groups/public/ was cached in the local repository, resolution will not be reattempted until the update interval of jboss-public-repository-group has elapsed or updates are forced
+  at org.eclipse.aether.internal.impl.DefaultUpdateCheckManager.newException(DefaultUpdateCheckManager.java:219)
+  at org.eclipse.aether.internal.impl.DefaultUpdateCheckManager.checkArtifact(DefaultUpdateCheckManager.java:172)
+  at org.eclipse.aether.internal.impl.DefaultArtifactResolver.gatherDownloads(DefaultArtifactResolver.java:564)
+  at org.eclipse.aether.internal.impl.DefaultArtifactResolver.performDownloads(DefaultArtifactResolver.java:482)
+  at org.eclipse.aether.internal.impl.DefaultArtifactResolver.resolve(DefaultArtifactResolver.java:400)
+  ... 43 more
+{code}",,,
+2317,JBTM-3442,"If I try to apply {{@Transactional}} on a bean through {{InterceptionFactory}} like this:
+
+{code:java}
+interface MyService {
+    void doSomething() throws Exception;
+}
+
+@Produces
+@ApplicationScoped
+public MyService myService(InterceptionFactory<MyService> interceptionFactory) {
+    interceptionFactory.configure().add(new TransactionalLiteral(Transactional.TxType.REQUIRED));
+    return interceptionFactory.createInterceptedInstance(() -> System.out.println(TransactionManager.transactionManager().getStatus()));
+}
+{code}
+
+and call the {{MyService.doSomething()}} method somewhere in my application, I can see {{0}} being printed (which says that there is an active transaction) but I still get the following exception after invocation:
+
+{code}
+java.lang.NullPointerException
+	at com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.getTransactional(TransactionalInterceptorBase.java:109)
+	at com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.invokeInOurTx(TransactionalInterceptorBase.java:188)
+	at com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.invokeInOurTx(TransactionalInterceptorBase.java:168)
+	at com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorRequired.doIntercept(TransactionalInterceptorRequired.java:53)
+	at com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.intercept(TransactionalInterceptorBase.java:86)
+	at com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorRequired.intercept(TransactionalInterceptorRequired.java:47)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.jboss.weld.interceptor.reader.SimpleInterceptorInvocation$SimpleMethodInvocation.invoke(SimpleInterceptorInvocation.java:73)
+	at org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.executeAroundInvoke(InterceptorMethodHandler.java:84)
+	at org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.executeInterception(InterceptorMethodHandler.java:72)
+	at org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.invoke(InterceptorMethodHandler.java:56)
+	at org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke(CombinedInterceptorAndDecoratorStackMethodHandler.java:79)
+	at org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke(CombinedInterceptorAndDecoratorStackMethodHandler.java:68)
+	at org.jboss.weld.bean.proxy.InterceptedProxyMethodHandler.invoke(InterceptedProxyMethodHandler.java:61)
+{code}
+
+The interceptor is trying to find the {{@Transactional}} annotation on the {{AnnotatedType}} but fails as it has been added via the {{InterceptionFactory}}. I know there is no easy solution as long as CDI-468 is not solved but do you think there is a workaround?",,,
+2322,JBTM-3438,"When creating the Narayana release the artifact {{org.jboss.narayana:test-utils:jar}} is not deployed to Nexus.
+
+This makes troubles when somebody works with the Narayana {{Final}} release and wants to work with integration tests and don't want to build whole Narayana in Final.
+
+{code}
+git clone https://github.com/jbosstm/narayana -b 5.10.6.Final
+cd narayana
+export JBOSS_HOME=...
+cp ArjunaJTA/jta/src/test/resources/standalone-cmr.xml $JBOSS_HOME/standalone/configuration/
+./build.sh -f ArjunaJTA/jta/pom.xml -B -Parq test
+{code}
+
+See artifacts on Maven central under group {{org.jboss.narayana}} - https://search.maven.org/search?q=g:org.jboss.narayana",,,
+2323,JBTM-3424,"The LRA code uses patter at many places where it prints error message to log and then it returns that error description to client by throwing the {{WebApplicationException}}.
+
+The example could be
+
+{code}
+} catch (URISyntaxException e) {
+  LRALogger.i18NLogger.error_invalidRecoveryUrlToJoinLRAURI(recoveryUrl.toString(), lraId);
+  String errorMsg = lraId + "": Invalid recovery URL "" + recoveryUrl.toString();
+  throw new WebApplicationException(errorMsg, e ,                   Response.status(INTERNAL_SERVER_ERROR).entity(errorMsg).build());
+}
+{code}
+
+There is the inconsistency that the log message is not the same as the message returned in via the exception.
+
+It would be good to make it consistent. The goal is to verify the log messages at `io.narayana.lra.proxy.logging.lraI18NLogger` and `io.narayana.lra.logging.lraI18NLogger`.",,,
+2329,JBTM-3420,"It happens that when using Arquillian WFLY tests that app server could be spontaneously killed by Arquillian itself. It happens in cases when the test uses {{ManagedContainer.kill}} commands. Which is usual practice in Narayana byteman crashrecovery tests. This relates to XTS, LRA, any byteman crashrec on WFLY.
+
+The most prominent place where this can be observed is client debugging the tests (WFLY Arq + crashrecovery). E.g. running the LRA coordinator test like: {{mvn clean install -Parq -Dit.test=LRACoordinatorRecovery1TestCase -Dmaven.failsafe.debug}} and then waiting with debugger on {{TestCase#recover()}} call makes the WildFly being stopped (killed) in a minute.
+
+This is done by Arquillian because of wrongly used processed in async shutdown hook - ie. https://issues.redhat.com/browse/WFARQ-78
+(some details about this at: https://github.com/wildfly/wildfly-arquillian/pull/164)",,,
+2330,JBTM-3414,This issue comes across ENTESB-15484 and NPE only appears when TRACE logger level is setting. And it looks like we need to check the trans value in com.arjuna.ats.internal.jta.recovery.arjunacore.XARecoveryModule.xaRecoveryFirstPass(),,,
+2331,JBTM-3406,"{color:#000000}InboundBridgeRecoveryManager.{color}{color:#00627a}checkXid does not correctly check nodename of the xid. Thus where multiple app server nodes share a db, bottom-up recovery can abort branches that don't belong to the node.
+{color}",,,
+2337,JBTM-3403,"com.hp.mwtests.ts.jta.jts.subordinate.TransactionImpleUnitTest hung waiting for JacORB to shutdown the orb. See attached stacktrace.
+
+ 
+
+The hanging job was http://narayanaci1.eng.hst.ams2.redhat.com/job/narayana-jdbcobjectstore-db2/PROFILE=db2,jdk=jdk8.latest,label=linux/4/console",,,
+2343,JBTM-3400,"LRA deployed on WFLY as war does utilize the abilities provided by Jandex annotation indexing.
+From technical prespective the {{ClassPathIndexer#createIndex}} (https://github.com/jbosstm/narayana/blob/5.9.10.Final/rts/lra/lra-proxy/api/src/main/java/io/narayana/lra/client/internal/proxy/nonjaxrs/ClassPathIndexer.java#L25) creates empty index and any further operations pass without any action.
+This is for example problematic for deployment time when non-JAXRS LRA prerequisites are checked - e.g. the {{@LRA}} annotated class needs to contain either {{@Compenstate}} or {{@AfterLRA}} otherwise deployment is not permitted (defined by spec, ie. LRA TCK fails with LRA WildFly war currently).
+
+The issue is that the Jandex indexer looks for system class loader and checks what's on classpath. But WFLY classloading works differently and classes are loaded by definitions driven by module class loader (ie. you can find only {{jboss-modules.jar}} on classpath).",,,
+2347,JBTM-3395,"The {{NarayanaLRAClientIT#testGetAllLRAs}} test started to fail with error
+
+{code}
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 12.129 s <<< FAILURE! - in io.narayana.lra.arquillian.client.NarayanaLRAClientIT
+[ERROR] testGetAllLRAs(io.narayana.lra.arquillian.client.NarayanaLRAClientIT)  Time elapsed: 0.627 s  <<< FAILURE!
+java.lang.AssertionError
+        at io.narayana.lra.arquillian.client.NarayanaLRAClientIT.testGetAllLRAs(NarayanaLRAClientIT.java:60)
+{code}",,,
+2348,JBTM-3391,The method [Transaction#isInEndState|https://github.com/jbosstm/narayana/blob/master/rts/lra/coordinator/src/main/java/io/narayana/lra/coordinator/domain/model/Transaction.java#L605] can wrongly change the outcome of the LRA if the failedList is not initialized. I noticed this when running the fix for JBTM-3387.,,,
+2349,JBTM-3390,NoData,,,
+2354,JBTM-3389,"Remove the dependency of {{org.apache httpclient}}. This is defined in {{pom.xml}} and provided in some tests and on other places of LRA modules.
+
+This dependency is no more needed.
+
+Removal cleans the the dependency tree and does not force WFLY to include it under war deployment for the clients.",,,
+2361,JBTM-3387,NarayanaLRAClientIT#testGetAllLRAs doesn't close started LRA. We should also check that after LRA close the getAllLRAs method returns an empty list.,,,
+2362,JBTM-3384,The quarkus' application.properties in the coordinator module are unused. The coordinator-quarkus module uses its own application.properties.,,,
+2364,JBTM-3383,"If the global transaction identifier is {{null}} for an [Xid|https://docs.oracle.com/javase/7/docs/api/javax/transaction/xa/Xid.html] returned by Oracle when the [XAResource.recover()|https://docs.oracle.com/javase/7/docs/api/javax/transaction/xa/XAResource.html#recover(int)] method is called, it causes Narayana to log a NullPointerException.
+
+This is caused by an XA datasource that is not compliant with JTA which requires a (non-null) [byte array|https://docs.oracle.com/javase/7/docs/api/javax/transaction/xa/Xid.html#getGlobalTransactionId()]. [^1^|https://bugzilla.redhat.com/show_bug.cgi?id=1353157]
+  
+ Ideally, a warning should be logged reporting any retrievable data found in the Xid along with the datasource for which the JDBC driver's {{XAResource.recover(int)}} returned the invalid/corrupt Xid object.
+{code:java}
+... WARN  [com.arjuna.ats.jta] (Periodic Recovery) ARJUNA016009: Caught:: java.lang.NullPointerException
+        at com.arjuna.ats.jta.xa.XidImple.copy(XidImple.java:190)
+        at com.arjuna.ats.jta.xa.XidImple.<init>(XidImple.java:69)
+        at com.arjuna.ats.internal.jta.recovery.arjunacore.RecoveryXids.contains(RecoveryXids.java:153)
+        at com.arjuna.ats.internal.jta.recovery.arjunacore.RecoveryXids.updateIfEquivalentRM(RecoveryXids.java:203)
+        at com.arjuna.ats.internal.jta.recovery.arjunacore.XARecoveryModule.refreshXidScansForEquivalentXAResourceImpl(XARecoveryModule.java:861)
+        at com.arjuna.ats.internal.jta.recovery.arjunacore.XARecoveryModule.xaRecoveryFirstPass(XARecoveryModule.java:629)
+        at com.arjuna.ats.internal.jta.recovery.arjunacore.XARecoveryModule.periodicWorkFirstPass(XARecoveryModule.java:189)
+        at com.arjuna.ats.internal.arjuna.recovery.PeriodicRecovery.doWorkInternal(PeriodicRecovery.java:765)
+        at com.arjuna.ats.internal.arjuna.recovery.PeriodicRecovery.run(PeriodicRecovery.java:377)
+ {code}",,,
+2367,JBTM-3381,"LRA Client should define a MicroProfile RestClientBuilder as provided service
+
+There are also some unnecessary dependencies that brings problems when building and/or running a native build for a Quarkus project.
+
+The clientID is not properly sent in the startLRA request.
+
+When joining and existing LRA with a null timelimit a NPE is thrown during the unboxing",,,
+2373,JBTM-3375,"We are seeing a number of quickstart failures:
+
+JTS Interoperability Quickstart: GlassFish
+JTS recovery
+JBoss Narayana Quickstarts: Two WS-BA Web services backed by Databases accessed in a JTA Transaction
+LRA Quickstart lra-test locally
+xts-demo-test
+
+ 
+
+The Jenkins CI job fails on first failure so we won't necessarily see the rest (I will change the CI script to fail the job at the end rather than as soon as a maven module fails).",,,
+2375,JBTM-3373,"The tests of in the LRA coordinator-jar module uses container (in this case the WildFly) and thus are considered to be integration tests. The LRA uses for integration tests failsafe (ie. the other tests of the LRA project work that way). The coordinator-jar tests should be configured with maven failsafe plugin as well.
+
+Beside this change narrows the way how the tests are handled in LRA it provides a foundations for making the test runnable not only with WildFly but with quarkus as coordinator.",,,
+2380,JBTM-3370,"mvn install -Pnative fails, also will probably need a few adjustments after able to compile in runtime.",,,
+2383,JBTM-3369,"The `ArjunaJTS/interop/glassfish` quickstart hangs forever once per 5 runs - see the console log at time of the job is stuck[1].
+
+The JBoss is started while then there is no more processing in place.
+
+{code}
+++ awk '/wildfly-parent/ { while(!/<version>/) {getline;} print; }' pom.xml
+++ cut -d '<' -f 2
+++ cut -d '>' -f 2
++ WILDFLY_MASTER_VERSION=21.0.0.Final-SNAPSHOT
++ cp -rp build/target/wildfly-21.0.0.Final-SNAPSHOT/ /home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/
++ cd /home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish
++ rm -rf /home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly/
++ WORKSPACE=/home/jenkins/workspace/narayana-quickstarts
+++ timeout_adjust 3
++ sleep 3
++ echo '===== JTS interop quickstart: step 2 (start GlassFish):'
++ ./step2.sh
+===== JTS interop quickstart: step 2 (start GlassFish):
+++ '[' /home/jenkins/workspace/narayana-quickstarts ']'
+++ '[' 5.10.7.Final-SNAPSHOT ']'
+++ QS_DIR=/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish
+++ ls /home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT/
+++ cd /home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT/
++++ pwd
+++ export JBOSS_HOME=/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT
+++ JBOSS_HOME=/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT
+++ cd -
+/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish
+++ '[' -d /home/jenkins/glassfish4 ']'
+++ GLASSFISH=/home/jenkins/glassfish4
++ set -ex
++ cd /home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish
++ export PATH=/home/jenkins/glassfish4/bin:/home/jenkins/workspace/narayana-quickstarts/tools/maven/bin:/usr/lib/jvm/java-1.8.0-openjdk/bin:/usr/lib/jvm/java-1.8.0-openjdk/bin:/usr/local/rvm/gems/ruby-2.4.9/bin:/usr/local/rvm/gems/ruby-2.4.9@global/bin:/usr/local/rvm/rubies/ruby-2.4.9/bin:/usr/local/bin:/usr/bin:/usr/local/rvm/bin
++ PATH=/home/jenkins/glassfish4/bin:/home/jenkins/workspace/narayana-quickstarts/tools/maven/bin:/usr/lib/jvm/java-1.8.0-openjdk/bin:/usr/lib/jvm/java-1.8.0-openjdk/bin:/usr/local/rvm/gems/ruby-2.4.9/bin:/usr/local/rvm/gems/ruby-2.4.9@global/bin:/usr/local/rvm/rubies/ruby-2.4.9/bin:/usr/local/bin:/usr/bin:/usr/local/rvm/bin
++ asadmin start-domain domain1
+Waiting for domain1 to start .............................
+Successfully started the domain : domain1
+domain  Location: /home/jenkins/glassfish4/glassfish/domains/domain1
+Log File: /home/jenkins/glassfish4/glassfish/domains/domain1/logs/server.log
+Admin Port: 4848
+Command start-domain executed successfully.
++ asadmin set configs.config.server-config.network-config.network-listeners.network-listener.http-listener-1.port=7080
+configs.config.server-config.network-config.network-listeners.network-listener.http-listener-1.port=7080
+Command set executed successfully.
+++ timeout_adjust 10
++ sleep 10
++ echo '===== JTS interop quickstart: step 3 (start WildFly):'
++ ./step3.sh
+===== JTS interop quickstart: step 3 (start WildFly):
+++ '[' /home/jenkins/workspace/narayana-quickstarts ']'
+++ '[' 5.10.7.Final-SNAPSHOT ']'
+++ QS_DIR=/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish
+++ ls /home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT/
+++ cd /home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT/
++++ pwd
+/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish
+++ export JBOSS_HOME=/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT
+++ JBOSS_HOME=/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT
+++ cd -
+++ '[' -d /home/jenkins/glassfish4 ']'
+++ GLASSFISH=/home/jenkins/glassfish4
++ set -ex
++ '[' -d /home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT ']'
++ cd /home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT
++ ./bin/standalone.sh -c standalone-full.xml -Djboss.tx.node.id=1 -Dcom.arjuna.ats.jts.transactionServiceId=0
+++ timeout_adjust 10
++ sleep 10
+=========================================================================
+
+  JBoss Bootstrap Environment
+
+  JBOSS_HOME: /home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT
+
+  JAVA: /usr/lib/jvm/java-1.8.0-openjdk/bin/java
+
+  JAVA_OPTS:  -server -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true 
+
+=========================================================================
+
+09:37:45,421 INFO  [org.jboss.modules] (main) JBoss Modules version 1.10.2.Final
+09:37:45,667 INFO  [org.jboss.msc] (main) JBoss MSC version 1.4.12.Final
+09:37:45,675 INFO  [org.jboss.threads] (main) JBoss Threads version 2.4.0.Final
+09:37:45,785 INFO  [org.jboss.as] (MSC service thread 1-2) WFLYSRV0049: WildFly Full 21.0.0.Final-SNAPSHOT (WildFly Core 13.0.0.Beta6) starting
+09:37:46,421 INFO  [org.wildfly.security] (ServerService Thread Pool -- 16) ELY00001: WildFly Elytron version 1.13.0.Final
+09:37:46,860 INFO  [org.jboss.as.controller.management-deprecated] (Controller Boot Thread) WFLYCTL0028: Attribute 'security-realm' in the resource at address '/core-service=management/management-interface=http-interface' is deprecated, and may be removed in a future version. See the attribute description in the output of the read-resource-description operation to learn more about the deprecation.
+09:37:46,877 INFO  [org.jboss.as.controller.management-deprecated] (ServerService Thread Pool -- 24) WFLYCTL0028: Attribute 'security-realm' in the resource at address '/subsystem=undertow/server=default-server/https-listener=https' is deprecated, and may be removed in a future version. See the attribute description in the output of the read-resource-description operation to learn more about the deprecation.
+09:37:46,931 INFO  [org.jboss.as.server] (Controller Boot Thread) WFLYSRV0039: Creating http management service using socket-binding (management-http)
+09:37:46,971 INFO  [org.xnio] (MSC service thread 1-4) XNIO version 3.8.2.Final
+09:37:46,986 INFO  [org.xnio.nio] (MSC service thread 1-4) XNIO NIO Implementation Version 3.8.2.Final
+09:37:47,020 INFO  [org.wildfly.extension.io] (ServerService Thread Pool -- 57) WFLYIO001: Worker 'default' has auto-configured to 48 IO threads with 384 max task threads based on your 24 available processors
+09:37:47,018 INFO  [org.jboss.as.clustering.infinispan] (ServerService Thread Pool -- 56) WFLYCLINF0001: Activating Infinispan subsystem.
+09:37:47,055 WARN  [org.jboss.as.txn] (ServerService Thread Pool -- 80) WFLYTX0013: The node-identifier attribute on the /subsystem=transactions is set to the default value. This is a danger for environments running multiple servers. Please make sure the attribute value is unique.
+09:37:47,058 INFO  [org.jboss.as.jaxrs] (ServerService Thread Pool -- 58) WFLYRS0016: RESTEasy version 3.13.2.Final
+09:37:47,063 INFO  [org.jboss.as.webservices] (ServerService Thread Pool -- 82) WFLYWS0002: Activating WebServices Extension
+09:37:47,067 INFO  [org.wildfly.extension.microprofile.config.smallrye._private] (ServerService Thread Pool -- 67) WFLYCONF0001: Activating WildFly MicroProfile Config Subsystem
+09:37:47,069 INFO  [org.wildfly.extension.microprofile.jwt.smallrye._private] (ServerService Thread Pool -- 69) WFLYJWT0001: Activating WildFly MicroProfile JWT Subsystem
+09:37:47,077 INFO  [org.wildfly.extension.microprofile.opentracing] (ServerService Thread Pool -- 71) WFLYTRACEXT0001: Activating MicroProfile OpenTracing Subsystem
+09:37:47,075 INFO  [org.jboss.as.connector] (MSC service thread 1-5) WFLYJCA0009: Starting JCA Subsystem (WildFly/IronJacamar 1.4.23.Final)
+09:37:47,079 INFO  [org.wildfly.extension.microprofile.metrics.smallrye] (ServerService Thread Pool -- 70) WFLYMETRICS0001: Activating Eclipse MicroProfile Metrics Subsystem
+09:37:47,081 INFO  [org.jboss.as.jsf] (ServerService Thread Pool -- 63) WFLYJSF0007: Activated the following JSF Implementations: [main]
+09:37:47,086 INFO  [org.wildfly.extension.microprofile.health.smallrye] (ServerService Thread Pool -- 68) WFLYHEALTH0001: Activating Eclipse MicroProfile Health Subsystem
+09:37:47,095 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-7) WFLYUT0003: Undertow 2.2.0.Final starting
+09:37:47,805 INFO  [org.jboss.as.security] (ServerService Thread Pool -- 78) WFLYSEC0002: Activating Security Subsystem
+09:37:47,806 INFO  [org.jboss.as.naming] (ServerService Thread Pool -- 72) WFLYNAM0001: Activating Naming Subsystem
+09:37:47,808 INFO  [org.wildfly.iiop.openjdk] (ServerService Thread Pool -- 55) WFLYIIOP0001: Activating IIOP Subsystem
+09:37:47,821 INFO  [org.jboss.as.connector.subsystems.datasources] (ServerService Thread Pool -- 47) WFLYJCA0004: Deploying JDBC-compliant driver class org.h2.Driver (version 1.4)
+09:37:47,826 INFO  [org.jboss.as.security] (MSC service thread 1-2) WFLYSEC0001: Current PicketBox version=5.0.3.Final-redhat-00006
+09:37:47,828 INFO  [org.jboss.as.connector.deployers.jdbc] (MSC service thread 1-3) WFLYJCA0018: Started Driver service with driver-name = h2
+09:37:47,872 INFO  [org.jboss.as.naming] (MSC service thread 1-5) WFLYNAM0003: Starting Naming Service
+09:37:47,875 INFO  [org.jboss.as.mail.extension] (MSC service thread 1-3) WFLYMAIL0001: Bound mail session [java:jboss/mail/Default]
+09:37:47,942 INFO  [org.jboss.remoting] (MSC service thread 1-4) JBoss Remoting version 5.0.18.Final
+09:37:47,995 INFO  [org.wildfly.extension.undertow] (ServerService Thread Pool -- 81) WFLYUT0014: Creating file handler for path '/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT/welcome-content' with options [directory-listing: 'false', follow-symlink: 'false', case-sensitive: 'true', safe-symlink-paths: '[]']
+09:37:48,032 INFO  [org.jboss.as.ejb3] (MSC service thread 1-4) WFLYEJB0482: Strict pool mdb-strict-max-pool is using a max instance size of 96 (per class), which is derived from the number of CPUs on this host.
+09:37:48,032 INFO  [org.jboss.as.ejb3] (MSC service thread 1-6) WFLYEJB0481: Strict pool slsb-strict-max-pool is using a max instance size of 384 (per class), which is derived from thread worker pool sizing.
+09:37:48,041 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-6) WFLYUT0012: Started server default-server.
+09:37:48,066 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-4) WFLYUT0018: Host default-host starting
+09:37:48,140 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-3) WFLYUT0006: Undertow HTTP listener default listening on 127.0.0.1:8080
+09:37:48,171 INFO  [org.jboss.as.patching] (MSC service thread 1-1) WFLYPAT0050: WildFly Full cumulative patch ID is: base, one-off patches include: none
+09:37:48,185 WARN  [org.jboss.as.domain.management.security] (MSC service thread 1-1) WFLYDM0111: Keystore /home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT/standalone/configuration/application.keystore not found, it will be auto generated on first use with a self signed certificate for host localhost
+09:37:48,190 INFO  [org.jboss.as.server.deployment.scanner] (MSC service thread 1-6) WFLYDS0013: Started FileSystemDeploymentService for directory /home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT/standalone/deployments
+09:37:48,200 INFO  [org.jboss.as.ejb3] (MSC service thread 1-2) WFLYEJB0493: EJB subsystem suspension complete
+09:37:48,400 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-2) WFLYUT0006: Undertow HTTPS listener https listening on 127.0.0.1:8443
+09:37:48,428 INFO  [org.jboss.as.connector.subsystems.datasources] (MSC service thread 1-5) WFLYJCA0001: Bound data source [java:jboss/datasources/ExampleDS]
+09:37:48,431 INFO  [org.wildfly.iiop.openjdk] (MSC service thread 1-8) WFLYIIOP0009: CORBA ORB Service started
+09:37:48,482 INFO  [org.jboss.ws.common.management] (MSC service thread 1-6) JBWS022052: Starting JBossWS 5.4.2.Final (Apache CXF 3.3.7) 
+09:37:50,611 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221000: live Message Broker is starting with configuration Broker Configuration (clustered=false,journalDirectory=/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT/standalone/data/activemq/journal,bindingsDirectory=/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT/standalone/data/activemq/bindings,largeMessagesDirectory=/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT/standalone/data/activemq/largemessages,pagingDirectory=/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/tmp/wildfly-21.0.0.Final-SNAPSHOT/standalone/data/activemq/paging)
+09:37:50,643 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221012: Using AIO Journal
+09:37:50,699 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221043: Protocol module found: [artemis-server]. Adding protocol support for: CORE
+09:37:50,700 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221043: Protocol module found: [artemis-amqp-protocol]. Adding protocol support for: AMQP
+09:37:50,700 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221043: Protocol module found: [artemis-hornetq-protocol]. Adding protocol support for: HORNETQ
+09:37:50,700 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221043: Protocol module found: [artemis-stomp-protocol]. Adding protocol support for: STOMP
+09:37:51,514 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221034: Waiting indefinitely to obtain live lock
+09:37:51,515 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221035: Live Server Obtained live lock
+ ./bin/jboss-cli.sh --connect --file=/home/jenkins/workspace/narayana-quickstarts/ArjunaJTS/interop/glassfish/configure-jts-transactions.cli
+Failed to connect to the controller: Timeout waiting for the system to boot.
+09:38:01,080 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221003: Deploying ANYCAST queue jms.queue.ExpiryQueue on address jms.queue.ExpiryQueue
+09:38:01,309 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221003: Deploying ANYCAST queue jms.queue.DLQ on address jms.queue.DLQ
+09:38:01,392 INFO  [org.wildfly.extension.messaging-activemq] (MSC service thread 1-4) WFLYMSGAMQ0016: Registered HTTP upgrade for activemq-remoting protocol handled by http-acceptor acceptor
+09:38:01,392 INFO  [org.wildfly.extension.messaging-activemq] (MSC service thread 1-3) WFLYMSGAMQ0016: Registered HTTP upgrade for activemq-remoting protocol handled by http-acceptor-throughput acceptor
+09:38:01,392 INFO  [org.wildfly.extension.messaging-activemq] (MSC service thread 1-1) WFLYMSGAMQ0016: Registered HTTP upgrade for activemq-remoting protocol handled by http-acceptor acceptor
+09:38:01,394 INFO  [org.wildfly.extension.messaging-activemq] (MSC service thread 1-6) WFLYMSGAMQ0016: Registered HTTP upgrade for activemq-remoting protocol handled by http-acceptor-throughput acceptor
+09:38:02,001 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221007: Server is now live
+09:38:02,001 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221001: Apache ActiveMQ Artemis Message Broker version 2.10.1 [default, nodeID=995a3edc-07b7-11eb-8350-0242ac11000f] 
+09:38:02,026 INFO  [org.wildfly.extension.messaging-activemq] (ServerService Thread Pool -- 87) WFLYMSGAMQ0002: Bound messaging object to jndi name java:/ConnectionFactory
+09:38:02,028 INFO  [org.wildfly.extension.messaging-activemq] (ServerService Thread Pool -- 88) WFLYMSGAMQ0002: Bound messaging object to jndi name java:jboss/exported/jms/RemoteConnectionFactory
+09:38:02,082 INFO  [org.jboss.as.connector.deployment] (MSC service thread 1-4) WFLYJCA0007: Registered connection factory java:/JmsXA
+{code}",,,
+2387,JBTM-3363,"I am trying to run the Microprofile LRA TCK against the Narayana LRA implementation, and am using a JVM based on OpenJ9 (not HotSpot). When I do this, I get the following exception
+
+(I've missed out a bunch of stack frames as it is rather large otherwise)
+
+ 
+
+java.util.ServiceConfigurationError: org.eclipse.microprofile.lra.tck.service.spi.LRARecoveryService: Provider io.narayana.lra.arquillian.spi.NarayanaLRARecovery could not be instantiated
+ at java.util.ServiceLoader.fail(ServiceLoader.java:581)
+ at java.util.ServiceLoader$ProviderImpl.newInstance(ServiceLoader.java:803)
+ at java.util.ServiceLoader$ProviderImpl.get(ServiceLoader.java:721)
+ at java.util.ServiceLoader$3.next(ServiceLoader.java:1394)
+ at org.eclipse.microprofile.lra.tck.service.LRATestService.loadService(LRATestService.java:105)
+ at org.eclipse.microprofile.lra.tck.service.LRATestService.<init>(LRATestService.java:50)
+ at org.eclipse.microprofile.lra.tck.service.LRATestService$Proxy$_$$_WeldClientProxy.<init>(Unknown Source)
+
+......
+
+Caused by: java.lang.ExceptionInInitializerError: null
+ at java.lang.J9VMInternals.ensureError(J9VMInternals.java:193)
+ at java.lang.J9VMInternals.recordInitializationFailure(J9VMInternals.java:182)
+ at jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+
+....
+
+Caused by: java.lang.IllegalStateException: Cannot change annotation @org.eclipse.microprofile.lra.annotation.ws.rs.LRA(timeLimit=0, cancelOn={}, end=false, value=SUPPORTS, cancelOnFamily=\{CLIENT_ERROR, SERVER_ERROR}, timeUnit=Seconds) of class class org.eclipse.microprofile.lra.tck.participant.api.LraResource in JDK8 way
+ at io.narayana.lra.arquillian.spi.LRAAnnotationAdjuster.adjustLRAAnnotation(LRAAnnotationAdjuster.java:95)
+ at io.narayana.lra.arquillian.spi.LRAAnnotationAdjuster.processWithClass(LRAAnnotationAdjuster.java:51)
+ at io.narayana.lra.arquillian.spi.NarayanaLRARecovery.<clinit>(NarayanaLRARecovery.java:49)
+
+....
+
+Caused by: java.lang.NoSuchMethodException: java.lang.Class.annotationData()
+ at java.lang.Class.newNoSuchMethodException(Class.java:638)
+ at java.lang.Class.throwExceptionOrReturnNull(Class.java:1344)
+ at java.lang.Class.getMethodHelper(Class.java:1408)
+ at java.lang.Class.getDeclaredMethod(Class.java:1080)
+ at io.narayana.lra.arquillian.spi.LRAAnnotationAdjuster.adjustLRAAnnotation(LRAAnnotationAdjuster.java:82).....",,,
+2388,JBTM-3360,"Raised originally in [https://groups.google.com/g/narayana-users/c/mu8RSHcARsk.]
+
+ 
+
+I verified that after the upgrade to RESTEasy 3.13.1 (mentioned fix was included in 3.12.0) the ServerLRAFilter is no longer able to get the correct method with the LRA annotation and the processing thus fails. This will fail TckLRATypeTests when Narayana upgrades RESTEasy.",,,
+2391,JBTM-3351,"The management operation {{clearHeuristic}} should consider to clear heuristic flag not only from the transaction ({{BasicAction}}) but from the participant record as well - when possible, e.g. the XA resource record maintains heuristic flag for participant and thus it should be cleared on the operation.
+
+The current management operation {{'clearHeuristic'}} is invoked only on the ""covering"" transaction - {{BasicAction}} is modified[1] -> [2] -> [3]. But the {{XAResourceRecord}} heuristics state[4] is unchanged. Then during recovery commit retry the {{XAResource.commit}} is denied[5].
+
+[1]  https://github.com/jbosstm/narayana/blob/5.10.5.Final/ArjunaCore/arjuna/classes/com/arjuna/ats/arjuna/tools/osb/mbean/ActionBean.java#L433
+[2] https://github.com/jbosstm/narayana/blob/5.10.5.Final/ArjunaCore/arjuna/classes/com/arjuna/ats/arjuna/tools/osb/mbean/ActionBean.java#L295
+[3] https://github.com/jbosstm/narayana/blob/5.10.5.Final/ArjunaCore/arjuna/classes/com/arjuna/ats/arjuna/coordinator/BasicAction.java#L2551
+[4] https://github.com/jbosstm/narayana/blob/5.10.5.Final/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/resources/arjunacore/XAResourceRecord.java#L1320
+[5] https://github.com/jbosstm/narayana/blob/5.10.5.Final/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/resources/arjunacore/XAResourceRecord.java#L463",,,
+2394,JBTM-3342,When a method annotated with @LRA is invoked with a nested context the parent context should be made available to the invoked method via the LRA_HTTP_PARENT_CONTEXT_HEADER ([https://github.com/eclipse/microprofile-lra/blob/master/api/src/main/java/org/eclipse/microprofile/lra/annotation/ws/rs/LRA.java#L132]).,,,
+2402,JBTM-3341,"when executing {{TckContextTests#testStatus,TckContextTests#testForget}} one after another the LRA started in testForget is kept in Closing state in object store even when it's removed from the in memory LRA lists. When the testStatus invokes recovery this LRA is also recovered (because it's still in Closing state) and then it's kept even in the in memory recovery list and again displayed to users. The testForget LRA is finished with failing participant (returning FailedToComplete) and the second phase correctly returns FINISH_ERROR, however, this change needs to be also reflected in the state of the parent Transaction object.",,,
+2405,JBTM-3337,"When Narayana starts with an empty property then it fails during startup.
+This is documented at the JBEAP issue https://issues.redhat.com/browse/JBEAP-19690.
+
+As the [~rchakrab] pointed at the issue the error came from https://github.com/jbosstm/narayana/blob/5.10.5.Final/common/classes/com/arjuna/common/util/propertyservice/AbstractPropertiesFactory.java#L122-L124
+
+The error which can be observed is
+{code}
+testGetWithEmptyPropertyWithStax(com.arjuna.common.tests.propertyservice.EmptyPropertiesFactoryTest)  Time elapsed: 0.023 s  <<< ERROR!
+java.lang.RuntimeException: unable to load properties from /home/ochaloup/Transactions/narayana/common/target/test-classes/properties-factory-test.xml
+      at com.arjuna.common.util.propertyservice.AbstractPropertiesFactory.getPropertiesFromFile(AbstractPropertiesFactory.java:107)
+   at com.arjuna.common.util.propertyservice.AbstractPropertiesFactory.initDefaultProperties(AbstractPropertiesFactory.java:196)
+  at com.arjuna.common.util.propertyservice.AbstractPropertiesFactory.getDefaultProperties(AbstractPropertiesFactory.java:62)
+  at com.arjuna.common.tests.propertyservice.EmptyPropertiesFactoryTest.testGetWithEmptyPropertyWithStax(EmptyPropertiesFactoryTest.java:57)
+      at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+      at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke(Method.java:498)
+ at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:47)
+ at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+      at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:44)
+   at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+        at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+    at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:271)
+        at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:70)
+        at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:50)
+    at org.junit.runners.ParentRunner$3.run(ParentRunner.java:238)
+      at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:63)
+  at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:236)
+    at org.junit.runners.ParentRunner.access$000(ParentRunner.java:53)
+  at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:229)
+ at org.junit.runners.ParentRunner.run(ParentRunner.java:309)
+    at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:365)
+ at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:272)
+    at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:236)
+  at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:159)
+      at org.apache.maven.surefire.booter.ForkedBooter.invokeProviderInSameClassLoader(ForkedBooter.java:386)
+     at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:323)
+      at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:143)
+Caused by: java.lang.IllegalArgumentException: key can't be empty
+   at java.lang.System.checkKey(System.java:843)
+  at java.lang.System.getProperty(System.java:716)
+     at com.arjuna.common.util.propertyservice.AbstractPropertiesFactory.applySystemProperties(AbstractPropertiesFactory.java:125)
+       at com.arjuna.common.util.propertyservice.AbstractPropertiesFactory.getPropertiesFromFile(AbstractPropertiesFactory.java:104)
+   ... 28 more
+{code}
+",,,
+2406,JBTM-3335,The jca + tomcat quickstart is using a very old version of hibernate-validator (org.hibernate:hibernate-validator:5.0.1.Final) and needs updating to use a more recent release.,,,
+2442,JBTM-3334,"The current XTS quickstart (https://github.com/jbosstm/quickstart/tree/5.10.5.Final/XTS) fails because there is used WFLY 20 quickstarts which was changed and start providing a microprofile quickstart which expects microprofile dependencies to be defined.
+
+The XTS quickstarts need to add `version.microprofile.bom` property to compile correctly.",,,
+2444,JBTM-3328,"In my project with Spring Boot, Hibernate, Informix, DBCP pool Narayana logs unnecessarily XA endAssociation. In the attached sample project I can prove it with the embedded Derby database. This happens during a rollback transaction. According to the linked discussion forum, this is due to [commit|https://github.com/jbosstm/narayana/commit/fcfb851072ea28c80902710e1179fbb9f62b3ca3] and the solution would be to log only with duplicate resources.",,,
+2445,JBTM-3326,"Currently, the nested participant enters the H_H state after it completes and the recovery calls the after LRA method in the first pass. This call should be postponed until the parent LRA finishes.",,,
+2451,JBTM-3324,"I've checked the new records found by Coverity static analysis tool (one running by EAP QE team, with more info on internal page https://mojo.redhat.com/docs/DOC-180330).
+
+There are two bugs that should be considered to be fixed,:
+
+* {{RecoveryManager#terminate}} changes the recovery manager instance to {{null}}. But the {{_recoveryManager}} is a static variable which should be synchorinzed on class not on the instance. Especially when {{#manager(boolean}} method is {{public static}}, see https://github.com/jbosstm/narayana/blob/5.10.5.Final/ArjunaCore/arjuna/classes/com/arjuna/ats/arjuna/recovery/RecoveryManager.java#L212
+* If the {{XAResourceRecord}} is called with {{params != null}} then the check verifies if the params length is with equal or more than the value of constant {{XACONNECTION}}. If the constant {{XACONNECTION}} is zero then for empty params array the access to {{params[0]}} will fail with {{ArrayIndexOutOfBoundsException}}, see https://github.com/jbosstm/narayana/blob/5.10.5.Final/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/resources/arjunacore/XAResourceRecord.java#L126
+
+Plus few minor ones.",,,
+2457,JBTM-3323,"The LRA ServerLRAFilter is being registered twice, once implicitly because ServerLRAFilter is a Provider, and once explicitly in FilterRegistration. Resteasy ignores the second registration but this is not the case for other JAX-RS implementations such as  Apache CXF and the endpoints may be registered twice. In particular this can result in 2 LRAs being created for the same client request.",,,
+2458,JBTM-3322,"Some of the Narayana quickstarts uses the shell scripts to run the quickstarts.
+Some of them use the {{sleep}} or waiting for some time to get response. Any of these attempts which are using timeout to wait/sleep should be using factor of timeout that could be set in jenkins job which starts the quickstarts scripts.
+
+For the Narayana CI AMS the we hit failures where server is not started fast enough and failure occurs. 
+E.g. in the next snippet the LRA thorntail was not able to start in 10 seconds
+
+{code}
++ echo '===== starting service on port 8082'
+===== starting service on port 8082
++ service_pid=22993
++ sleep 10
++ java -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv4Addresses -Dthorntail.http.port=8082 -Dlra.http.port=8080 -Dthorntail.transactions.object-store-path=../txlogs -jar target/lra-participant-example-thorntail.jar
+2020-05-19 07:31:21,337 WARN  [org.jboss.as.dependency.private] (MSC service thread 1-6) WFLYSRV0018: Deployment ""deployment.lra-coordinator.war"" is using a private module (""org.jboss.jts"") which may be changed or removed in future versions without notice.
+2020-05-19 07:31:21,353 INFO  [org.jboss.weld.deployer] (MSC service thread 1-7) WFLYWELD0003: Processing weld deployment lra-coordinator.war
+2020-05-19 07:31:28,225 INFO  [org.jboss.as] (MSC service thread 1-2) WFLYSRV0049: Thorntail 2.6.0.Final (WildFly Core 10.0.3.Final) starting
+2020-05-19 07:31:28,268 INFO  [org.wildfly.swarm] (MSC service thread 1-2) THORN0019: Install MSC service for command line args: []
+2020-05-19 07:31:29,370 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-4) WFLYUT0012: Started server default-server.
+2020-05-19 07:31:30,942 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-4) WFLYUT0018: Host default-host starting
++ '[' '' = true ']'
++ echo '===== testing service'
++ test_service '1 completed and 0 compensated'
+===== testing service
++ curl -4 -X PUT -I http://localhost:8082/cdi
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0    74    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 404 Not Found
+...
+2020-05-19 07:31:32,469 INFO  [org.jboss.as.server] (main) WFLYSRV0010: Deployed ""lra-participant-example.war"" (runtime-name : ""lra-participant-example.war"")
+2020-05-19 07:31:32,475 INFO  [org.wildfly.swarm] (main) THORN99999: Thorntail is Ready
+{code}",,,
+2471,JBTM-3321,"The current REST-AT inbound bridge wrongly uses the user {{@Priority}} value (https://docs.oracle.com/javaee/7/api/javax/ws/rs/Priorities.html#USER).
+
+The transactional interceptor should not be called at the same time as the user interceptors and it has to go before them.
+This is a not expected ordering and it may cause issues when a user adds his own provider.",,,
+2472,JBTM-3320,forgetAllParticipants does not repeat failed forget calls and if the calls are successful the nested LRA is not finished. This leaves the nested LRA active.,,,
+2479,JBTM-3318,"The test {{TckRecoveryTests#testCancelWhenParticipantIsUnavailable}} fails on AMS CI.
+The CI is a bit slower and it seems the issue consists of timeout handling.
+
+{code}
+[INFO] Running org.eclipse.microprofile.lra.tck.TckRecoveryTests
+[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 57.021 s <<< FAILURE! - in org.eclipse.microprofile.lra.tck.TckRecoveryTests
+[ERROR] testCancelWhenParticipantIsUnavailable(org.eclipse.microprofile.lra.tck.TckRecoveryTests)  Time elapsed: 28.349 s  <<< FAILURE!
+java.lang.AssertionError: Compensate on restarted service should have been called. Was -1 expected:<200> but was:<500>
+	at org.eclipse.microprofile.lra.tck.TckRecoveryTests.testCancelWhenParticipantIsUnavailable(TckRecoveryTests.java:215)
+{code}
+",,,
+2484,JBTM-3317,"There is a trouble on building Narayana on JDK11 after the merging the fix for https://issues.redhat.com/browse/JBTM-3246 there is an issue on building for JDK11 with {{release}} profile.
+The failure is for {{narayana-jta}} and {{narayana-full}} profiles.
+
+{code}
+java version ""11.0.6"" 2020-01-14 LTS
+Java(TM) SE Runtime Environment 18.9 (build 11.0.6+8-LTS)
+Java HotSpot(TM) 64-Bit Server VM 18.9 (build 11.0.6+8-LTS, mixed mode)
+{code}
+
+{code}
+./tools/maven/bin/mvn -B -s ""./tools/maven/conf/settings.xml"" -Dbpa=fc18x64 -Dorson.jar.location=/home/ochaloup/Transactions/narayana/ext/ clean install   -Pcommunity,release -DskipTests -Didlj-enabled=true
+{code}
+
+{code}
+[INFO] Narayana: ArjunaJTA narayana-jta ................... FAILURE [  2.221 s]
+...
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-javadoc-plugin:3.0.1:jar (attach-javadocs) on project narayana-jta: MavenReportException: Error while generating Javadoc: 
+[ERROR] Exit code: 1 - /home/ochaloup/Transactions/narayana/ArjunaJTA/cdi/classes/com/arjuna/ats/jta/cdi/async/ContextPropagationAsyncHandler.java:21: error: package io.smallrye.reactive.converters does not exist
+[ERROR] import io.smallrye.reactive.converters.ReactiveTypeConverter;
+[ERROR]                                       ^
+[ERROR] /home/ochaloup/Transactions/narayana/ArjunaJTA/cdi/classes/com/arjuna/ats/jta/cdi/async/ContextPropagationAsyncHandler.java:22: error: package io.smallrye.reactive.converters does not exist
+[ERROR] import io.smallrye.reactive.converters.Registry;
+{code}",,,
+2486,JBTM-3316,"The MP LRA spec changed to use attribute {{lra.tck.timeout.factor}} instead of the previously used {{lra.tck.consistency.longDelay}} and {{lra.tck.consistency.shortDelay}}.
+https://github.com/eclipse/microprofile-lra/issues/249
+
+The Narayana LRA TCK `arquillian.xml` should be reflecting this.
+
+plus, the scripts should prolong the timeout to stabilize the CI runs",,,
+2489,JBTM-3313,"
+{code:java}
+[ERROR] Failures: 
+[ERROR]   FailedLRAIT.testCompensateFailed:134 lra not in failed list
+[ERROR]   FailedLRAIT.testCompleteFailed:147 lra not in failed list
+[ERROR]   FailedLRAIT.testWithStatusCompensateFailed:106 lra not in failed list
+[ERROR]   FailedLRAIT.testWithStatusCompleteFailed:121 lra not in failed list
+{code}
+",,,
+2490,JBTM-3312,"When the Complete/Compensate callbacks are delivered and the participant also defined the AfterLRA method then the LRA is concluded with HEURISTIC_HAZARD outcome. However, when the subsequent delivery of the AfterLRA notifications also succeeds the LRA is then in HEURISTIC_COMMIT state but this state is not taken into account for the status of the LRA.",,,
+2491,JBTM-3310,"After a full TCK run the output of the following command {{curl http://localhost:8080/lra-recovery-coordinator/failed | jq}}
+
+
+{code:json}
+[
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LraCancelOnResource#cancelOn301"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_20"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_3b0"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_281"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_36a"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_315"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckInterface#requiresNewLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_1f7"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_3f"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.ContextTckResource#contextCheck"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_198"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_96"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LraCancelOnResource#cancelOnFamily3xx"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_35"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_38f"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_291"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LraCancelOnResource#cancelOnFamilyDefault5xx"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_2a"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_386"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_35c"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LraCancelOnResource#cancelOnFamilyDefault4xx"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_25"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LraCancelOnResource#notCancelOnFamily5xx"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_2f"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckSuperclass#requiredEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_3c4"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckSuperclass#requiresNewEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_2df"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_375"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_32c"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_de"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LraCancelOnResource#cancelFromRemoteCall"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_3a"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_1e0"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckInterface#requiredLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_3a2"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_234"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_1fe"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.ContextTckResource#async1LRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_175"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_30d"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_338"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_8c"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.ContextTckResource#newLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_181"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRAUnknownResource#activityWithLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_4"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_255"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_2d4"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_5c"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_106"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_1e8"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckResource#requiresNewLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_219"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.RecoveryResource#requiredLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_14c"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckInterface#requiresNewLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_212"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_247"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.ContextTckResource#requiresNew"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_19e"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckResource#requiresNewLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_325"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_a1"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_1d2"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_c4"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckInterface#requiresNewEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_275"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_110"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_3bc"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckSuperclass#requiredLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_2be"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_75"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_22c"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_397"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_299"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_cd"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_2f7"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckSuperclass#requiresNewLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_29d"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.ContextTckResource#requiredLRA"",
+    ""closed"": false,
+    ""closing"": true,
+    ""failedParticipants"": [
+      ""<http://localhost:8180/context-tck-resource/forget?method=javax.ws.rs.DELETE>; rel=\""forget\""; title=\""forget URI\""; type=\""text/plain\"",<http://localhost:8180/context-tck-resource/leave?method=javax.ws.rs.PUT>; rel=\""leave\""; title=\""leave URI\""; type=\""text/plain\"",<http://localhost:8180/context-tck-resource/complete?method=javax.ws.rs.PUT>; rel=\""complete\""; title=\""complete URI\""; type=\""text/plain\"",<http://localhost:8180/context-tck-resource/compensate?method=javax.ws.rs.PUT>; rel=\""compensate\""; title=\""compensate URI\""; type=\""text/plain\"",<http://localhost:8180/context-tck-resource/status?method=javax.ws.rs.GET>; rel=\""status\""; title=\""status URI\""; type=\""text/plain\""""
+    ],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_1ba"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Closing"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_d4"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckSuperclass#requiresNewEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_34e"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_1f3"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_215"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_fb"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_34a"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_48"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRAUnknownResource#activityWithLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_13"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_f1"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckResource#requiresNewEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_23d"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.ContextTckResource#requiresNew"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_1a6"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_2cc"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckResource#requiredEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_267"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LraResource#timeLimitTest2"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_70"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_2ff"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_3a5"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_2b6"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckSuperclass#requiresNewLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_2c5"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.ContextTckResource#newLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_16d"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.ContextTckResource#newLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_15e"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_1ca"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_2a8"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LraResource#nestedActivity"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_62"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": false
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_37d"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_271"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_2e9"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.ContextTckResource#newLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_17b"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_20a"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_124"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.ContextTckResource#async3LRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_159"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_e8"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_289"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.nonjaxrs.valid.ValidLRAParticipant#enlistWithComplete"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_13a"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LraResource#timeLimit"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_b3"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckInterface#requiresNewEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_31d"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckResource#requiredLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_343"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckInterface#requiredEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_224"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": false,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.ContextTckResource#asyncInvocationWithLRA"",
+    ""closed"": true,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_1b4"",
+    ""recovering"": false,
+    ""startTime"": 0,
+    ""status"": ""Closed"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.LRATypeTckResource#requiresNewEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_259"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  },
+  {
+    ""active"": false,
+    ""cancelled"": false,
+    ""cancelling"": true,
+    ""clientId"": ""org.eclipse.microprofile.lra.tck.participant.api.NonParticipatingTckResource#startDontEndLRA"",
+    ""closed"": false,
+    ""closing"": false,
+    ""failedParticipants"": [],
+    ""failedToCancel"": false,
+    ""failedToClose"": false,
+    ""finishTime"": 0,
+    ""httpStatus"": 200,
+    ""lraId"": ""http://localhost:8080/lra-coordinator/0_ffffc0a80067_b55f_5eb12f16_b8"",
+    ""recovering"": true,
+    ""startTime"": 0,
+    ""status"": ""Cancelling"",
+    ""timeNow"": 0,
+    ""topLevel"": true
+  }
+]
+{code}
+
+Contains a lot of LRAs which are not in either FailedToClose or FailedToCancel states.
+",,,
+2493,JBTM-3307,"The test regularly fails CI
+[ERROR] testRecovery2(io.narayana.lra.coordinator.LRACoordinatorRecovery2TestCase)  Time elapsed: 30.455 s  <<< FAILURE!
+java.lang.AssertionError: LRA with short timeout should not be active
+
+presumably due to a timing issue (since I cannot reproduce it on my laptop). I will see if there is a way to make the test more robust.",,,
+2498,JBTM-3301,"Current Tomcat related quickstarts in the Narayana quickstart repo https://github.com/jbosstm/quickstart/tree/5.10.4.Final
+
+First, use the old integration code of the Narayana-Tomcat from time the integration code was part of the Narayana repo (https://github.com/jbosstm/narayana/tree/5.9.0.Final/tomcat)
+But now it's separated under the standalone project here https://github.com/web-servers/narayana-tomcat
+There is a small trouble with this change as the code for JWS requires a newer version of the Tomcat than it's used in the quickstart now. The Tomcate version update from {{9.0.4}} to up-to-date version is needed as well.
+
+The Tomcat quickstart does not start on JDK9+ as the newer JDK misses the JAX-B classes directly in the JDK. The dependencies need to be provided as part of the {{war}} archive (or provided to Tomcat classpath in other way).
+
+A small trouble on the {{run.sh}} shell script used for quickstart execution is that if {{TOMCAT_HOME}} is placed on a path with space in name it fails as the path is not encapsulated with parentheses {{""}}.",,,
+2505,JBTM-3296,"The quickstarts {{lra-test}} fails as the {{TripController}} is annotated with the {{@LRA}} but it does not define neither {{@Compensate}} nor {{@AfterLRA}} method.
+See https://github.com/eclipse/microprofile-lra/issues/244
+
+Failure is
+{code}
+2020-04-17 01:49:26,020 ERROR [org.jboss.msc.service.fail] (MSC service thread 1-1) MSC000001: Failed to start service jboss.deployment.unit.""lra-test.war"".WeldStartService: org.jboss.msc.service.StartException in service jboss.deployment.unit.""lra-test.war"".WeldStartService: Failed to start service
+        at org.jboss.msc.service.ServiceControllerImpl$StartTask.execute(ServiceControllerImpl.java:1730)
+        at org.jboss.msc.service.ServiceControllerImpl$ControllerTask.run(ServiceControllerImpl.java:1558)
+        at org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
+        at org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1985)
+        at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1487)
+        at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1378)
+        at java.lang.Thread.run(Thread.java:748)
+Caused by: org.jboss.weld.exceptions.DefinitionException: Exception List with 1 exceptions:
+Exception 0 :
+java.lang.IllegalStateException: io.narayana.rts.lra.demo.tripcontroller.TripController : The class contains an LRA method and no Compensate or AfterLRA method was found.
+        at io.narayana.lra.client.internal.proxy.nonjaxrs.LRACDIExtension.isLRAParticipant(LRACDIExtension.java:129)
+        at io.narayana.lra.client.internal.proxy.nonjaxrs.LRACDIExtension.getAsParticipant(LRACDIExtension.java:104)
+        at io.narayana.lra.client.internal.proxy.nonjaxrs.LRACDIExtension.observe(LRACDIExtension.java:75)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.jboss.weld.injection.StaticMethodInjectionPoint.invoke(StaticMethodInjectionPoint.java:95)
+        at org.jboss.weld.injection.MethodInvocationStrategy$SpecialParamPlusBeanManagerStrategy.invoke(MethodInvocationStrategy.java:144)
+        at org.jboss.weld.event.ObserverMethodImpl.sendEvent(ObserverMethodImpl.java:330)
+        at org.jboss.weld.event.ExtensionObserverMethodImpl.sendEvent(ExtensionObserverMethodImpl.java:123)
+        at org.jboss.weld.event.ObserverMethodImpl.sendEvent(ObserverMethodImpl.java:308)
+        at org.jboss.weld.event.ObserverMethodImpl.notify(ObserverMethodImpl.java:286)
+        at javax.enterprise.inject.spi.ObserverMethod.notify(ObserverMethod.java:124)
+        at org.jboss.weld.util.Observers.notify(Observers.java:166)
+        at org.jboss.weld.event.ObserverNotifier.notifySyncObservers(ObserverNotifier.java:285)
+        at org.jboss.weld.event.ObserverNotifier.notify(ObserverNotifier.java:273)
+        at org.jboss.weld.event.ObserverNotifier.fireEvent(ObserverNotifier.java:177)
+        at org.jboss.weld.event.ObserverNotifier.fireEvent(ObserverNotifier.java:171)
+        at org.jboss.weld.bootstrap.events.AbstractContainerEvent.fire(AbstractContainerEvent.java:53)
+        at org.jboss.weld.bootstrap.events.AbstractDefinitionContainerEvent.fire(AbstractDefinitionContainerEvent.java:44)
+        at org.jboss.weld.bootstrap.events.AfterBeanDiscoveryImpl.fire(AfterBeanDiscoveryImpl.java:75)
+        at org.jboss.weld.bootstrap.WeldStartup.deployBeans(WeldStartup.java:456)
+        at org.jboss.weld.bootstrap.WeldBootstrap.deployBeans(WeldBootstrap.java:86)
+        at org.jboss.as.weld.WeldStartService.start(WeldStartService.java:97)
+        at org.jboss.msc.service.ServiceControllerImpl$StartTask.startService(ServiceControllerImpl.java:1738)
+        at org.jboss.msc.service.ServiceControllerImpl$StartTask.execute(ServiceControllerImpl.java:1700)
+        at org.jboss.msc.service.ServiceControllerImpl$ControllerTask.run(ServiceControllerImpl.java:1558)
+        at org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
+        at org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1985)
+        at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1487)
+        at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1378)
+        at java.lang.Thread.run(Thread.java:748)
+
+        at org.jboss.weld.bootstrap.events.AbstractDefinitionContainerEvent.fire(AbstractDefinitionContainerEvent.java:46)
+        at org.jboss.weld.bootstrap.events.AfterBeanDiscoveryImpl.fire(AfterBeanDiscoveryImpl.java:75)
+        at org.jboss.weld.bootstrap.WeldStartup.deployBeans(WeldStartup.java:456)
+        at org.jboss.weld.bootstrap.WeldBootstrap.deployBeans(WeldBootstrap.java:86)
+        at org.jboss.as.weld.WeldStartService.start(WeldStartService.java:97)
+        at org.jboss.msc.service.ServiceControllerImpl$StartTask.startService(ServiceControllerImpl.java:1738)
+        at org.jboss.msc.service.ServiceControllerImpl$StartTask.execute(ServiceControllerImpl.java:1700)
+        ... 6 more
+        Suppressed: java.lang.IllegalStateException: io.narayana.rts.lra.demo.tripcontroller.TripController : The class contains an LRA method and no Compensate or AfterLRA method was found.
+                at io.narayana.lra.client.internal.proxy.nonjaxrs.LRACDIExtension.isLRAParticipant(LRACDIExtension.java:129)
+                at io.narayana.lra.client.internal.proxy.nonjaxrs.LRACDIExtension.getAsParticipant(LRACDIExtension.java:104)
+                at io.narayana.lra.client.internal.proxy.nonjaxrs.LRACDIExtension.observe(LRACDIExtension.java:75)
+                at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+                at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+                at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+                at java.lang.reflect.Method.invoke(Method.java:498)
+                at org.jboss.weld.injection.StaticMethodInjectionPoint.invoke(StaticMethodInjectionPoint.java:95)
+                at org.jboss.weld.injection.MethodInvocationStrategy$SpecialParamPlusBeanManagerStrategy.invoke(MethodInvocationStrategy.java:144)
+                at org.jboss.weld.event.ObserverMethodImpl.sendEvent(ObserverMethodImpl.java:330)
+                at org.jboss.weld.event.ExtensionObserverMethodImpl.sendEvent(ExtensionObserverMethodImpl.java:123)
+                at org.jboss.weld.event.ObserverMethodImpl.sendEvent(ObserverMethodImpl.java:308)
+                at org.jboss.weld.event.ObserverMethodImpl.notify(ObserverMethodImpl.java:286)
+                at javax.enterprise.inject.spi.ObserverMethod.notify(ObserverMethod.java:124)
+                at org.jboss.weld.util.Observers.notify(Observers.java:166)
+                at org.jboss.weld.event.ObserverNotifier.notifySyncObservers(ObserverNotifier.java:285)
+                at org.jboss.weld.event.ObserverNotifier.notify(ObserverNotifier.java:273)
+                at org.jboss.weld.event.ObserverNotifier.fireEvent(ObserverNotifier.java:177)
+                at org.jboss.weld.event.ObserverNotifier.fireEvent(ObserverNotifier.java:171)
+                at org.jboss.weld.bootstrap.events.AbstractContainerEvent.fire(AbstractContainerEvent.java:53)
+                at org.jboss.weld.bootstrap.events.AbstractDefinitionContainerEvent.fire(AbstractDefinitionContainerEvent.java:44)
+                ... 12 more
+{code}",,,
+2506,JBTM-3295,"When the {{@LRA}} annotated class does not containe neither {{@Compensate}} nor {{@AfterLRA}} the exception message contains {{null}} instead of the name of the guilty class.
+
+{code}
+Caused by: org.jboss.weld.exceptions.DefinitionException: Exception List with 1 exceptions:
+Exception 0 :
+java.lang.IllegalStateException: null: The class contains an LRA method and no Compensate or AfterLRA method was found.
+        at io.narayana.lra.client.internal.proxy.nonjaxrs.LRACDIExtension.isLRAParticipant(LRACDIExtension.java:129)
+        at io.narayana.lra.client.internal.proxy.nonjaxrs.LRACDIExtension.getAsParticipant(LRACDIExtension.java:104)
+        at io.narayana.lra.client.internal.proxy.nonjaxrs.LRACDIExtension.observe(LRACDIExtension.java:75)
+{code}
+
+The reason seems to be that the method {{ClassInfo.simpleName()}} returns null if it's not an inner class or nested class.
+
+The javadoc says following on it
+{code}
+Returns the source declared name of this class if it is an inner class, or a local class. Otherwise
+this method will return null.
+{code}",,,
+2507,JBTM-3293,"I am not sure whether this should be possible but the lra-coordinator.jar from lra-coordinator-jar module can't be deployed on latest WildFly. The deployment fails with the following error:
+
+
+{noformat}
+Caused by: org.jboss.weld.exceptions.DeploymentException: WELD-001408: Unsatisfied dependencies for type LRAService with qualifiers @Default
+  at injection point [BackedAnnotatedField] @Inject io.narayana.lra.coordinator.api.RecoveryCoordinator.lraService
+  at io.narayana.lra.coordinator.api.RecoveryCoordinator.lraService(RecoveryCoordinator.java:0)
+WELD-001474: Class io.narayana.lra.coordinator.domain.service.LRAService is on the classpath, but was ignored because a class it references was not found: com.arjuna.ats.arjuna.recovery.RecoveryModule from [Module ""deployment.lra-coordinator.jar"" from Service Module Loader].
+{noformat}
+",,,
+2510,JBTM-3290,"When our AMS CI is slower then the quickstart {{ArjunaJTS/interop/glassfish}} consistently fails with error
+
+{code}
+[0m[ERROR] Command execution failed.
+org.apache.commons.exec.ExecuteException: Process exited with an error: 1 (Exit value: 1)
+	at org.apache.commons.exec.DefaultExecutor.executeInternal(DefaultExecutor.java:404)
+	at org.apache.commons.exec.DefaultExecutor.execute(DefaultExecutor.java:166)
+	at org.codehaus.mojo.exec.ExecMojo.executeCommandLine(ExecMojo.java:804)
+	at org.codehaus.mojo.exec.ExecMojo.executeCommandLine(ExecMojo.java:751)
+	at org.codehaus.mojo.exec.ExecMojo.execute(ExecMojo.java:313)
+	at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo(DefaultBuildPluginManager.java:132)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:208)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:153)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:145)
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:116)
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:80)
+	at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build(SingleThreadedBuilder.java:51)
+	at org.apache.maven.lifecycle.internal.LifecycleStarter.execute(LifecycleStarter.java:120)
+	at org.apache.maven.DefaultMaven.doExecute(DefaultMaven.java:355)
+	at org.apache.maven.DefaultMaven.execute(DefaultMaven.java:155)
+	at org.apache.maven.cli.MavenCli.execute(MavenCli.java:584)
+	at org.apache.maven.cli.MavenCli.doMain(MavenCli.java:216)
+	at org.apache.maven.cli.MavenCli.main(MavenCli.java:160)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced(Launcher.java:289)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launch(Launcher.java:229)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode(Launcher.java:415)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.main(Launcher.java:356)
+{code}",,,
+2511,JBTM-3287,"{noformat}
+Caused by: java.lang.NoClassDefFoundError: org/eclipse/microprofile/lra/annotation/LRAStatus
+{noformat}
+
+It seems that the LRA API dependency needs to be defined directly in the lra-coordinator-thorntail module. It isn't picked up from transitive dependency (lra-coordinator-jar).",,,
+2512,JBTM-3283,"When the LRA TCK is run with {{-Dit.test}} e.g. {{mvn clean verify -Parq -Dit.test=TckRecoveryTests#testCancelWhenParticipantIsUnavailable}} then it fails with 
+
+{code}
+ava.lang.RuntimeException: Could not create statement
+Caused by: java.lang.RuntimeException: Could not lookup value for field private java.net.URL org.eclipse.microprofile.lra.tck.TckRecoveryTests.deploymentURL
+Caused by: java.lang.IllegalArgumentException: Cannot parse java VM arguments  -Dthorntail.http.host=localhost -Dthorntail.http.port=8180 -Dlra.tck.coordinator.hostname=localhost -Dlra.tck.coordinator.port=8080 -Dlra.http.host=localhost -Dlra.http.port=8080 -Dlra.tck.consistency.shortDelay=1000 -Dlra.tck.consistency.longDelay=20000 
+{code}
+
+The trouble is that Arquillian (in particular it could be the Thorntail Arquillian adapter) is not capable to parse multiple spaces in the VM args.
+https://github.com/jbosstm/narayana/blob/5.10.4.Final/rts/lra/lra-test/lra-test-tck/src/test/resources/arquillian-thorntail.xml#L10
+Ie. in the stup there could happen to be resolved to
+{code}
+<property name=""javaVmArguments"">{space}{space}{space}{space}-Dthorntail.http.host=localhost ...
+{code}
+Those multiple spaces seems to do some troubles",,,
+2514,JBTM-3282,"The LRA quickstarts 'lra-examples' tries to recompile the LRA coordinator.
+
+This is wrong as LRA coordinator should be shipped and used as it is in the version provided by Narayana team.
+This recompilation causes the issue when there is a non-existing version of LRA API spec in the repo (e.g. some snapshot from eclipse microprofile).
+
+Resolution:
+The coordinator should be taken from maven repository as provided during the Narayana release.",,,
+2521,JBTM-3281,The TCK test {{TckContextTests.testForgetCalledForNestedParticipantsWhenParentIsClosed}} is currently failing.,,,
+2526,JBTM-3280,"Not reproducible locally so far.
+
+Currently we know of:
+- TckTests#timeLimit
+- -TckRecoveryTests#testCancelWhenParticipantIsRestarted-",,,
+2528,JBTM-3278,"LRA issue 272 - https://github.com/eclipse/microprofile-lra/issues/272
+
+We must require (fail the deployment otherwise) that LRA method must be combined with either Compensate method or AfterLRA method in the same LRA resource.",,,
+2535,JBTM-3277,"The quickstarts fails on CI as it seems the CI is now dual stack and for normal run we need to enforce the IPv4 to be used.
+
+The when {{localhost}} is used then {{curl}} is directed to {{::1}} while java Thorntail is started at {{0.0.0.0}}.
+
+The workaround the setup the curl should force the IPv4 to be used {{-4}}.
+
+The CI error is observed with errors
+
+{code}
+===== injecting a fault which should halt the service on pid
+...
+WFLYUT0006: Undertow HTTP listener default listening on 0.0.0.0:8080
+...
+Failed to connect to ::1: Network is unreachable
+{code}
+
+The same happens on tomcat driver example where error is like
+{code}
+% Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0curl: (7) Failed to connect to ::1: Network is unreachable
+Listening for transport dt_socket at address: 8000
+INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server version:        Apache Tomcat/9.0.7
+{code}",,,
+2542,JBTM-3275,"The quickstart XTS over SSL defines wrongly a way how the timeout to wait on container is done. When timeout happens it has to try to stop the container if it would be still in progress of starting. It's needed to be stopped first.
+https://github.com/jbosstm/quickstart/blob/5.10.4.Final/XTS/ssl/xts-over-ssh.sh#L46
+Otherwise exit is called but the server is hanging around and the job can't be stopped.
+
+The script may be stuck like
+
+{code}
+INFO  [org.jboss.as.server] (Controller Boot Thread) WFLYSRV0212: Resuming server
+INFO  [org.jboss.as] (Controller Boot Thread) WFLYSRV0060: Http management interface listening on http://127.0.0.1:10090/management
+INFO  [org.jboss.as] (Controller Boot Thread) WFLYSRV0051: Admin console listening on http://127.0.0.1:10090
+INFO  [org.jboss.as] (Controller Boot Thread) WFLYSRV0025: WildFly Full 20.0.0.Beta1-SNAPSHOT (WildFly Core 11.0.0.Final) started in 18797ms - Started 380 of 646 services (392 services are lazy, passive or on-demand)
+ ""result"" => ""running""
++ RETURN_CODE=0
+++ date +%s
++ '[' 24 -gt 20 ']'
++ NOT_TIMEOUTED=false
++ '[' 0 -ne 0 ']'
++ false
++ echo 'Timeout 20s exceeded when waiting for container at port 10090'
++ exit 2
+Timeout 20s exceeded when waiting for container at port 10090
+{code}",,,
+2555,JBTM-3270,"When a inbound REST-AT Transaction is rolled-back while it was not yet persisted into object store then a warning message is shown in the log
+
+{quote}
+[com.arjuna.ats.arjuna] (default task-2) ARJUNA012269: UNKNOWN state for object with uid 0:ffff0a00000a:1f1301f3:5e7de5f0:37 , type /REST-AT/Integration/ParticipantInformationRecoveryRecord
+{quote}
+
+The reason for this is that REST-AT {{RecoveryManager}} instance does not track which participants were really persisted ({{ObjectStore.write_committed}}). Regardless of this fact the removal is attempted and the underlaying removal found it knows nothing about such state
+https://github.com/jbosstm/narayana/blob/5.10.4.Final/ArjunaCore/arjuna/classes/com/arjuna/ats/internal/arjuna/objectstore/ShadowingStore.java#L543
+
+This should be probably handled similarly to the XTS bridge
+https://github.com/jbosstm/narayana/blob/5.10.4.Final/XTS/recovery/src/org/jboss/jbossts/xts/recovery/participant/at/XTSATRecoveryManagerImple.java#L114
+where {{uidMap}} is used to not issue removal of non-persisted items.",,,
+2571,JBTM-3265,FailingParticipantCallsIT.testFailingAfterLRA fails regularly on CI,,,
+2574,JBTM-3264,"When running quickstart {{XTS/ssl}} then there are created two new directories directly at {{XTS/ssl/quickstart}} and {{XTS/ssl/wildfly}}. Those are temporary testing files and for that reason should be created under {{target}} directory. When they are placed in the source directory it will be ""managed"" by git as well and it could make a bit disorder.",,,
+2621,JBTM-3229,"https://github.com/eclipse/microprofile-lra/issues/241
+
+The specification was updated to allow AfterLRA listeners (LRA resources without Compensate method but with the AfterLRA method) to enlist for AfterLRA notification even after the LRA enters the ending (closing/canceling) phase.",,,
+2625,JBTM-3228,"https://github.com/eclipse/microprofile-lra/issues/208
+
+According to the specification, we should call Forget on nested LRA participants when the parent LRA is closed.",,,
+2629,JBTM-3227,"The LRA branch tracks MP-LRA changes and we test it on our CI set up.
+The branch depends on snapshot builds but the current build is failing because the test TckTests#TestForget  is wrong and it has been fixed in a later snapshot. Therefore we need to upgrade the snapshot build dependency",,,
+2718,JBTM-3193,There looks to be a JTA record in the object store when they are run. Could it be from a previous run? Or is it expected and if so why is the RecordManager unaware of the JTA_RECORD type for this run due to https://github.com/jbosstm/narayana/blob/1e17caa16b5efb9b16cdb2d8489a1b93722ebdd5/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/Implementations.java#L84 not being triggered?,,,
+2732,JBTM-3182,"lra-test/basic is unable to run because of wrong CDI configuration after latest LRA upgrade:
+
+
+{code:java}
+ERROR [org.jboss.resteasy.resteasy_jaxrs.i18n] (default task-1) RESTEASY002025: Unknown exception while executing GET /root/participant/lra: java.lang.NullPointerException
+	at io.narayana.lra.filter.ServerLRAFilter.filter(ServerLRAFilter.java:311)
+{code}
+",,,
+2784,JBTM-3158,"One of the [Narayana quickstarts|https://github.com/jbosstm/quickstart] throws the following exception when executed according to the steps in README.md:
+
+java.lang.reflect.InvocationTargetException
+    at sun.reflect.NativeMethodAccessorImpl.invoke0 (Native Method)
+    at sun.reflect.NativeMethodAccessorImpl.invoke (NativeMethodAccessorImpl.java:62)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke (DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke (Method.java:498)
+    at org.codehaus.mojo.exec.ExecJavaMojo$1.run (ExecJavaMojo.java:293)
+    at java.lang.Thread.run (Thread.java:748)
+Caused by: javax.persistence.EntityExistsException: A different object with the same identifier value was already associated with the session : [org.jboss.narayana.quickstart.jta.QuickstartEntity#1]
+    at org.hibernate.jpa.spi.AbstractEntityManagerImpl.convert (AbstractEntityManagerImpl.java:1664)
+    at org.hibernate.jpa.spi.AbstractEntityManagerImpl.convert (AbstractEntityManagerImpl.java:1602)
+    at org.hibernate.jpa.spi.AbstractEntityManagerImpl.convert (AbstractEntityManagerImpl.java:1608)
+    at org.hibernate.jpa.spi.AbstractEntityManagerImpl.persist (AbstractEntityManagerImpl.java:1152)
+    at org.jboss.narayana.quickstart.jta.QuickstartEntityRepository.save (QuickstartEntityRepository.java:45)
+    at org.jboss.narayana.quickstart.jta.QuickstartEntityRepository$Proxy$_$$_WeldSubclass.save$$super (Unknown Source)
+    at sun.reflect.NativeMethodAccessorImpl.invoke0 (Native Method)
+    at sun.reflect.NativeMethodAccessorImpl.invoke (NativeMethodAccessorImpl.java:62)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke (DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke (Method.java:498)
+    at org.jboss.weld.interceptor.proxy.TerminalAroundInvokeInvocationContext.proceedInternal (TerminalAroundInvokeInvocationContext.java:49)
+    at org.jboss.weld.interceptor.proxy.AroundInvokeInvocationContext.proceed (AroundInvokeInvocationContext.java:77)
+    at com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.invokeInCallerTx (TransactionalInterceptorBase.java:186)
+    at com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorRequired.doIntercept (TransactionalInterceptorRequired.java:55)
+    at com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.intercept (TransactionalInterceptorBase.java:88)
+    at com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorRequired.intercept (TransactionalInterceptorRequired.java:47)
+    at sun.reflect.NativeMethodAccessorImpl.invoke0 (Native Method)
+    at sun.reflect.NativeMethodAccessorImpl.invoke (NativeMethodAccessorImpl.java:62)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke (DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke (Method.java:498)
+    at org.jboss.weld.interceptor.reader.SimpleInterceptorInvocation$SimpleMethodInvocation.invoke (SimpleInterceptorInvocation.java:74)
+    at org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.executeAroundInvoke (InterceptorMethodHandler.java:84)
+    at org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.executeInterception (InterceptorMethodHandler.java:72)
+    at org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.invoke (InterceptorMethodHandler.java:56)
+    at org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke (CombinedInterceptorAndDecoratorStackMethodHandler.java:79)
+    at org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke (CombinedInterceptorAndDecoratorStackMethodHandler.java:68)
+    at org.jboss.narayana.quickstart.jta.QuickstartEntityRepository$Proxy$_$$_WeldSubclass.save (Unknown Source)
+    at org.jboss.narayana.quickstart.jta.QuickstartService.executeDemonstration (QuickstartService.java:106)
+    at org.jboss.narayana.quickstart.jta.QuickstartService.demonstrateCommit (QuickstartService.java:55)
+    at org.jboss.narayana.quickstart.jta.QuickstartApplication.main (QuickstartApplication.java:78)
+    at sun.reflect.NativeMethodAccessorImpl.invoke0 (Native Method)
+    at sun.reflect.NativeMethodAccessorImpl.invoke (NativeMethodAccessorImpl.java:62)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke (DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke (Method.java:498)
+    at org.codehaus.mojo.exec.ExecJavaMojo$1.run (ExecJavaMojo.java:293)
+    at java.lang.Thread.run (Thread.java:748)",,,
+2931,JBTM-3122,"Quickstarts do not run tests with JDK9+. We use the Arquillian that starts the WildFly and for the JDK9+ it requires JVM options to add module permissions (and more).
+
+The quickstarts need to start using a profile, similar how WFLY uses it, that defines jvm args that will be passed to the {{arquillian.xml}}.
+See https://github.com/wildfly/wildfly/blob/16.0.0.Final/pom.xml#L7188
+
+{code}
+--add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED
+--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+--add-modules=java.se
+{code}
+
+The trouble in quickstarts is that we have no parent for the quickstarts so we need to add such profile to all the `pom.xml` files all over the quickstarts.
+
+Maybe we should provide a parent with such settings. We can unify not only this but e.g. ee version used or arquillian version.",,,
+3032,JBTM-3108,Issue https://issues.jboss.org/browse/JBTM-3093 disabled the site plugin while the MP LRA APIs are still being developed. When MP LRA releases we need to renable the site plugin (used for code coverage tests).,,,
+3212,JBTM-2929,"Add LRA documentation. 
+
+The documentation is intended to be a MicroProfile specification and is available in the sandbox: https://github.com/eclipse/microprofile-sandbox/pull/2/files#diff-eeb2668147f799967ab5923f47f739a3 (which is part of PR https://github.com/eclipse/microprofile-sandbox/pull/2)",,,

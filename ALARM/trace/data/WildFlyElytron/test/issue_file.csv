@@ -1,0 +1,2353 @@
+,issue_id,issue_comments,issue_desc,created_at,closed_at
+504,ELY-1929,This was previously fixed under ELY-1924 for the 1.x branch however the 1.10.x branch is also showing failures with OpenJDK11.,,,
+506,ELY-1926,"When using WebServicesClientConfigProviderImpl class from wildfly-elytron-client exception is thrown:
+
+class configured for PasswordFactory (provider: WildFlyElytronPasswordProvider) cannot be found. org.wildfly.security.password.impl.PasswordFactorySpiImpl
+
+This issue is to fix this.",,,
+507,ELY-1924,NoData,,,
+509,ELY-1908,"missing comma
+{code:java}
+stringBuilder.append(""syslog-format"").append(event.getFormat().toString());
+{code}
+should be 
+{code:java}
+stringBuilder.append("",syslog-format"").append(event.getFormat().toString());
+{code}",,,
+510,ELY-1905,Refactor the tests method of validating SSL sessions as it is currently based on checking session IDs which are essentially obsolete with TLS1.3,,,
+511,ELY-1898,"In several places in the API, `SecurityFactory<Credential>` is used, but its bound is too strict, disallowing passing in specific instances, e.g. `SecurityFactory<GSSKerberosCredential>`.
+These should all be replaced with `SecurityFactory<? extends Credential>`.
+
+An example of code that doesn't work:
+
+{code:java}
+SecurityFactory<GSSKerberosCredential> ksf = ...;
+CredentialSource cs = CredentialSource.fromSecurityFactory(ksf); // Compiler error: required SecurityFactory<Credential> provided SecurityFactory<GSSCredential>
+{code}
+
+Similar issue in the following method:
+
+{code:java}
+MechanismConfiguration.setServerCredential(SecurityFactory<Credential> credentialFactory)
+{code}",,,
+514,ELY-1895,"This test is based on using a bad address for UDP to trigger a failure ""0.35.98.76"", however with the later Kernel version this error no longer occurs.
+
+Overall I believe safer to develop a more reliable failure scenario for this test.",,,
+515,ELY-1890,"Using the offline elytron.sh tool, after creating the credential store I changed the mode to 600. Using the elytron.sh tool to add credentials changes the mode back to 644. Is that intentional for it to automatically do that? I would either expect it to not change and update or not change and error out.
+
+",,,
+517,ELY-1876,"When KeyStoreCredentialStore is initialized with Provider[], getKeyStoreInstance will not log trace messages.",,,
+518,ELY-1874,"Currently, the maxCertPath is added as a parameter to PXIXBuilderParameters to be checked only when building the path. It should be updated to create a new PKIXCertPathChecker to be checked when validating the path as well for the case when the full path is passed in and does not need to be built",,,
+520,ELY-1872,"It looks like elytron-tool.sh doesn't work well with symbolic links.
+
+The soft link becomes a credential store - in a ""standard"" file - with the newly added alias but the original credential store will not be updated.
+
+
+",,,
+523,ELY-1868,The ```testFailureInfiniteReconnectAttempts``` test in ```SyslogAuditEndpointTest``` is currently not testing the functionality correctly but not making continuous attempts before being interrupted,,,
+525,ELY-1866,"The symbolic link  https://github.com/wildfly-security/wildfly-elytron/blob/1.x/LICENSE.txt is broken, pointing to non-existent file
+
+{code:java}
+$ find | grep LICENSE.txt | xargs file
+./tool/LICENSE.txt:                             symbolic link to src/main/resources/META-INF/LICENSE.txt
+./tool/src/main/resources/META-INF/LICENSE.txt: ASCII text
+./LICENSE.txt:                                  broken symbolic link to src/main/resources/META-INF/LICENSE.txt
+{code}
+
+From above findings it seems the link should be redirected to 
+{code:java}
+tool/src/main/resources/META-INF/LICENSE.txt
+{code}
+",,,
+526,ELY-1864,"ELY-1712 introduced a way to limit reconnect attempts. The UDP implementation attempts to endlessly reconnect and re-send the message. With a TCP connection the connection will be retried, but the message is swallowed and not re-sent after re-connection. UDP should do the same thing.
+
+The reconnect attempts should be checked for both TCP and UDP. Once reached the endpoint should just shutdown and throw an error.",,,
+529,ELY-1862,"Found during QE's coverity scan:
+
+{code}
+*** CID 1485949:  SpotBugs: Correctness  (FB.IL_INFINITE_RECURSIVE_LOOP)
+/auth/server/base/src/main/java/org/wildfly/security/auth/server/event/SecurityEventVisitor.java:
+129 in org.wildfly.security.auth.server.event.SecurityEventVisitor.handleSyslogAuditEvent(org.wildfly.security.auth.server.event.SyslogAuditEvent,
+java.lang.Object)()
+123          *
+124          * @param event the security event
+125          * @param param the visitor parameter
+126          * @return the visitor return value
+127          */
+128         public R handleSyslogAuditEvent(final SyslogAuditEvent
+event, final P param) {
+>>>     CID 1485949:  SpotBugs: Correctness  (FB.IL_INFINITE_RECURSIVE_LOOP)
+>>>     There is an apparent infinite recursive loop.
+129             return handleSyslogAuditEvent(event, param);
+130         }
+131
+{code}",,,
+538,ELY-1849,"Registering the DIGEST SASL mech with WildFlyElytronSaslDigestProvider does not register all the necessary password factories, causing the mech to fail with 
+
+{{Caused by java.lang.IllegalStateException: java.security.NoSuchAlgorithmException: ELY08028: Invalid algorithm ""digest-md5""}}",,,
+540,ELY-1847,"
+{noformat}
+Caused by: java.lang.NoSuchMethodException: org.wildfly.security.http.bearer.BearerTokenAuthenticationMechanism.<init>(java.security.Provider)
+    at java.lang.Class.getConstructor0(Class.java:3082)
+    at java.lang.Class.getConstructor(Class.java:1825)
+    at org.wildfly.security.WildFlyElytronProvider$ProviderService.newInstance(WildFlyElytronProvider.java:339)
+{noformat}",,,
+543,ELY-1843,"The NonceManager creates a ScheduledThreadPoolExecutor in
+
+https://github.com/wildfly-security/wildfly-elytron/blob/master/http/digest/src/main/java/org/wildfly/security/http/digest/NonceManager.java#L49
+
+but there is no way to shut it down, thus resulting in a thread leak when stopping an application.",,,
+551,ELY-1839,"The schemas are currently located in ""./tests/base/src/main/resources/schema"" these may be needed for testing purposes but these should be in a module somewhere exposed as public API.
+
+This could also potentially be a new module that just contains schemas if needed.",,,
+557,ELY-1831,When manipulating an existing store the store password should only be prompted for once - it is either valid or it is not.  It is only during the creation of the store it should be prompted for twice.,,,
+558,ELY-1826,"When JBoss EAP is configured to authenticate management interfaces with LDAPS and RBAC enabled authentication works unless the security manager is enabled. When security manager is enabled the exception [1] occurs in console and exception [2] is logged in server.log
+
+[1]
+{code}
+""Failed to connect to the controller: Unable to authenticate against controller at ... Authentication failed: all available authentication mechanisms failed: PLAIN: javax.security.sasl.SaslException: PLAIN: Server rejected authentication""
+{code}
+
+[2]
+{code}
+2019-05-15 09:30:45,434 DEBUG [org.wildfly.security] (management task-3) Could not create [class javax.naming.ldap.InitialLdapContext]. Failed to connect to LDAP server.: javax.naming.CommunicationException: myldap.mydomain:636 [Root exception is java.lang.ClassNotFoundException: org/wildfly/security/auth/realm/ldap/ThreadLocalSSLSocketFactory]
+	at com.sun.jndi.ldap.Connection.<init>(Connection.java:238)
+	at com.sun.jndi.ldap.LdapClient.<init>(LdapClient.java:137)
+	at com.sun.jndi.ldap.LdapClient.getInstance(LdapClient.java:1609)
+	at com.sun.jndi.ldap.LdapCtx.connect(LdapCtx.java:2749)
+	at com.sun.jndi.ldap.LdapCtx.<init>(LdapCtx.java:319)
+	at com.sun.jndi.ldap.LdapCtxFactory.getUsingURL(LdapCtxFactory.java:192)
+	at com.sun.jndi.ldap.LdapCtxFactory.getUsingURLs(LdapCtxFactory.java:210)
+	at com.sun.jndi.ldap.LdapCtxFactory.getLdapCtxInstance(LdapCtxFactory.java:153)
+	at com.sun.jndi.ldap.LdapCtxFactory.getInitialContext(LdapCtxFactory.java:83)
+	at org.jboss.as.naming.InitialContext.getDefaultInitCtx(InitialContext.java:116)
+	at org.jboss.as.naming.InitialContext.init(InitialContext.java:101)
+	at javax.naming.ldap.InitialLdapContext.<init>(InitialLdapContext.java:154)
+	...
+	at org.xnio.sasl.SaslUtils.evaluateResponse(SaslUtils.java:245)
+	at org.xnio.sasl.SaslUtils.evaluateResponse(SaslUtils.java:217)
+	at org.jboss.remoting3.remote.ServerConnectionOpenListener$AuthStepRunnable.run(ServerConnectionOpenListener.java:486)
+	at org.jboss.remoting3.EndpointImpl$TrackingExecutor.lambda$execute$0(EndpointImpl.java:949)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.ClassNotFoundException: org/wildfly/security/auth/realm/ldap/ThreadLocalSSLSocketFactory
+	at java.lang.Class.forName0(Native Method)
+	at java.lang.Class.forName(Class.java:348)
+	at com.sun.jndi.ldap.VersionHelper12.loadClass(VersionHelper12.java:72)
+	at com.sun.jndi.ldap.Connection.createSocket(Connection.java:293)
+	at com.sun.jndi.ldap.Connection.<init>(Connection.java:215)
+	... 42 more
+{code}
+
+",,,
+559,ELY-1807,We presently have two ElytronMessages interfaces in the 'org.wildfly.security.auth.util' package - each of these must be in a unique package.,,,
+561,ELY-1805,NoData,,,
+564,ELY-1794,If a login FORM submission is received this should be higher priority than any previously cached identity.,,,
+565,ELY-1792,"The {{org.wildfly.security.tool.VaultCommandTest}} {{bulkConversionBasicTest}}, {{testDuplicateOptions}}, {{singleConversionBasicTest}} tests result in error on IBM Java:
+
+{noformat}
+java.lang.RuntimeException: java.lang.Exception: ELYTOOL00012: Problem converting vault (enc-dir=""target/test-classes/vault-v1/vault_data/"";keystore=""target/test-classes/vault-v1/vault-jceks.keystore"")
+	at org.wildfly.security.tool.AbstractCommandTest.executeCommandAndCheckStatusAndGetOutput(AbstractCommandTest.java:132)
+	at org.wildfly.security.tool.AbstractCommandTest.executeCommandAndCheckStatusAndGetOutput(AbstractCommandTest.java:116)
+	at org.wildfly.security.tool.VaultCommandTest.bulkConversionBasicTest(VaultCommandTest.java:74)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:90)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:55)
+	at java.lang.reflect.Method.invoke(Method.java:508)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at org.junit.rules.ExternalResource$1.evaluate(ExternalResource.java:48)
+	at org.junit.rules.RunRules.evaluate(RunRules.java:20)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:367)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:274)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:238)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:161)
+	at org.apache.maven.surefire.booter.ForkedBooter.invokeProviderInSameClassLoader(ForkedBooter.java:290)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:242)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:121)
+Caused by: java.lang.Exception: ELYTOOL00012: Problem converting vault (enc-dir=""target/test-classes/vault-v1/vault_data/"";keystore=""target/test-classes/vault-v1/vault-jceks.keystore"")
+	at org.wildfly.security.tool.VaultCommand.execute(VaultCommand.java:190)
+	at org.wildfly.security.tool.AbstractCommandTest.executeCommandAndCheckStatusAndGetOutput(AbstractCommandTest.java:130)
+	... 30 more
+Caused by: java.io.IOException: com.sun.crypto.provider.SealedObjectForKeyProtector
+	at com.ibm.crypto.provider.JceKeyStore.engineLoad(Unknown Source)
+	at java.security.KeyStore.load(KeyStore.java:1456)
+	at org.wildfly.security.tool.VaultCommand.getVaultCredentialStoreProtectionParameter(VaultCommand.java:402)
+	at org.wildfly.security.tool.VaultCommand.convert(VaultCommand.java:290)
+	at org.wildfly.security.tool.VaultCommand.execute(VaultCommand.java:183)
+	... 31 more
+{noformat}
+
+Probably because the {{tool/src/test/resources/vault-v1/vault-jceks.keystore}} file is not generated by IBM Java.",,,
+569,ELY-1790,"We are hitting regression in our tests against WF master
+{code}
+01:48:56,706 INFO  [com.redhat.eap.qe.cli.CommandExecutor] (main) Command:[/home/hudson/hudson_workspace/workspace/eap-7.x-security-fips-matrix/d6d35f0f/openjdk-1.8.0/bin/java, -jar, /home/hudson/hudson_workspace/workspace/eap-7.x-security-fips-matrix/d6d35f0f/fips-testsuite/fips/target/dist/jboss-eap/bin/wildfly-elytron-tool.jar, credential-store, -c, -a, secret-key, -x, pass123+, -p, pass123+, -l, /home/hudson/hudson_workspace/workspace/eap-7.x-security-fips-matrix/d6d35f0f/fips-testsuite/fips/target/FipsCsElytronToolTestCase/workaround_dir, -u, keyStoreType=PKCS11;external=true;keyAlias=my-key;externalPath=/home/hudson/hudson_workspace/workspace/eap-7.x-security-fips-matrix/d6d35f0f/fips-testsuite/fips/target/FipsCsElytronToolTestCase/secure-data-file, --debug]
+01:48:57,255 INFO  [com.redhat.eap.qe.cli.CommandExecutor] (main) Process output:
+01:48:57,255 INFO  [com.redhat.eap.qe.cli.CommandExecutor] (main) 
+01:48:57,256 ERROR [com.redhat.eap.qe.cli.CommandExecutor] (main) Process error:
+01:48:57,257 ERROR [com.redhat.eap.qe.cli.CommandExecutor] (main) Exception encountered executing the command:
+org.wildfly.security.credential.store.CredentialStoreException: ELY09508: Cannot write credential to store
+	at org.wildfly.security.credential.store.impl.KeyStoreCredentialStore.store(KeyStoreCredentialStore.java:402)
+	at org.wildfly.security.credential.store.CredentialStore.store(CredentialStore.java:242)
+	at org.wildfly.security.credential.store.CredentialStore.store(CredentialStore.java:226)
+	at org.wildfly.security.tool.CredentialStoreCommand.execute(CredentialStoreCommand.java:242)
+	at org.wildfly.security.tool.ElytronTool.main(ElytronTool.java:84)
+Caused by: java.security.NoSuchAlgorithmException: class configured for PasswordFactory (provider: WildFlyElytron) cannot be found.
+	at java.security.Provider$Service.getImplClass(Provider.java:1649)
+	at java.security.Provider$Service.newInstanceGeneric(Provider.java:1660)
+	at java.security.Provider$Service.newInstance(Provider.java:1584)
+	at org.wildfly.security.password.PasswordFactory.getInstance(PasswordFactory.java:119)
+	at org.wildfly.security.password.PasswordFactory.getInstance(PasswordFactory.java:76)
+	at org.wildfly.security.credential.store.impl.KeyStoreCredentialStore.store(KeyStoreCredentialStore.java:276)
+	... 4 more
+Caused by: java.lang.ClassNotFoundException: org.wildfly.security.password.impl.PasswordFactorySpiImpl
+	at java.net.URLClassLoader.findClass(URLClassLoader.java:382)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+	at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:349)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+	at java.security.Provider$Service.getImplClass(Provider.java:1636)
+	... 9 more
+{code}",,,
+570,ELY-1768,"let's enable checkstyle again to avoid ugly code, trailing spaces, unused imports, etc...",,,
+632,ELY-1761,"We have users that use U+00A8 ([diaeresis|https://en.wikipedia.org/wiki/Diaeresis_(diacritic)]) as an Active Directory password. They can not log in using the Elytron LDAP realm. Here's the sequence of events:
+
+* PlainSaslClient.evaluateChallenge calls StringPrep.encode with the profile StringPrep.PROFILE_SASL_STORED https://github.com/wildfly-security/wildfly-elytron/blob/fd74e43caf3e701971b021c3ba8474e83065d049/sasl/plain/src/main/java/org/wildfly/security/sasl/plain/PlainSaslClient.java#L95
+* StringPrep.PROFILE_SASL_STORED ors PROFILE_SASL_QUERY which ors NORMALIZE_KC https://github.com/wildfly-security/wildfly-elytron/blob/fd74e43caf3e701971b021c3ba8474e83065d049/sasl/base/src/main/java/org/wildfly/security/sasl/util/StringPrep.java#L67
+* StringPrep.encode then normalises using NFKC which replaces U+00A8 with U+0020 U+0308 https://github.com/wildfly-security/wildfly-elytron/blob/fd74e43caf3e701971b021c3ba8474e83065d049/sasl/base/src/main/java/org/wildfly/security/sasl/util/StringPrep.java#L199
+* Active Directory rejects the login
+
+We would be wiling to work on a patch but we need some guidance on the desired solution. A simple solution would be a new profile in StringPrep that doesn't normalize and is used for passwords.",,,
+637,ELY-1747,NoData,,,
+639,ELY-1699,"We see this failing with ratio 1:100 with error ""ELY10038: Unexpected HTTP status code in response from ACME server ""404"": ""Not Found""""
+
+{noformat}
+org.wildfly.security.x500.cert.acme.AcmeException: ELY10038: Unexpected HTTP status code in response from ACME server ""404"": ""Not Found""
+	at org.wildfly.security.x500.cert.acme.AcmeClientSpi.handleAcmeErrorResponse(AcmeClientSpi.java:907)
+	at org.wildfly.security.x500.cert.acme.AcmeClientSpi.sendGetRequest(AcmeClientSpi.java:728)
+	at org.wildfly.security.x500.cert.acme.AcmeClientSpi.getResourceUrls(AcmeClientSpi.java:183)
+	at org.wildfly.security.x500.cert.acme.AcmeClientSpi.getResourceUrl(AcmeClientSpi.java:711)
+	at org.wildfly.security.x500.cert.acme.AcmeClientSpi.revokeCertificate(AcmeClientSpi.java:639)
+	at org.wildfly.security.x500.cert.acme.AcmeClientSpiTest.revokeCertificate(AcmeClientSpiTest.java:334)
+	at org.wildfly.security.x500.cert.acme.AcmeClientSpiTest.testRevokeCertificateWithReason(AcmeClientSpiTest.java:324)
+{noformat}
+
+{noformat}
+00:27:53,593 INFO  (nioEventLoopGroup-3-2) [org.mockserver.mock.HttpStateHandler] <LoggingFormatter.java:34> returning response:
+
+	{
+	  ""statusCode"" : 200,
+	  ""headers"" : {
+	    ""Cache-Control"" : [ ""public, max-age=0, no-cache"" ],
+	    ""Replay-Nonce"" : [ ""NT_I4byOA1qs22GwXEcNp9RNyoq4hO6JTBMh1iUK3yI"" ],
+	    ""Content-Type"" : [ ""application/json"" ],
+	    ""Link"" : [ ""<https://boulder:4431/terms/v7>;rel=\""terms-of-service\"""" ],
+	    ""connection"" : [ ""keep-alive"" ]
+	  },
+	  ""body"" : ""{\n  \""id\"": 384,\n  \""key\"": {\n    \""kty\"": \""RSA\"",\n    \""n\"": \""puL-WcMYUJ2Ajdy1UsUgNzjn6ecDxiWd7NGUGq267SOLwhKjSWWMwkopfcg5VMjPJWEE38IIXyjW5nFKCqFAIf3Zlih_1SLcjgVFbibn-oMGFLZs9ggr2bjRGJsbsJQIOKmgVs2y3l5RcIyF2M-UOx4GtAUQJsYittchBLxqjs0SBjWdtpWzaX4fwTCzx48RXuZhky_mKAyKbhAYnIGdDhcVIZsff6zzEM1bpJED6OBZh6pyP-N0kOxcGmPPCHMf0MzwjnK8VrFPEaIIfQAbUC1rTauiqZX7glEnN2kYqOwl8g3nf5fbX6sUuDU15fV0cmdUthy8_GHyE2qdzjPRLw\"",\n    \""e\"": \""AQAB\""\n  },\n  \""contact\"": [\n    \""mailto:certificates@example.com\"",\n    \""mailto:admin@example.com\""\n  ],\n  \""initialIp\"": \""127.0.0.1\"",\n  \""createdAt\"": \""2018-04-23T11:10:28-04:00\"",\n  \""status\"": \""valid\""\n}\n""
+	}
+
+ for request:
+
+	{
+	  ""method"" : ""POST"",
+	  ""path"" : ""/acme/acct/384"",
+	  ""body"" : ""{\""protected\"":\""eyJhbGciOiJSUzI1NiIsImtpZCI6Imh0dHA6Ly9sb2NhbGhvc3Q6NDAwMS9hY21lL2FjY3QvMzg0Iiwibm9uY2UiOiJma0Q4QkRreW5mSEUxVUVTcFV2SHRDTGE0UzJXa0NJd3BYZE80N1EzdnpBIiwidXJsIjoiaHR0cDovL2xvY2FsaG9zdDo0MDAxL2FjbWUvYWNjdC8zODQifQ\"",\""payload\"":\""e30\"",\""signature\"":\""cyg9Mgmgw4KcTGB96Uz1XPflyZCXgBYWRTiuppLLBMVYBG-eZvrCvzkjqlBTXfmixpBaCPoYU9PnNg3FEYgYzut8zgOsrvcgyu7byYdxnO9LxtxFCnLYPp8xGyoRD9W3owAxcbKnwTf3rmxhSKBRCDZnGs-JuZqJc25kbK4tLNZLaPfdyBS3oaE7xzxKrz6waLCIt9_CoRlSjqc9ZY9P8syUVdkdmdMtlyZJPJNt-keteulOA2_4xZzUV0RdxswlivT3v5Zz9bDuj5JPtHx-1NHSjRhLcM2pl2wk9pvm35q4_au4DjiP5enP-x_-qn6fXJuNUsuUdv_DHjmWLYL7Vw\""}"",
+	  ""headers"" : {
+	    ""Accept"" : [ ""text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2"" ],
+	    ""User-Agent"" : [ ""Elytron ACME Client/1.7.0.CR2"" ],
+	    ""Connection"" : [ ""keep-alive"" ],
+	    ""Host"" : [ ""localhost:4001"" ],
+	    ""Accept-Language"" : [ ""en-US"" ],
+	    ""Content-Length"" : [ ""599"" ],
+	    ""Content-Type"" : [ ""application/jose+json"" ]
+	  },
+	  ""keepAlive"" : true,
+	  ""secure"" : false
+	}
+
+ for response action:
+
+	{
+	  ""statusCode"" : 200,
+	  ""headers"" : {
+	    ""Cache-Control"" : [ ""public, max-age=0, no-cache"" ],
+	    ""Replay-Nonce"" : [ ""NT_I4byOA1qs22GwXEcNp9RNyoq4hO6JTBMh1iUK3yI"" ],
+	    ""Content-Type"" : [ ""application/json"" ],
+	    ""Link"" : [ ""<https://boulder:4431/terms/v7>;rel=\""terms-of-service\"""" ]
+	  },
+	  ""body"" : ""{\n  \""id\"": 384,\n  \""key\"": {\n    \""kty\"": \""RSA\"",\n    \""n\"": \""puL-WcMYUJ2Ajdy1UsUgNzjn6ecDxiWd7NGUGq267SOLwhKjSWWMwkopfcg5VMjPJWEE38IIXyjW5nFKCqFAIf3Zlih_1SLcjgVFbibn-oMGFLZs9ggr2bjRGJsbsJQIOKmgVs2y3l5RcIyF2M-UOx4GtAUQJsYittchBLxqjs0SBjWdtpWzaX4fwTCzx48RXuZhky_mKAyKbhAYnIGdDhcVIZsff6zzEM1bpJED6OBZh6pyP-N0kOxcGmPPCHMf0MzwjnK8VrFPEaIIfQAbUC1rTauiqZX7glEnN2kYqOwl8g3nf5fbX6sUuDU15fV0cmdUthy8_GHyE2qdzjPRLw\"",\n    \""e\"": \""AQAB\""\n  },\n  \""contact\"": [\n    \""mailto:certificates@example.com\"",\n    \""mailto:admin@example.com\""\n  ],\n  \""initialIp\"": \""127.0.0.1\"",\n  \""createdAt\"": \""2018-04-23T11:10:28-04:00\"",\n  \""status\"": \""valid\""\n}\n""
+	}
+
+00:27:53,601 INFO  (nioEventLoopGroup-3-3) [org.mockserver.mock.HttpStateHandler] <LoggingFormatter.java:34> resetting all expectations and request logs
+
+00:27:53,618 INFO  (nioEventLoopGroup-3-4) [org.mockserver.mock.HttpStateHandler] <LoggingFormatter.java:34> creating expectation:
+
+	{
+	  ""httpRequest"" : {
+	    ""method"" : ""GET"",
+	    ""path"" : ""/directory""
+	  },
+	  ""times"" : {
+	    ""remainingTimes"" : 1,
+	    ""unlimited"" : false
+	  },
+	  ""timeToLive"" : {
+	    ""unlimited"" : true
+	  },
+	  ""httpResponse"" : {
+	    ""headers"" : {
+	      ""Cache-Control"" : [ ""public, max-age=0, no-cache"" ],
+	      ""Content-Type"" : [ ""application/json"" ]
+	    },
+	    ""body"" : ""{\n  \""FpVd7yM-nVU\"": \""https://community.letsencrypt.org/t/adding-random-entries-to-the-directory/33417\"",\n  \""keyChange\"": \""http://localhost:4001/acme/key-change\"",\n  \""meta\"": {\n    \""caaIdentities\"": [\n      \""happy-hacker-ca.invalid\""\n    ],\n    \""termsOfService\"": \""https://boulder:4431/terms/v7\"",\n    \""website\"": \""https://github.com/letsencrypt/boulder\""\n  },\n  \""newAccount\"": \""http://localhost:4001/acme/new-acct\"",\n  \""newNonce\"": \""http://localhost:4001/acme/new-nonce\"",\n  \""newOrder\"": \""http://localhost:4001/acme/new-order\"",\n  \""revokeCert\"": \""http://localhost:4001/acme/revoke-cert\""\n}\n""
+	  }
+	}
+
+00:27:53,634 INFO  (nioEventLoopGroup-3-1) [org.mockserver.mock.HttpStateHandler] <LoggingFormatter.java:34> creating expectation:
+
+	{
+	  ""httpRequest"" : {
+	    ""method"" : ""HEAD"",
+	    ""path"" : ""/acme/new-nonce""
+	  },
+	  ""times"" : {
+	    ""remainingTimes"" : 1,
+	    ""unlimited"" : false
+	  },
+	  ""timeToLive"" : {
+	    ""unlimited"" : true
+	  },
+	  ""httpResponse"" : {
+	    ""statusCode"" : 204,
+	    ""headers"" : {
+	      ""Cache-Control"" : [ ""public, max-age=0, no-cache"" ],
+	      ""Replay-Nonce"" : [ ""-mlJhcox_6FFuDwNhcmL06FWD6uL7K7lam9Jel-MqqM"" ]
+	    }
+	  }
+	}
+
+00:27:53,656 INFO  (nioEventLoopGroup-3-2) [org.mockserver.mock.HttpStateHandler] <LoggingFormatter.java:34> creating expectation:
+
+	{
+	  ""httpRequest"" : {
+	    ""method"" : ""POST"",
+	    ""path"" : ""/acme/new-acct"",
+	    ""body"" : ""{\""protected\"":\""eyJhbGciOiJSUzI1NiIsImp3ayI6eyJlIjoiQVFBQiIsImt0eSI6IlJTQSIsIm4iOiJwdUwtV2NNWVVKMkFqZHkxVXNVZ056am42ZWNEeGlXZDdOR1VHcTI2N1NPTHdoS2pTV1dNd2tvcGZjZzVWTWpQSldFRTM4SUlYeWpXNW5GS0NxRkFJZjNabGloXzFTTGNqZ1ZGYmlibi1vTUdGTFpzOWdncjJialJHSnNic0pRSU9LbWdWczJ5M2w1UmNJeUYyTS1VT3g0R3RBVVFKc1lpdHRjaEJMeHFqczBTQmpXZHRwV3phWDRmd1RDeng0OFJYdVpoa3lfbUtBeUtiaEFZbklHZERoY1ZJWnNmZjZ6ekVNMWJwSkVENk9CWmg2cHlQLU4wa094Y0dtUFBDSE1mME16d2puSzhWckZQRWFJSWZRQWJVQzFyVGF1aXFaWDdnbEVuTjJrWXFPd2w4ZzNuZjVmYlg2c1V1RFUxNWZWMGNtZFV0aHk4X0dIeUUycWR6alBSTHcifSwibm9uY2UiOiItbWxKaGNveF82RkZ1RHdOaGNtTDA2RldENnVMN0s3bGFtOUplbC1NcXFNIiwidXJsIjoiaHR0cDovL2xvY2FsaG9zdDo0MDAxL2FjbWUvbmV3LWFjY3QifQ\"",\""payload\"":\""eyJvbmx5UmV0dXJuRXhpc3RpbmciOnRydWV9\"",\""signature\"":\""lztzTXBmbrxXGMspfEetHDGKdZ2NrpQTioysqHIa9aaL5dy8bPmKZ_Vmz68-xnUJcjK-5FMCn5vtYEKAJlJ7W3wVYzthcVuYlv-b6FNw3IYsdSSHMr5RLm0rSt9EwYd-BI4bCoT7dioYpCMHzTrd-3X8QjDS4fx1o6D-po_Hwkt4PWx5Yoo9ExlykM5cHOQlCQENPk3Pn0M4_8XkfH1QTvVTIm4A4lbo_Eko1aU9PgvWbNsqkEhRzH7rBb5FUlxFgRoSHuTJwn6uJL-H0cfYQUn-J5JyD5C-P8su3M7NoAXCj0vy_84TziHMxe1C8fI-A64M6CtlL9qGm5MwPgv8Gg\""}""
+	  },
+	  ""times"" : {
+	    ""remainingTimes"" : 1,
+	    ""unlimited"" : false
+	  },
+	  ""timeToLive"" : {
+	    ""unlimited"" : true
+	  },
+	  ""httpResponse"" : {
+	    ""statusCode"" : 200,
+	    ""headers"" : {
+	      ""Cache-Control"" : [ ""public, max-age=0, no-cache"" ],
+	      ""Replay-Nonce"" : [ ""zbQR7CL_GSx0oydZ0AVoNEh7omY_XONdWFpYOfeFVQc"" ],
+	      ""Link"" : [ ""<https://boulder:4431/terms/v7>;rel=\""terms-of-service\"""" ],
+	      ""Location"" : [ ""http://localhost:4001/acme/acct/384"" ]
+	    }
+	  }
+	}
+
+00:27:53,700 INFO  (nioEventLoopGroup-3-3) [org.mockserver.mock.HttpStateHandler] <LoggingFormatter.java:34> creating expectation:
+
+	{
+	  ""httpRequest"" : {
+	    ""method"" : ""POST"",
+	    ""path"" : ""/acme/revoke-cert"",
+	    ""body"" : ""{\""protected\"":\""eyJhbGciOiJSUzI1NiIsImtpZCI6Imh0dHA6Ly9sb2NhbGhvc3Q6NDAwMS9hY21lL2FjY3QvMzg0Iiwibm9uY2UiOiJ6YlFSN0NMX0dTeDBveWRaMEFWb05FaDdvbVlfWE9OZFdGcFlPZmVGVlFjIiwidXJsIjoiaHR0cDovL2xvY2FsaG9zdDo0MDAxL2FjbWUvcmV2b2tlLWNlcnQifQ\"",\""payload\"":\""eyJjZXJ0aWZpY2F0ZSI6Ik1JSUZaekNDQkUtZ0F3SUJBZ0lUQVBfNDBNVEh3LWw1M3lpOWVOMnptclFkX1RBTkJna3Foa2lHOXcwQkFRc0ZBREFmTVIwd0d3WURWUVFEREJSb01uQndlU0JvTW1OclpYSWdabUZyWlNCRFFUQWVGdzB4T0RBME16QXhPRFF4TURoYUZ3MHhPREEzTWpreE9EUXhNRGhhTUI0eEhEQWFCZ05WQkFNVEUyaHRlSFJ1ZFd0c2JHaDRlR3hpYUM1amIyMHdnZ0VpTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFDWUpyX3BaQkNTeV9LZHdLd1c0TDdyNnhWYVB1R0dna1JKY3lnTE5EWUhNd2JObm9zM3FnckpEMk0tRW5HOWlrSmlIRzd5VUtfVHRGNWZrVFA3UEROUzNlallkVTl1RTFHeTM1VTcyVGVzbVpzSC1aNy11NHJsc1JxdzVXcURDUjBGeW1PR0xuUEpVa3hGN29PRlFHc1lwZ3h3T1JVV0g5TlBEUzZTT3RTWF9XbUJ0S015VGM5QW9GRjBlRHM3NlBmOWl5eXZONjh4ejF6Y3g5aENnbDB5ZVNXTFhUNHV1SUJibHIxNXZhdzdCVVFNMnBGdE9aNGFIcWRiTDUtQ05TOWVxNUk2WTRpMW1yQVBEWklkN2xMOHAxY2tQLXI0dlh0a0VVdmxEaXFNMzdiRlB3enZDMWVVeGtOanNTdnQ0OGh4TTBtMU82cHZhTVB2Qm1CWGxHOUZBZ01CQUFHamdnS2JNSUlDbHpBT0JnTlZIUThCQWY4RUJBTUNCYUF3SFFZRFZSMGxCQll3RkFZSUt3WUJCUVVIQXdFR0NDc0dBUVVGQndNQ01Bd0dBMVVkRXdFQl93UUNNQUF3SFFZRFZSME9CQllFRkl3VXBFcGpUbmhUTl9XN3JlckkwT3V2alVMck1COEdBMVVkSXdRWU1CYUFGUHQ0VHhMNVlCV0RMSjhYZnpRWnN5NDI2a0dKTUdRR0NDc0dBUVVGQndFQkJGZ3dWakFpQmdnckJnRUZCUWN3QVlZV2FIUjBjRG92THpFeU55NHdMakF1TVRvME1EQXlMekF3QmdnckJnRUZCUWN3QW9Za2FIUjBjRG92TDJKdmRXeGtaWEk2TkRRek1DOWhZMjFsTDJsemMzVmxjaTFqWlhKME1CNEdBMVVkRVFRWE1CV0NFMmh0ZUhSdWRXdHNiR2g0ZUd4aWFDNWpiMjB3SndZRFZSMGZCQ0F3SGpBY29CcWdHSVlXYUhSMGNEb3ZMMlY0WVcxd2JHVXVZMjl0TDJOeWJEQmhCZ05WSFNBRVdqQllNQWdHQm1lQkRBRUNBVEJNQmdNcUF3UXdSVEFpQmdnckJnRUZCUWNDQVJZV2FIUjBjRG92TDJWNFlXMXdiR1V1WTI5dEwyTndjekFmQmdnckJnRUZCUWNDQWpBVERCRkVieUJYYUdGMElGUm9iM1VnVjJsc2REQ0NBUVFHQ2lzR0FRUUIxbmtDQkFJRWdmVUVnZklBOEFCMUFOMlpOUHlsNXlTQXlWWm9mWUUwbVFoSnNrbjN0V25ZeDd5clAxekI4MjVrQUFBQll4Z1NzYVFBQUFRREFFWXdSQUlnTUFGb19yNFl0aWNfc1lpVmxpaE10ZGZSZDFnclNYSUl1U2pwQzNZT1NOZ0NJRzdMWTlkMGl2cVV2czJ3Y0Z1Q0tNZkFsdDFNWTNvcjR6cGJlelFsNWpvREFIY0FGdWhwd2RHVjZ0ZkQtSmNhNF9CMkFmZU00YmFkTWFoU0dMYURmekdvRlFnQUFBRmpHQkt4cFFBQUJBTUFTREJHQWlFQTRYSmZVd3JVbkxWUGxRbF9IVVFxakRUVkFRdDJIN29BdXNrWUhiT3EtYTRDSVFEcGZwa3pNbkxudlNxay02QU5ZRWRKb0p5Q0M3M1ZwdHo0WG1MVnJMNHNtekFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBc1VEMUJ6M2NWQzA4NXF4a2VkYzJqd3FUSEk0UF9OaERrQVFmSGhrQ0VlaFoyVTVmRE1YWXFwZDh0UUluZUdoZU1ZTkQ4OWRFQXYyXzI5SXNGXzhKNC1uSURrLU1XQkFsQm43VUtES2xDbEdza0RDenJPajF6clJwOUtscTNLaElFSkUzT01nTGIyM3pNbERLeWRIcXA5OGtTc25hQmFoS1VlV3l1WXcxdmNwemZ3TjE0UG9xMW1jRnJWUFAxcWRBNG1NMTVFVHgyV0tZdTFWaWIySVVESmx2STNYbUg5SFR5ODZYRTRMNXFTd20xalJFbzZ5a3FDTmhSMHJMeHhHeXhDRldWVXVLNG9SaFR3YmF0VzEzR3JvSlhGdGNQeVVuRGJkSU9iRzIwLV9DME9ZMk9Rc1pWQTNWTC1IQ2c3ckt6QnZOSTNlaVkzVVNMYVBMM1I0dWhnIiwicmVhc29uIjoxMH0\"",\""signature\"":\""eP8PR2UEdU-HW7hM0XyeDWuPADRh_XKwmNM8QmowJzn4WLYkp-pHbnpGnID0aRTAjFQsvvPmkWIrNN9TMCgwfr5EqP7xoU1uGS3J6uNydZI4TyjGZaJ9v1I9sqb5Zw_Q5cht-vSMnxznmuEu3K_6jrDLq9x-U22sNFyA_aoqu5odPNJl_l2D2ZHaPbO19NjOfc2-mgBKR4y850oEzz8vKsFcPjtASFMoC3Ulyc2kDHuUeH9HL3W4DqvD0ygVhcbh5R9NRzwefj1h2YSD_8QJj20DprPSReJ_LxZTZzy3-oB3WWibLUaVS6xr0ZbMCPQSp_rTSRWpekWoM7vm_XwdCQ\""}""
+	  },
+	  ""times"" : {
+	    ""remainingTimes"" : 1,
+	    ""unlimited"" : false
+	  },
+	  ""timeToLive"" : {
+	    ""unlimited"" : true
+	  },
+	  ""httpResponse"" : {
+	    ""statusCode"" : 200,
+	    ""headers"" : {
+	      ""Cache-Control"" : [ ""public, max-age=0, no-cache"" ],
+	      ""Replay-Nonce"" : [ ""q4qaFhcWgftkiRaaeEZskz_fp9ue2OJGRDW3mYBGCNk"" ]
+	    }
+	  }
+	}
+
+00:27:53,712 INFO  (nioEventLoopGroup-3-2) [org.mockserver.mock.HttpStateHandler] <LoggingFormatter.java:34> request:
+
+	{
+	  ""method"" : ""GET"",
+	  ""path"" : ""/directory"",
+	  ""headers"" : {
+	    ""content-length"" : [ ""0"" ],
+	    ""Accept"" : [ ""text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2"" ],
+	    ""User-Agent"" : [ ""Elytron ACME Client/1.7.0.CR2"" ],
+	    ""Connection"" : [ ""keep-alive"" ],
+	    ""Host"" : [ ""localhost:4001"" ],
+	    ""Accept-Language"" : [ ""en-US"" ]
+	  },
+	  ""keepAlive"" : true,
+	  ""secure"" : false
+	}
+
+ matched expectation:
+
+	{
+	  ""method"" : ""GET"",
+	  ""path"" : ""/directory""
+	}
+
+00:27:53,713 INFO  (nioEventLoopGroup-3-2) [org.mockserver.mock.HttpStateHandler] <LoggingFormatter.java:34> returning response:
+
+	{
+	  ""headers"" : {
+	    ""Cache-Control"" : [ ""public, max-age=0, no-cache"" ],
+	    ""Content-Type"" : [ ""application/json"" ],
+	    ""connection"" : [ ""keep-alive"" ]
+	  },
+	  ""body"" : ""{\n  \""FpVd7yM-nVU\"": \""https://community.letsencrypt.org/t/adding-random-entries-to-the-directory/33417\"",\n  \""keyChange\"": \""http://localhost:4001/acme/key-change\"",\n  \""meta\"": {\n    \""caaIdentities\"": [\n      \""happy-hacker-ca.invalid\""\n    ],\n    \""termsOfService\"": \""https://boulder:4431/terms/v7\"",\n    \""website\"": \""https://github.com/letsencrypt/boulder\""\n  },\n  \""newAccount\"": \""http://localhost:4001/acme/new-acct\"",\n  \""newNonce\"": \""http://localhost:4001/acme/new-nonce\"",\n  \""newOrder\"": \""http://localhost:4001/acme/new-order\"",\n  \""revokeCert\"": \""http://localhost:4001/acme/revoke-cert\""\n}\n""
+	}
+
+ for request:
+
+	{
+	  ""method"" : ""GET"",
+	  ""path"" : ""/directory"",
+	  ""headers"" : {
+	    ""content-length"" : [ ""0"" ],
+	    ""Accept"" : [ ""text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2"" ],
+	    ""User-Agent"" : [ ""Elytron ACME Client/1.7.0.CR2"" ],
+	    ""Connection"" : [ ""keep-alive"" ],
+	    ""Host"" : [ ""localhost:4001"" ],
+	    ""Accept-Language"" : [ ""en-US"" ]
+	  },
+	  ""keepAlive"" : true,
+	  ""secure"" : false
+	}
+
+ for response action:
+
+	{
+	  ""headers"" : {
+	    ""Cache-Control"" : [ ""public, max-age=0, no-cache"" ],
+	    ""Content-Type"" : [ ""application/json"" ]
+	  },
+	  ""body"" : ""{\n  \""FpVd7yM-nVU\"": \""https://community.letsencrypt.org/t/adding-random-entries-to-the-directory/33417\"",\n  \""keyChange\"": \""http://localhost:4001/acme/key-change\"",\n  \""meta\"": {\n    \""caaIdentities\"": [\n      \""happy-hacker-ca.invalid\""\n    ],\n    \""termsOfService\"": \""https://boulder:4431/terms/v7\"",\n    \""website\"": \""https://github.com/letsencrypt/boulder\""\n  },\n  \""newAccount\"": \""http://localhost:4001/acme/new-acct\"",\n  \""newNonce\"": \""http://localhost:4001/acme/new-nonce\"",\n  \""newOrder\"": \""http://localhost:4001/acme/new-order\"",\n  \""revokeCert\"": \""http://localhost:4001/acme/revoke-cert\""\n}\n""
+	}
+
+00:27:53,714 INFO  (nioEventLoopGroup-3-4) [org.mockserver.mock.HttpStateHandler] <LoggingFormatter.java:34> request:
+
+	{
+	  ""method"" : ""GET"",
+	  ""path"" : ""/directory"",
+	  ""headers"" : {
+	    ""content-length"" : [ ""0"" ],
+	    ""Accept"" : [ ""text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2"" ],
+	    ""User-Agent"" : [ ""Elytron ACME Client/1.7.0.CR2"" ],
+	    ""Connection"" : [ ""keep-alive"" ],
+	    ""Host"" : [ ""localhost:4001"" ],
+	    ""Accept-Language"" : [ ""en-US"" ]
+	  },
+	  ""keepAlive"" : true,
+	  ""secure"" : false
+	}
+
+ did not match expectation:
+
+	{
+	  ""method"" : ""HEAD"",
+	  ""path"" : ""/acme/new-nonce""
+	}
+
+ because:
+
+	method matches = false
+	path matches = false
+	query string parameters match = true
+	body matches = true
+	headers match = true
+	cookies match = true
+	keep-alive matches = true
+	ssl matches = true
+
+00:27:53,715 INFO  (nioEventLoopGroup-3-4) [org.mockserver.mock.HttpStateHandler] <LoggingFormatter.java:34> request:
+
+	{
+	  ""method"" : ""GET"",
+	  ""path"" : ""/directory"",
+	  ""headers"" : {
+	    ""content-length"" : [ ""0"" ],
+	    ""Accept"" : [ ""text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2"" ],
+	    ""User-Agent"" : [ ""Elytron ACME Client/1.7.0.CR2"" ],
+	    ""Connection"" : [ ""keep-alive"" ],
+	    ""Host"" : [ ""localhost:4001"" ],
+	    ""Accept-Language"" : [ ""en-US"" ]
+	  },
+	  ""keepAlive"" : true,
+	  ""secure"" : false
+	}
+
+ did not match expectation:
+
+	{
+	  ""method"" : ""POST"",
+	  ""path"" : ""/acme/new-acct"",
+	  ""body"" : ""{\""protected\"":\""eyJhbGciOiJSUzI1NiIsImp3ayI6eyJlIjoiQVFBQiIsImt0eSI6IlJTQSIsIm4iOiJwdUwtV2NNWVVKMkFqZHkxVXNVZ056am42ZWNEeGlXZDdOR1VHcTI2N1NPTHdoS2pTV1dNd2tvcGZjZzVWTWpQSldFRTM4SUlYeWpXNW5GS0NxRkFJZjNabGloXzFTTGNqZ1ZGYmlibi1vTUdGTFpzOWdncjJialJHSnNic0pRSU9LbWdWczJ5M2w1UmNJeUYyTS1VT3g0R3RBVVFKc1lpdHRjaEJMeHFqczBTQmpXZHRwV3phWDRmd1RDeng0OFJYdVpoa3lfbUtBeUtiaEFZbklHZERoY1ZJWnNmZjZ6ekVNMWJwSkVENk9CWmg2cHlQLU4wa094Y0dtUFBDSE1mME16d2puSzhWckZQRWFJSWZRQWJVQzFyVGF1aXFaWDdnbEVuTjJrWXFPd2w4ZzNuZjVmYlg2c1V1RFUxNWZWMGNtZFV0aHk4X0dIeUUycWR6alBSTHcifSwibm9uY2UiOiItbWxKaGNveF82RkZ1RHdOaGNtTDA2RldENnVMN0s3bGFtOUplbC1NcXFNIiwidXJsIjoiaHR0cDovL2xvY2FsaG9zdDo0MDAxL2FjbWUvbmV3LWFjY3QifQ\"",\""payload\"":\""eyJvbmx5UmV0dXJuRXhpc3RpbmciOnRydWV9\"",\""signature\"":\""lztzTXBmbrxXGMspfEetHDGKdZ2NrpQTioysqHIa9aaL5dy8bPmKZ_Vmz68-xnUJcjK-5FMCn5vtYEKAJlJ7W3wVYzthcVuYlv-b6FNw3IYsdSSHMr5RLm0rSt9EwYd-BI4bCoT7dioYpCMHzTrd-3X8QjDS4fx1o6D-po_Hwkt4PWx5Yoo9ExlykM5cHOQlCQENPk3Pn0M4_8XkfH1QTvVTIm4A4lbo_Eko1aU9PgvWbNsqkEhRzH7rBb5FUlxFgRoSHuTJwn6uJL-H0cfYQUn-J5JyD5C-P8su3M7NoAXCj0vy_84TziHMxe1C8fI-A64M6CtlL9qGm5MwPgv8Gg\""}""
+	}
+
+ because:
+
+	method matches = false
+	path matches = false
+	query string parameters match = true
+	body matches = false
+	headers match = true
+	cookies match = true
+	keep-alive matches = true
+	ssl matches = true
+
+00:27:53,716 INFO  (nioEventLoopGroup-3-4) [org.mockserver.mock.HttpStateHandler] <LoggingFormatter.java:34> request:
+
+	{
+	  ""method"" : ""GET"",
+	  ""path"" : ""/directory"",
+	  ""headers"" : {
+	    ""content-length"" : [ ""0"" ],
+	    ""Accept"" : [ ""text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2"" ],
+	    ""User-Agent"" : [ ""Elytron ACME Client/1.7.0.CR2"" ],
+	    ""Connection"" : [ ""keep-alive"" ],
+	    ""Host"" : [ ""localhost:4001"" ],
+	    ""Accept-Language"" : [ ""en-US"" ]
+	  },
+	  ""keepAlive"" : true,
+	  ""secure"" : false
+	}
+
+ did not match expectation:
+
+	{
+	  ""method"" : ""POST"",
+	  ""path"" : ""/acme/revoke-cert"",
+	  ""body"" : ""{\""protected\"":\""eyJhbGciOiJSUzI1NiIsImtpZCI6Imh0dHA6Ly9sb2NhbGhvc3Q6NDAwMS9hY21lL2FjY3QvMzg0Iiwibm9uY2UiOiJ6YlFSN0NMX0dTeDBveWRaMEFWb05FaDdvbVlfWE9OZFdGcFlPZmVGVlFjIiwidXJsIjoiaHR0cDovL2xvY2FsaG9zdDo0MDAxL2FjbWUvcmV2b2tlLWNlcnQifQ\"",\""payload\"":\""eyJjZXJ0aWZpY2F0ZSI6Ik1JSUZaekNDQkUtZ0F3SUJBZ0lUQVBfNDBNVEh3LWw1M3lpOWVOMnptclFkX1RBTkJna3Foa2lHOXcwQkFRc0ZBREFmTVIwd0d3WURWUVFEREJSb01uQndlU0JvTW1OclpYSWdabUZyWlNCRFFUQWVGdzB4T0RBME16QXhPRFF4TURoYUZ3MHhPREEzTWpreE9EUXhNRGhhTUI0eEhEQWFCZ05WQkFNVEUyaHRlSFJ1ZFd0c2JHaDRlR3hpYUM1amIyMHdnZ0VpTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFDWUpyX3BaQkNTeV9LZHdLd1c0TDdyNnhWYVB1R0dna1JKY3lnTE5EWUhNd2JObm9zM3FnckpEMk0tRW5HOWlrSmlIRzd5VUtfVHRGNWZrVFA3UEROUzNlallkVTl1RTFHeTM1VTcyVGVzbVpzSC1aNy11NHJsc1JxdzVXcURDUjBGeW1PR0xuUEpVa3hGN29PRlFHc1lwZ3h3T1JVV0g5TlBEUzZTT3RTWF9XbUJ0S015VGM5QW9GRjBlRHM3NlBmOWl5eXZONjh4ejF6Y3g5aENnbDB5ZVNXTFhUNHV1SUJibHIxNXZhdzdCVVFNMnBGdE9aNGFIcWRiTDUtQ05TOWVxNUk2WTRpMW1yQVBEWklkN2xMOHAxY2tQLXI0dlh0a0VVdmxEaXFNMzdiRlB3enZDMWVVeGtOanNTdnQ0OGh4TTBtMU82cHZhTVB2Qm1CWGxHOUZBZ01CQUFHamdnS2JNSUlDbHpBT0JnTlZIUThCQWY4RUJBTUNCYUF3SFFZRFZSMGxCQll3RkFZSUt3WUJCUVVIQXdFR0NDc0dBUVVGQndNQ01Bd0dBMVVkRXdFQl93UUNNQUF3SFFZRFZSME9CQllFRkl3VXBFcGpUbmhUTl9XN3JlckkwT3V2alVMck1COEdBMVVkSXdRWU1CYUFGUHQ0VHhMNVlCV0RMSjhYZnpRWnN5NDI2a0dKTUdRR0NDc0dBUVVGQndFQkJGZ3dWakFpQmdnckJnRUZCUWN3QVlZV2FIUjBjRG92THpFeU55NHdMakF1TVRvME1EQXlMekF3QmdnckJnRUZCUWN3QW9Za2FIUjBjRG92TDJKdmRXeGtaWEk2TkRRek1DOWhZMjFsTDJsemMzVmxjaTFqWlhKME1CNEdBMVVkRVFRWE1CV0NFMmh0ZUhSdWRXdHNiR2g0ZUd4aWFDNWpiMjB3SndZRFZSMGZCQ0F3SGpBY29CcWdHSVlXYUhSMGNEb3ZMMlY0WVcxd2JHVXVZMjl0TDJOeWJEQmhCZ05WSFNBRVdqQllNQWdHQm1lQkRBRUNBVEJNQmdNcUF3UXdSVEFpQmdnckJnRUZCUWNDQVJZV2FIUjBjRG92TDJWNFlXMXdiR1V1WTI5dEwyTndjekFmQmdnckJnRUZCUWNDQWpBVERCRkVieUJYYUdGMElGUm9iM1VnVjJsc2REQ0NBUVFHQ2lzR0FRUUIxbmtDQkFJRWdmVUVnZklBOEFCMUFOMlpOUHlsNXlTQXlWWm9mWUUwbVFoSnNrbjN0V25ZeDd5clAxekI4MjVrQUFBQll4Z1NzYVFBQUFRREFFWXdSQUlnTUFGb19yNFl0aWNfc1lpVmxpaE10ZGZSZDFnclNYSUl1U2pwQzNZT1NOZ0NJRzdMWTlkMGl2cVV2czJ3Y0Z1Q0tNZkFsdDFNWTNvcjR6cGJlelFsNWpvREFIY0FGdWhwd2RHVjZ0ZkQtSmNhNF9CMkFmZU00YmFkTWFoU0dMYURmekdvRlFnQUFBRmpHQkt4cFFBQUJBTUFTREJHQWlFQTRYSmZVd3JVbkxWUGxRbF9IVVFxakRUVkFRdDJIN29BdXNrWUhiT3EtYTRDSVFEcGZwa3pNbkxudlNxay02QU5ZRWRKb0p5Q0M3M1ZwdHo0WG1MVnJMNHNtekFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBc1VEMUJ6M2NWQzA4NXF4a2VkYzJqd3FUSEk0UF9OaERrQVFmSGhrQ0VlaFoyVTVmRE1YWXFwZDh0UUluZUdoZU1ZTkQ4OWRFQXYyXzI5SXNGXzhKNC1uSURrLU1XQkFsQm43VUtES2xDbEdza0RDenJPajF6clJwOUtscTNLaElFSkUzT01nTGIyM3pNbERLeWRIcXA5OGtTc25hQmFoS1VlV3l1WXcxdmNwemZ3TjE0UG9xMW1jRnJWUFAxcWRBNG1NMTVFVHgyV0tZdTFWaWIySVVESmx2STNYbUg5SFR5ODZYRTRMNXFTd20xalJFbzZ5a3FDTmhSMHJMeHhHeXhDRldWVXVLNG9SaFR3YmF0VzEzR3JvSlhGdGNQeVVuRGJkSU9iRzIwLV9DME9ZMk9Rc1pWQTNWTC1IQ2c3ckt6QnZOSTNlaVkzVVNMYVBMM1I0dWhnIiwicmVhc29uIjoxMH0\"",\""signature\"":\""eP8PR2UEdU-HW7hM0XyeDWuPADRh_XKwmNM8QmowJzn4WLYkp-pHbnpGnID0aRTAjFQsvvPmkWIrNN9TMCgwfr5EqP7xoU1uGS3J6uNydZI4TyjGZaJ9v1I9sqb5Zw_Q5cht-vSMnxznmuEu3K_6jrDLq9x-U22sNFyA_aoqu5odPNJl_l2D2ZHaPbO19NjOfc2-mgBKR4y850oEzz8vKsFcPjtASFMoC3Ulyc2kDHuUeH9HL3W4DqvD0ygVhcbh5R9NRzwefj1h2YSD_8QJj20DprPSReJ_LxZTZzy3-oB3WWibLUaVS6xr0ZbMCPQSp_rTSRWpekWoM7vm_XwdCQ\""}""
+	}
+
+ because:
+
+	method matches = false
+	path matches = false
+	query string parameters match = true
+	body matches = false
+	headers match = true
+	cookies match = true
+	keep-alive matches = true
+	ssl matches = true
+
+{noformat}
+",,,
+643,ELY-1697,"On ibm java 
+{noformat}
+08:56:01 + java -version
+08:56:02 java version ""1.8.0_181""
+08:56:02 Java(TM) SE Runtime Environment (build 8.0.5.22 - pxa6480sr5fp22-20180919_01(SR5 FP22))
+08:56:02 IBM J9 VM (build 2.9, JRE 1.8.0 Linux amd64-64-Bit Compressed References 20180915_397057 (JIT enabled, AOT enabled)
+08:56:02 OpenJ9   - 6c152c2
+08:56:02 OMR      - 15647c3
+08:56:02 IBM      - d734883)
+08:56:02 JCL - 20180821_01 based on Oracle jdk8u181-b12
+{noformat}
+
+I see error
+{noformat}
+09:12:38 org.wildfly.security.sasl.digest.CompatibilityClientTest  Time elapsed: 1.31 sec  <<< ERROR!
+09:12:38 org.wildfly.security.credential.store.CredentialStoreException: ELY09514: Unable to initialize credential store
+09:12:38 	at org.wildfly.security.credential.store.impl.KeyStoreCredentialStore.load(KeyStoreCredentialStore.java:871)
+09:12:38 	at org.wildfly.security.credential.store.impl.KeyStoreCredentialStore.initialize(KeyStoreCredentialStore.java:213)
+09:12:38 	at org.wildfly.security.credential.store.CredentialStoreBuilder.build(CredentialStoreBuilder.java:124)
+09:12:38 	at org.wildfly.security.sasl.digest.CompatibilityClientTest.setupCredentialStore(CompatibilityClientTest.java:98)
+09:12:38 Caused by: java.io.IOException: com.sun.crypto.provider.SealedObjectForKeyProtector
+09:12:38 	at java.security.KeyStore.load(KeyStore.java:1456)
+09:12:38 	at org.wildfly.security.credential.store.impl.KeyStoreCredentialStore.load(KeyStoreCredentialStore.java:859)
+09:12:38 	... 3 more
+{noformat}
+
+SealedObjectForKeyProtector exception is seen on IBM when keystore is created with nonIBM java. Which makes me think problem can be testsuite is run twice with -Djava8.home. Which is way we use to test with ibm 8 jdk. So probably credential store from previous run is used in run with ibm java.",,,
+644,ELY-1695,"When running the testsuite with multiple profiles (default-test,java8-test,java9-test), the following error happens for the second and third (java8-test and java8-test) profiles:
+{code}
+Running org.wildfly.security.ldap.LdapTestSuite
+Tests run: 63, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 19.83 sec <<< FAILURE! - in org.wildfly.security.ldap.LdapTestSuite
+testX509Auth(org.wildfly.security.ldap.X509EvidenceVerificationSuiteChild)  Time elapsed: 0.121 sec  <<< FAILURE!
+java.lang.AssertionError
+        at org.wildfly.security.ldap.X509EvidenceVerificationSuiteChild.testX509AuthInternal(X509EvidenceVerificationSuiteChild.java:80)
+        at org.wildfly.security.ldap.X509EvidenceVerificationSuiteChild.testX509Auth(X509EvidenceVerificationSuiteChild.java:49)
+        at org.wildfly.security.ldap.DirContextFactoryRule$1.evaluate(DirContextFactoryRule.java:218)
+
+testX509AuthBinary(org.wildfly.security.ldap.X509EvidenceVerificationSuiteChild)  Time elapsed: 0.116 sec  <<< FAILURE!
+java.lang.AssertionError
+        at org.wildfly.security.ldap.X509EvidenceVerificationSuiteChild.testX509AuthInternal(X509EvidenceVerificationSuiteChild.java:80)
+        at org.wildfly.security.ldap.X509EvidenceVerificationSuiteChild.testX509AuthBinary(X509EvidenceVerificationSuiteChild.java:54)
+        at org.wildfly.security.ldap.DirContextFactoryRule$1.evaluate(DirContextFactoryRule.java:218)
+
+
+Results :
+
+Failed tests: 
+  X509EvidenceVerificationSuiteChild.testX509Auth:49->testX509AuthInternal:80
+  X509EvidenceVerificationSuiteChild.testX509AuthBinary:54->testX509AuthInternal:80
+{code}",,,
+646,ELY-1692,"Elytron enforces JDK9+ jdk, but is not possible to run tests with jdk 8.
+{noformat}
+java -version
+java version ""11"" 2018-09-25
+Java(TM) SE Runtime Environment 18.9 (build 11+28)
+Java HotSpot(TM) 64-Bit Server VM 18.9 (build 11+28, mixed mode)
+
+mvn clean test -Dtest=MechanismDatabaseTest -Dmaven.test.redirectTestOutputToFile=true -Djava8.home=/home/mchoma/app/jdk8u172-b11 -X
+...
+[DEBUG] Forking command line: /bin/sh -c cd /home/mchoma/git-repo/wildfly-elytron && /home/mchoma/app/jdk-11+28/bin/java
+{noformat}
+
+Also in surefire reports java8 folder there is java 11 logged 
+{noformat}
+    <property name=""java.vendor"" value=""Oracle Corporation""/>
+    <property name=""java.vm.info"" value=""mixed mode""/>
+    <property name=""java.vm.version"" value=""11+28""/>
+{noformat}
+
+Setting to blocker as currently I dont see way how to run tests on jdk8.",,,
+648,ELY-1691,NoData,,,
+649,ELY-1680,"{code}
+[ERROR] testGetCertificateChainBinary(org.wildfly.security.ldap.KeyStoreSuiteChild)  Time elapsed: 0.057 s  <<< FAILURE!
+org.junit.ComparisonFailure: expected:<CN=[firefly_binary], OU=Elytron, O=Elyt...> but was:<CN=[localhost], OU=Elytron, O=Elyt...>
+	at org.wildfly.security.ldap.KeyStoreSuiteChild.testGetCertificateChainBinary(KeyStoreSuiteChild.java:136)
+	at org.wildfly.security.ldap.DirContextFactoryRule$1.evaluate(DirContextFactoryRule.java:218)
+{code}
+
+If I switch order of certificates in chain, then test passes.
+{code}
+diff --git a/src/test/java/org/wildfly/security/ldap/KeyStoreSuiteChild.java b/src/test/java/org/wildfly/security/ldap/KeyStoreSuiteChild.java
+index d8095867a..cda635beb 100644
+--- a/src/test/java/org/wildfly/security/ldap/KeyStoreSuiteChild.java
++++ b/src/test/java/org/wildfly/security/ldap/KeyStoreSuiteChild.java
+@@ -133,8 +133,8 @@ public class KeyStoreSuiteChild {
+         Certificate[] chain = keyStore.getCertificateChain(""firefly_binary"");
+         Assert.assertNotNull(chain);
+         Assert.assertEquals(2, chain.length);
+-        Assert.assertEquals(""CN=firefly_binary, OU=Elytron, O=Elytron, L=Elytron, ST=Elytron, C=UK"", ((X509Certificate)chain[0]).getSubjectDN().toString());
+-        Assert.assertEquals(""CN=localhost, OU=Elytron, O=Elytron, L=Elytron, ST=Elytron, C=UK"", ((X509Certificate)chain[1]).getSubjectDN().toString());
++        Assert.assertEquals(""CN=firefly_binary, OU=Elytron, O=Elytron, L=Elytron, ST=Elytron, C=UK"", ((X509Certificate)chain[1]).getSubjectDN().toString());
++        Assert.assertEquals(""CN=localhost, OU=Elytron, O=Elytron, L=Elytron, ST=Elytron, C=UK"", ((X509Certificate)chain[0]).getSubjectDN().toString());
+     }
+{code}
+
+-For some reason I want able to debug code with -Dmaven.surefire.debug (Breakpoint was never hit) to find out which calls switch the order.-
+It takes long (5min) for debugger to attach to code.",,,
+651,ELY-1677,"*Issue*
+Currently, Elytron will send back a 403 Response when an invalid bearer token is sent. For the built-in JWT validator (the token validation we are using), this [includes a few checks like signature, expiration time, audience and issuer|https://github.com/wildfly-security/wildfly-elytron/blob/1.7.0.CR1/src/main/java/org/wildfly/security/auth/realm/token/validator/JwtValidator.java#L94].
+
+It seems that the current [BearerTokenAuthenticationMechanism|https://github.com/wildfly-security/wildfly-elytron/blob/1.7.0.CR1/src/main/java/org/wildfly/security/http/impl/BearerTokenAuthenticationMechanism.java#L108] does not differentiate between failed authentication and failed authorization, returning a 403 in both cases. This produces conflicting and erroneous results. Did I fail to authenticate (say, expired JWT) or did I authenticate but do not have access to the resource in question?
+
+This would also be closer in line with [RFC 6750 (The OAuth 2.0 Authorization Framework: Bearer Token Usage)|https://tools.ietf.org/html/rfc6750#section-3] which includes an example of an expired (invalid) token.
+
+{quote}
+ And in response to a protected resource request with an
+   authentication attempt using an expired access token:
+
+     HTTP/1.1 401 Unauthorized
+     WWW-Authenticate: Bearer realm=""example"",
+                       error=""invalid_token"",
+                       error_description=""The access token expired""
+{quote}
+
+
+*Potential Solution*
+Perhaps this could be ameliorated by something akin to the following change in BearerTokenAuthenticationMechanism::evaluateRequest by differentiating between failure to authorize and failure to authenticate the token. Merely a quick, unvetted example as I haven't had enough time to dig in to the source.
+
+{code}
+if (verifyCallback.isVerified()) {
+	AuthorizeCallback authorizeCallback = new AuthorizeCallback(null, null);
+
+	handleCallback(authorizeCallback);
+
+	if (authorizeCallback.isAuthorized()) {
+	    httpBearer.debugf(""Token authentication successful."");
+	    handleCallback(new IdentityCredentialCallback(new BearerTokenCredential(tokenEvidence.getToken()), true));
+	    handleCallback(AuthenticationCompleteCallback.SUCCEEDED);
+	    request.authenticationComplete();
+	    return;
+	}
+	else{
+		httpBearer.debugf(""Token authorization failed message."");
+		request.authenticationFailed(""Some token unauthorized message"", response -> response.setStatusCode(FORBIDDEN));
+		return;
+	}  
+}
+httpBearer.debugf(""Token authentication failed."");
+request.authenticationFailed(""Invalid bearer token"", response -> response.setStatusCode(UNAUTHORIZED));
+return;
+{code}",,,
+652,ELY-1674,"AFAICT the ECHDE_PSK suites use PSK authentication, not ECDHE key authentication.",,,
+659,ELY-1673,We should exclude the list of draft ciphers from the mechanism database.,,,
+666,ELY-1672,"AEAD is not a digest (PRF) function, it's a description of a message authentication strategy.  We should only use the actual digest names in the mechanism database.",,,
+673,ELY-1671,"JDK 10 Error:
+{noformat}
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 1.854 s
+[INFO] Finished at: 2018-09-19T13:50:48+01:00
+[INFO] Final Memory: 26M/108M
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-javadoc-plugin:3.0.0-M1:javadoc (default-cli) on project wildfly-elytron: An error has occurred in Javadoc report generation:
+[ERROR] Exit code: 1 - javadoc: warning - The old Doclet and Taglet APIs in the packages
+[ERROR] com.sun.javadoc, com.sun.tools.doclets and their implementations
+[ERROR] are planned to be removed in a future JDK release. These
+[ERROR] components have been superseded by the new APIs in jdk.javadoc.doclet.
+[ERROR] Users are strongly recommended to migrate to the new APIs.
+[ERROR] javadoc: error - invalid flag: -Xdoclint:none
+[ERROR] 
+[ERROR] Command line was: /home/darranl/applications/java/jdk-10.0.2/bin/javadoc @options @argfile
+[ERROR] 
+[ERROR] Refer to the generated Javadoc files in '/home/darranl/src/community/wildfly-elytron/target/site/apidocs/api-javadoc' dir.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+{noformat}
+
+JDK 11 Error:
+{noformat}
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 5.908 s
+[INFO] Finished at: 2018-10-01T10:19:12-04:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-javadoc-plugin:3.0.0-M1:javadoc (default-cli) on project wildfly-elytron: An error has occurred in Javadoc report generation: 
+[ERROR] Exit code: 1 - /home/jucook/Documents/WildFly/WildFly-Elytron/wildfly-elytron/src/main/java/org/wildfly/security/manager/JDKSpecific.java:20: error: cannot find symbol
+[ERROR] import sun.reflect.Reflection;
+[ERROR]                   ^
+[ERROR]   symbol:   class Reflection
+[ERROR]   location: package sun.reflect
+[ERROR] 
+[ERROR] Command line was: /home/jucook/JDKs/Java11/OpenJDK/openjdk-11-ea+26_linux-x64_bin/jdk-11/bin/javadoc @options @argfile
+[ERROR] 
+[ERROR] Refer to the generated Javadoc files in '/home/jucook/Documents/WildFly/WildFly-Elytron/wildfly-elytron/target/site/apidocs/api-javadoc' dir.
+[ERROR] 
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+{noformat}",,,
+674,ELY-1664,"Check Trace logging of ssl context creation. How I read code logging should apply after throw expression. That wouldn never happen. Also there is another throw of exception with SSLUtils::throwIt.
+{code:java|title=org.wildfly.security.ssl.SSLUtils}
+        // now return a factory that will return the best match is can create.
+        final String[] supportedProtocols = protocolSelector.evaluate(preferredProviderByAlgorithm.keySet().toArray(NO_STRINGS));
+        if (supportedProtocols.length > 0) {
+            return () -> {
+                for (String protocol : supportedProtocols) {
+                    List<Provider> providerList = preferredProviderByAlgorithm.getOrDefault(protocol, Collections.emptyList());
+                        for (Provider provider : providerList) {
+                            try {
+                                return SSLContext.getInstance(protocol, provider);
+                            } catch (NoSuchAlgorithmException ignored) {}
+                        }
+                }
+                throw ElytronMessages.log.noAlgorithmForSslProtocol();
+            };
+        }
+
+        if (log.isTraceEnabled()) {
+            log.tracef(""No %s provided by providers in %s: %s"", SERVICE_TYPE, SSLUtils.class.getSimpleName(), Arrays.toString(providerSupplier.get()));
+        }
+
+        return SSLUtils::throwIt;
+{code}",,,
+675,ELY-1663,"Rarely 1:30 it happens there occures error accessing http management interface secured with TLS with BC FIPS
+
+{code}
+Operation {""operation"" => ""add"",""address"" => [(""subsystem"" => ""elytron""),(""server-ssl-context"" => ""test-server-ssl-context"")],""key-manager"" => ""key-manager-name_test-server-ssl-context"",""cipher-suite-filter"" => ""TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA,TLS_DHE_DSS_WITH_AES_128_CBC_SHA,TLS_DHE_DSS_WITH_AES_128_CBC_SHA256,TLS_DHE_DSS_WITH_AES_256_CBC_SHA,TLS_DHE_DSS_WITH_AES_256_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_3DES_EDE_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA256"",""trust-manager"" => ""trust-manager-name_test-server-ssl-context"",""protocols"" => [""TLSv1.2""],""need-client-auth"" => true} failed: {""outcome"" => ""failed"",""failure-description"" => {""WFLYCTL0080: Failed services"" => {""org.wildfly.security.ssl-context.test-server-ssl-context"" => ""java.security.NoSuchAlgorithmException: ELY04001: No algorithm found matching TLS/SSL protocol selection criteria
+    Caused by: java.security.NoSuchAlgorithmException: ELY04001: No algorithm found matching TLS/SSL protocol selection criteria""}},""rolled-back"" => true}
+
+ERROR [org.jboss.msc.service.fail] (MSC service thread 1-2) MSC000001: Failed to start service org.wildfly.security.ssl-context.test-server-ssl-context: org.jboss.msc.service.StartException in service org.wildfly.security.ssl-context.test-server-ssl-context: java.security.NoSuchAlgorithmException: ELY04001: No algorithm found matching TLS/SSL protocol selection criteria
+	at org.wildfly.extension.elytron.SSLDefinitions$6.lambda$getValueSupplier$1(SSLDefinitions.java:982)
+	at org.wildfly.extension.elytron.TrivialService.start(TrivialService.java:53)
+	at org.jboss.msc.service.ServiceControllerImpl$StartTask.startService(ServiceControllerImpl.java:1736)
+	at org.jboss.msc.service.ServiceControllerImpl$StartTask.execute(ServiceControllerImpl.java:1698)
+	at org.jboss.msc.service.ServiceControllerImpl$ControllerTask.run(ServiceControllerImpl.java:1556)
+	at org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
+	at org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1985)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1487)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1378)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.security.NoSuchAlgorithmException: ELY04001: No algorithm found matching TLS/SSL protocol selection criteria
+	at org.wildfly.security.ssl.SSLUtils.lambda$createSslContextFactory$1(SSLUtils.java:130)
+	at org.wildfly.security.ssl.SSLContextBuilder.lambda$build$0(SSLContextBuilder.java:340)
+	at org.wildfly.security.OneTimeSecurityFactory.create(OneTimeSecurityFactory.java:53)
+	at org.wildfly.extension.elytron.SSLDefinitions$6.lambda$getValueSupplier$1(SSLDefinitions.java:980)
+	... 9 more
+{code}
+
+Some facts
+* It happens only on management interface BC FIPS TLS tests
+* It does not occur on Undertow secured with BC FIPS
+* Previously there was issue with similar error but that happened everywhere https://issues.jboss.org/browse/ELY-1618 
+",,,
+676,ELY-1660,"The testClientNotTrustedByServer test in org.wildfly.security.sasl.entity.EntityTest currently fails on OpenJDK 9 with the failure:
+{code}
+javax.security.sasl.SaslException: ELY05053: Callback handler failed for unknown reason [Caused by java.lang.NullPointerException]
+        at org.wildfly.security.sasl.util.AbstractSaslParticipant.tryHandleCallbacks(AbstractSaslParticipant.java:124)
+        at org.wildfly.security.sasl.entity.EntitySaslClient.evaluateMessage(EntitySaslClient.java:168)
+        at org.wildfly.security.sasl.util.AbstractSaslParticipant.evaluateMessage(AbstractSaslParticipant.java:199)
+        at org.wildfly.security.sasl.util.AbstractSaslClient.evaluateChallenge(AbstractSaslClient.java:79)
+        at org.wildfly.security.sasl.entity.EntityTest.testClientNotTrustedByServer(EntityTest.java:504)
+Caused by: java.lang.NullPointerException
+        at java.base/java.util.ArrayList.<init>(ArrayList.java:178)
+        at org.wildfly.security.auth.client.AuthenticationConfiguration$ClientCallbackHandler.handle(AuthenticationConfiguration.java:1744)
+        at org.wildfly.security.sasl.util.AbstractSaslParticipant.tryHandleCallbacks(AbstractSaslParticipant.java:120)
+        ... 4 more
+{code}
+Output of java -version:
+{code}
+openjdk version ""9""
+OpenJDK Runtime Environment (build 9+181)
+OpenJDK 64-Bit Server VM (build 9+181, mixed mode)
+{code}",,,
+677,ELY-1642,"{{mvn test}} results in compilation error:
+
+{noformat}
+[ERROR] /home/okotek/git/wildfly-elytron/src/main/java/org/wildfly/security/manager/WildFlySecurityManager.java:[58,19] cannot find symbol
+  symbol:   class Reflection
+  location: package sun.reflect
+{noformat}
+
+Blocks testing on JDK 11, setting to Critical.",,,
+681,ELY-1640,"For ELY-1629, {{AcmeClientSpi.changeAccountKey()}} was updated to include both {{newKey}} and {{oldKey}} in the inner payload for the account key change request to prepare for the ACME v2 key rollover [breaking change|https://community.letsencrypt.org/t/acme-v2-draft-13-compliant-key-rollover/68953]. Currently, specifying both works fine since Let's Encrypt's staging server will expect {{oldKey}} and ignore {{newKey}} and Let's Encrypt's production server will expect {{newKey}} and ignore {{oldKey}}. However, once the new ACME v2 key rollover changes are available in Let's Encrypt's production server on Aug. 23rd, we can update this method to only include the {{oldKey}} in the inner payload. ",,,
+683,ELY-1639,"Fix of ELY-1622 introduced regression. It is not possible to do 1 way ssl (no key-store-ssl-certificate in wildfly-config.xml) with exception 
+
+{code}
+14:13:56,143 ERROR [org.jboss.as.cli.impl.CliLauncher] Error processing CLI: org.jboss.as.cli.CliInitializationException: Failed to connect to the controller
+        at org.jboss.as.cli.impl.CliLauncher.initCommandContext(CliLauncher.java:330)
+        at org.jboss.as.cli.impl.CliLauncher.main(CliLauncher.java:291)
+        at org.jboss.as.cli.CommandLineMain.main(CommandLineMain.java:45)
+        at org.jboss.modules.Module.run(Module.java:352)
+        at org.jboss.modules.Module.run(Module.java:320)
+        at org.jboss.modules.Main.main(Main.java:593)
+Caused by: org.jboss.as.cli.CommandLineException: Failed to resolve host 'localhost'
+        at org.jboss.as.cli.impl.CommandContextImpl.connectController(CommandContextImpl.java:1256)
+        at org.jboss.as.cli.impl.CommandContextImpl.connectController(CommandContextImpl.java:1203)
+        at org.jboss.as.cli.impl.CommandContextImpl.connectController(CommandContextImpl.java:1198)
+        at org.jboss.as.cli.impl.CliLauncher.initCommandContext(CliLauncher.java:328)
+        ... 5 more
+Caused by: java.io.IOException: Failed to obtain SSLContext
+        at org.jboss.as.cli.impl.CLIModelControllerClient.<init>(CLIModelControllerClient.java:156)
+        at org.jboss.as.cli.impl.ModelControllerClientFactory$2.getClient(ModelControllerClientFactory.java:85)
+        at org.jboss.as.cli.impl.CommandContextImpl.connectController(CommandContextImpl.java:1222)
+        ... 8 more
+Caused by: java.security.KeyManagementException: FIPS mode: only SunJSSE KeyManagers may be used
+        at sun.security.ssl.SSLContextImpl.chooseKeyManager(SSLContextImpl.java:149)
+        at sun.security.ssl.SSLContextImpl.engineInit(SSLContextImpl.java:66)
+        at javax.net.ssl.SSLContext.init(SSLContext.java:282)
+        at org.wildfly.security.ssl.SSLContextBuilder.lambda$build$0(SSLContextBuilder.java:372)
+        at org.wildfly.security.OneTimeSecurityFactory.create(OneTimeSecurityFactory.java:53)
+        at org.wildfly.security.auth.client.AuthenticationContextConfigurationClient.getSSLContext(AuthenticationContextConfigurationClient.java:221)
+        at org.wildfly.security.auth.client.AuthenticationContextConfigurationClient.getSSLContext(AuthenticationContextConfigurationClient.java:208)
+        at org.jboss.as.cli.impl.CLIModelControllerClient.<init>(CLIModelControllerClient.java:153)
+        ... 10 more
+ {code}
+
+It is because after fix Fix of ELY-1622 custom keymanager is used. But it is forbidden by jdk FIPS PKCS11.",,,
+693,ELY-1636,Update {{AcmeChallenge.Type}} to be able to handle newly introduced / unknown challenge types to avoid issues with {{AcmeChallenge.Type.forName()}} returning null if/when new challenge types is encountered.,,,
+694,ELY-1634,"We are having trouble getting LDAPS referrals working with an Elytron LDAP realm. The issue is the following stack trace.
+
+{code}
+javax.security.sasl.SaslException: ELY05012: Authentication mechanism server-side authentication failed [Caused by org.wildfly.security.auth.server.RealmUnavailableException: ELY01153: Direct LDAP verification failed with DN [redacted] and absolute DN [null]]
+        at org.wildfly.security.sasl.plain.PlainSaslServer.evaluateResponse(PlainSaslServer.java:121)
+        at org.wildfly.security.sasl.util.AuthenticationCompleteCallbackSaslServerFactory$1.evaluateResponse(AuthenticationCompleteCallbackSaslServerFactory.java:58)
+        at org.wildfly.security.sasl.util.AuthenticationTimeoutSaslServerFactory$DelegatingTimeoutSaslServer.evaluateResponse(AuthenticationTimeoutSaslServerFactory.java:106)
+        at org.wildfly.security.sasl.util.SecurityIdentitySaslServerFactory$1.evaluateResponse(SecurityIdentitySaslServerFactory.java:59)
+        at org.xnio.sasl.SaslUtils.evaluateResponse(SaslUtils.java:245)
+        at org.xnio.sasl.SaslUtils.evaluateResponse(SaslUtils.java:217)
+        at org.jboss.remoting3.remote.ServerConnectionOpenListener$AuthStepRunnable.run(ServerConnectionOpenListener.java:486)
+        at org.jboss.remoting3.EndpointImpl$TrackingExecutor.lambda$execute$0(EndpointImpl.java:926)
+        at org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
+        at org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1985)
+        at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1487)
+        at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1349)
+        at java.lang.Thread.run(Thread.java:748)
+Caused by: org.wildfly.security.auth.server.RealmUnavailableException: ELY01153: Direct LDAP verification failed with DN [redacted] and absolute DN [null]
+        at org.wildfly.security.auth.realm.ldap.DirectEvidenceVerifier$1.verifyEvidence(DirectEvidenceVerifier.java:104)
+        at org.wildfly.security.auth.realm.ldap.LdapSecurityRealm$LdapRealmIdentity.verifyEvidence(LdapSecurityRealm.java:609)
+        at org.wildfly.security.auth.realm.AggregateSecurityRealm$Identity.verifyEvidence(AggregateSecurityRealm.java:155)
+        at org.wildfly.security.auth.server.ServerAuthenticationContext$NameAssignedState.verifyEvidence(ServerAuthenticationContext.java:1977)
+        at org.wildfly.security.auth.server.ServerAuthenticationContext.verifyEvidence(ServerAuthenticationContext.java:759)
+        at org.wildfly.security.auth.server.ServerAuthenticationContext$1.handleOne(ServerAuthenticationContext.java:992)
+        at org.wildfly.security.auth.server.ServerAuthenticationContext$1.handleOne(ServerAuthenticationContext.java:902)
+        at org.wildfly.security.auth.server.ServerAuthenticationContext$1.handle(ServerAuthenticationContext.java:839)
+        at org.wildfly.security.sasl.util.SSLQueryCallbackHandler.handle(SSLQueryCallbackHandler.java:60)
+        at org.wildfly.security.sasl.util.TrustManagerSaslServerFactory.lambda$createSaslServer$0(TrustManagerSaslServerFactory.java:96)
+        at org.wildfly.security.sasl.plain.PlainSaslServer.evaluateResponse(PlainSaslServer.java:117)
+        ... 12 more
+Caused by: javax.naming.CommunicationException: ldap.acme.com:636 [Root exception is java.lang.ClassNotFoundException: org.wildfly.security.auth.realm.ldap.ThreadLocalSSLSocketFactory from [Module ""org.wildfly.extension.io"" version 5.0.0.Final from local module loader @7586beff (finder: local module finder @3b69e7d1 (roots: redacted))]]
+        at com.sun.jndi.ldap.Connection.<init>(Connection.java:226)
+        at com.sun.jndi.ldap.LdapClient.<init>(LdapClient.java:137)
+        at com.sun.jndi.ldap.LdapClient.getInstance(LdapClient.java:1615)
+        at com.sun.jndi.ldap.LdapCtx.connect(LdapCtx.java:2749)
+        at com.sun.jndi.ldap.LdapCtx.ensureOpen(LdapCtx.java:2699)
+        at com.sun.jndi.ldap.LdapCtx.ensureOpen(LdapCtx.java:2673)
+        at com.sun.jndi.ldap.LdapCtx.reconnect(LdapCtx.java:2669)
+        at org.wildfly.security.auth.realm.ldap.DelegatingLdapContext.reconnect(DelegatingLdapContext.java:181)
+        at org.wildfly.security.auth.realm.ldap.DirectEvidenceVerifier$1.verifyEvidence(DirectEvidenceVerifier.java:97)
+        ... 22 more
+Caused by: java.lang.ClassNotFoundException: org.wildfly.security.auth.realm.ldap.ThreadLocalSSLSocketFactory from [Module ""org.wildfly.extension.io"" version 5.0.0.Final from local module loader @7586beff (finder: local module finder @3b69e7d1 (roots: redacted))]
+        at org.jboss.modules.ModuleClassLoader.findClass(ModuleClassLoader.java:255)
+        at org.jboss.modules.ConcurrentClassLoader.performLoadClassUnchecked(ConcurrentClassLoader.java:410)
+        at org.jboss.modules.ConcurrentClassLoader.performLoadClass(ConcurrentClassLoader.java:398)
+        at org.jboss.modules.ConcurrentClassLoader.loadClass(ConcurrentClassLoader.java:116)
+        at java.lang.Class.forName0(Native Method)
+        at java.lang.Class.forName(Class.java:348)
+        at com.sun.jndi.ldap.VersionHelper12.loadClass(VersionHelper12.java:72)
+        at com.sun.jndi.ldap.Connection.createSocket(Connection.java:281)
+        at com.sun.jndi.ldap.Connection.<init>(Connection.java:203)
+        ... 30 more
+{code}
+
+As you can see the Sun/Oracle LDAP classes try to load the class {{org.wildfly.security.auth.realm.ldap.ThreadLocalSSLSocketFactory}} using the TCCL which is the {{org.wildfly.extension.io}} module loader. This will not work as ThreadLocalSSLSocketFactor is in the module {{org.wildfy.security.elytron-private}}.",,,
+695,ELY-1633,"AuthenticationConfiguration seems to employ double checked locking but but incorrectly does not declare the variable as volatile.
+
+https://en.wikipedia.org/wiki/Double-checked_locking#Usage_in_Java",,,
+732,ELY-1622,"I am trying to connect from jboss-cli.sh to EAP server. To reproduce the problem it is enough BC FIPS is used only on client side.
+{code:java|titlejboss-cli.log}
+11:50:25,147 ERROR [org.jboss.as.cli.impl.CliLauncher] Error processing CLI: org.jboss.as.cli.CliInitializationException: Failed to connect to the controller
+        at org.jboss.as.cli.impl.CliLauncher.initCommandContext(CliLauncher.java:330)
+        at org.jboss.as.cli.impl.CliLauncher.main(CliLauncher.java:291)
+        at org.jboss.as.cli.CommandLineMain.main(CommandLineMain.java:45)
+        at org.jboss.modules.Module.run(Module.java:352)
+        at org.jboss.modules.Module.run(Module.java:320)
+        at org.jboss.modules.Main.main(Main.java:593)
+Caused by: org.jboss.as.cli.CommandLineException: Failed to resolve host 'localhost'
+        at org.jboss.as.cli.impl.CommandContextImpl.connectController(CommandContextImpl.java:1256)
+        at org.jboss.as.cli.impl.CommandContextImpl.connectController(CommandContextImpl.java:1203)
+        at org.jboss.as.cli.impl.CommandContextImpl.connectController(CommandContextImpl.java:1198)
+        at org.jboss.as.cli.impl.CliLauncher.initCommandContext(CliLauncher.java:328)
+        ... 5 more
+Caused by: java.io.IOException: Failed to obtain SSLContext
+        at org.jboss.as.cli.impl.CLIModelControllerClient.<init>(CLIModelControllerClient.java:156)
+        at org.jboss.as.cli.impl.ModelControllerClientFactory$2.getClient(ModelControllerClientFactory.java:85)
+        at org.jboss.as.cli.impl.CommandContextImpl.connectController(CommandContextImpl.java:1222)
+        ... 8 more
+Caused by: java.security.KeyManagementException: java.security.NoSuchAlgorithmException: SunX509 KeyManagerFactory not available
+        at org.bouncycastle.jsse.provider.ProvSSLContextSpi.selectKeyManager(ProvSSLContextSpi.java:589)
+        at org.bouncycastle.jsse.provider.ProvSSLContextSpi.engineInit(ProvSSLContextSpi.java:531)
+        at javax.net.ssl.SSLContext.init(SSLContext.java:282)
+        at org.wildfly.security.ssl.SSLContextBuilder.lambda$build$0(SSLContextBuilder.java:372)
+        at org.wildfly.security.OneTimeSecurityFactory.create(OneTimeSecurityFactory.java:53)
+        at org.wildfly.security.auth.client.AuthenticationContextConfigurationClient.getSSLContext(AuthenticationContextConfigurationClient.java:221)
+        at org.wildfly.security.auth.client.AuthenticationContextConfigurationClient.getSSLContext(AuthenticationContextConfigurationClient.java:208)
+        at org.jboss.as.cli.impl.CLIModelControllerClient.<init>(CLIModelControllerClient.java:153)
+        ... 10 more
+Caused by: java.security.NoSuchAlgorithmException: SunX509 KeyManagerFactory not available
+        at sun.security.jca.GetInstance.getInstance(GetInstance.java:159)
+        at javax.net.ssl.KeyManagerFactory.getInstance(KeyManagerFactory.java:137)
+        at org.bouncycastle.jsse.provider.ProvSSLContextSpi.selectKeyManager(ProvSSLContextSpi.java:583)
+        ... 17 more
+{code}
+
+When I use non-FIPS java with CLI I can make it work. It does occure also when connecting to default unsecured port 9990.
+When I use BCFKS truststore on server side, e.g. in 2-way http communication it works.
+
+I believe problem is I cant configure algorithm for keymanager on client side in wildfly-config.xml. (At least I don't see how could I do so).
+BC provider does not know SunX509 arlgorithm, rather X509, X.509 or PKIX could be used.",,,
+733,ELY-1618,"When I configure BouncyCastleJsseProvider to by only possible provider providing TLS TLS does not work with exception
+
+{code} 
+14:07:53,905 TRACE [org.wildfly.security] (MSC service thread 1-4) No SSLContext provided by providers in SSLUtils: [BCFIPS version 1.01, BCJSSE version 1.0005, SUN version 1.8, ApacheXMLDSig version 2.11, SunJCE version 1.8, TLSP version 1.0, WildFlyElytron version 1.0]
+14:07:53,906 ERROR [org.jboss.msc.service.fail] (MSC service thread 1-4) MSC000001: Failed to start service org.wildfly.security.ssl-context.test-server-ssl-context: org.jboss.msc.service.StartException in service org.wildfly.security.ssl-context.test-server-ssl-context: java.security.NoSuchAlgorithmException: ELY04001: No algorithm found matching TLS/SSL protocol selection criteria
+	at org.wildfly.extension.elytron.SSLDefinitions$6.lambda$getValueSupplier$1(SSLDefinitions.java:926)
+	at org.wildfly.extension.elytron.TrivialService.start(TrivialService.java:53)
+	at org.jboss.msc.service.ServiceControllerImpl$StartTask.startService(ServiceControllerImpl.java:1736)
+	at org.jboss.msc.service.ServiceControllerImpl$StartTask.execute(ServiceControllerImpl.java:1698)
+	at org.jboss.msc.service.ServiceControllerImpl$ControllerTask.run(ServiceControllerImpl.java:1556)
+	at org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
+	at org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1985)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1487)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1378)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.security.NoSuchAlgorithmException: ELY04001: No algorithm found matching TLS/SSL protocol selection criteria
+	at org.wildfly.security.ssl.SSLUtils.throwIt(SSLUtils.java:142)
+	at org.wildfly.security.ssl.SSLContextBuilder.lambda$build$0(SSLContextBuilder.java:340)
+	at org.wildfly.security.OneTimeSecurityFactory.create(OneTimeSecurityFactory.java:53)
+	at org.wildfly.extension.elytron.SSLDefinitions$6.lambda$getValueSupplier$1(SSLDefinitions.java:924)
+	... 9 more
+
+14:07:53,910 ERROR [org.jboss.as.controller.management-operation] (management-handler-thread - 1) WFLYCTL0013: Operation (""add"") failed - address: ([
+    (""subsystem"" => ""elytron""),
+    (""server-ssl-context"" => ""test-server-ssl-context"")
+]) - failure description: {""WFLYCTL0080: Failed services"" => {""org.wildfly.security.ssl-context.test-server-ssl-context"" => ""java.security.NoSuchAlgorithmException: ELY04001: No algorithm found matching TLS/SSL protocol selection criteria
+    Caused by: java.security.NoSuchAlgorithmException: ELY04001: No algorithm found matching TLS/SSL protocol selection criteria""}}
+{code}
+
+After debugging it seems problem is this:
+Supported protocols resolved from BCJSSE version 1.0005 are [TLS, TLSV1, TLSV1.2, DEFAULT, TLSV1.1]
+Whereas Elytron class org.wildfly.security.ssl.Protocol use constants TLSv1, TLSv1.1, TLSv1.2, ... It means lower case ""v""
+And thus ProtocolSelector.evaluate does return empty set.
+
+Possible solution to this particular problem will be make Protocol case insensitive. It means define enum constants in upper case and adjust methods to use .toUpperCase(). But I am probably not aware of all consequences of such change.
+",,,
+734,ELY-1616,"The ""key-attribute"" (""userPKCS12"") should not be necessary to use LdapKeyStore as truststore.
+See Steps to Reproduce for more information.",,,
+744,ELY-1607,"I know there have been discussed earlier we should revise/update database and defaults regularly.
+
+Checking few ciphersuites from java cipher suite list [1]. I have noticed:
+
+*    Elytron is missing CHACHA20 variants introduced in rfc 7905
+*    missing ciphersuites from RFC 6209
+*    ...
+
+Please revise content of MechanismDatabase.properties
+
+[1] https://docs.oracle.com/javase/10/docs/specs/security/standard-names.html#jsse-cipher-suite-names
+",,,
+746,ELY-1605,"{code}
+/subsystem=elytron/server-ssl-context=a:add(cipher-suite-filter=""TLS_RSA_WITH_AES_256_CCM,TLS_RSA_WITH_AES_128_CCM"")
+{
+    ""outcome"" => ""failed"",
+    ""failure-description"" => ""WFLYELY01017: Invalid value for cipher-suite-filter. ELY05016: Unrecognized token \""TLS_RSA_WITH_AES_256_CCM\"" in mechanism selection string \""TLS_RSA_WITH_AES_256_CCM,TLS_RSA_WITH_AES_128_CCM\"""",
+    ""rolled-back"" => true
+}
+{code}
+
+This is probably simply because MechanismDatabase.properties does not know CCM cipher suites.
+
+Marking as Critical because both of ciphersuites from reproducer are listed as FIPS cipher suites for FIPS BC TLS [1]
+
+These two ciphersuites (TLS_RSA_WITH_AES_256_CCM,TLS_RSA_WITH_AES_128_CCM) are introduced in [rfc6655|https://tools.ietf.org/html/rfc6655].
+
+[1] https://downloads.bouncycastle.org/fips-java/BC-FJA-(D)TLSUserGuide-1.0.5.pdf
+[2] https://tools.ietf.org/html/rfc6655",,,
+748,ELY-1601,"Unhandled null value of withIdentities in
+https://github.com/wildfly-security/wildfly-elytron/blob/master/src/main/java/org/wildfly/security/auth/server/SecurityIdentity.java#L526
+
+Also it looks securityIdentity is added into withIdentities multiple-times.",,,
+751,ELY-1595,"With ELY-1572 source compatibility check was disabled because of bug in japicmp-base-0.12.0 . With new release of japicmp it should be fixed and source compatibility can be checked again.
+
+[1] https://github.com/wildfly-security/wildfly-elytron/pull/1145#issuecomment-393063711
+[2] Also related ELY-1587",,,
+752,ELY-1592,"Use case: Administrator wants to connect to CLI using kerberos ticket. It is not possible in CD13 with error
+
+{code}
+Client authentication failed: javax.security.sasl.SaslException: ELY05108: Unable to create response token [Caused by GSSException: No valid credentials provided (Mechanism level: Attempt to obtain new INITIATE credentials failed! (null))]
+{code}
+
+Attaching logs of server and client for CD12 (OK) and CD13 (NOK)
+
+In server log there is missing message {{Server received authentication request}} so it makes me think problem is on client side.
+
+Comparing client logs there is difference
+* CD13
+{code}
+11:32:58,924 TRACE [org.jboss.remoting.remote.client] Client authentication failed: javax.security.sasl.SaslException: ELY05108: Unable to create response token [Caused by GSSException: No valid credentials provided (Mechanism level: Attempt to obtain new INITIATE credentials failed! (null))]
+{code}
+* CD12 
+compared to CD12
+{code}
+11:31:16,946 TRACE [org.wildfly.security.sasl.gssapi] GSSContext established, transitioning to negotiate security layer.
+{code}",,,
+754,ELY-1589,"XSD validation of test-wildfly-config.xml in tests fails because of invalid XSD:
+
+{noformat}Src-resolve: Cannot Resolve The Name 'resource-type' To A(n) 'simpleType Definition' Component.{noformat}
+
+Problem is, ""resource-type"" (which is complexType) is used as type of an attribute (not of an element) in certificate-revocation-list-type.
+
+Edit: there is much more errors when trying to verify testing XMLs against XSDs.",,,
+765,ELY-1587,"Debugging revealed certificate use {{utf8String}} representation whereas Elytron is expecting {{printableString}}
+
+In rfc 5280 [1] chapter 4.1.2.4. Issuer there is specified value of subject/issuer can be of 5 types
+
+{code}
+   DirectoryString ::= CHOICE {
+         teletexString           TeletexString (SIZE (1..MAX)),
+         printableString         PrintableString (SIZE (1..MAX)),
+         universalString         UniversalString (SIZE (1..MAX)),
+         utf8String              UTF8String (SIZE (1..MAX)),
+         bmpString               BMPString (SIZE (1..MAX)) }
+{code}
+
+However Elytron X500 principal decoder [2] can handle only 2 of them PRINTABLE_STRING_TYPE and IA5_STRING_TYPE (not sure which type of rfc does that match) [2]
+
+Definitely missing {{utf8String}} (my case). Also revise for backward compatibility {{teletexString}}, {{bmpString}} and {{universalString}}
+
+[1] https://www.ietf.org/rfc/rfc5280.txt
+[2] https://github.com/wildfly-security/wildfly-elytron/blob/32ff7c17965b3ecae6be7ce1c9b96ab642ddc4ad/src/main/java/org/wildfly/security/x500/util/X500PrincipalUtil.java#L95",,,
+771,ELY-1573,Each PasswordSpec implementation class must have an equals/hashCode.,,,
+780,ELY-1572,"As part of ELY-1523 japicmp was configured to force binary and source compatibility.
+By last discussion, only binary compatibility is required.
+
+{panel}
+*Honza Kalina*	jaspicmp reports it as source incompatibility, not as binary incompatibility - so it maybe it is false positive, as I would say it should be source-compatible...
+*Darran Lofthouse*	Binary is the only one we are really interested in, i.e. will an update to a later version of Elytron break something.  Most of our backwards compatibility strategy is more about breaking things and upsetting people
+{panel}
+
+Japicmp currently reports adding default method into interface as source incompatible change (see  https://github.com/siom79/japicmp/issues/201) -> blocks adding IV into MaskedPassword in ELY-867",,,
+786,ELY-1570,"I CAN connect to Wildfly with
+JConsole
+JVisualVM
+
+I cannot connect with 
+Java Mission Control (JMC).  
+
+
+
+I believe this is an issue with some new code that fails to recognize that ""classLoader"" can be null in the Java SE / Eclipse OSI environment
+
+ ClassLoader classLoader = WildFlyElytronProvider.class.getClassLoader();
+
+com.oracle.jmc.rjmx.ConnectionException caused by javax.security.sasl.SaslException [Caused by java.lang.NullPointerException]
+	at com.oracle.jmc.rjmx.internal.RJMXConnection.connect(RJMXConnection.java:406)
+	at com.oracle.jmc.rjmx.internal.ServerHandle.doConnect(ServerHandle.java:88)
+	at com.oracle.jmc.rjmx.internal.ServerHandle.connect(ServerHandle.java:78)
+	at com.oracle.jmc.console.ui.editor.internal.ConsoleEditor$ConnectJob.run(ConsoleEditor.java:73)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:55)
+Caused by: javax.security.sasl.SaslException [Caused by java.lang.NullPointerException]
+	at org.jboss.remoting3.remote.ClientConnectionOpenListener$Capabilities.handleEvent(ClientConnectionOpenListener.java:426)
+	at org.jboss.remoting3.remote.ClientConnectionOpenListener$Capabilities.handleEvent(ClientConnectionOpenListener.java:242)
+	at org.xnio.ChannelListeners.invokeChannelListener(ChannelListeners.java:92)
+	at org.xnio.conduits.ReadReadyHandler$ChannelListenerHandler.readReady(ReadReadyHandler.java:66)
+	at org.xnio.nio.NioSocketConduit.handleReady(NioSocketConduit.java:89)
+	at org.xnio.nio.WorkerThread.run(WorkerThread.java:591)
+	at ...asynchronous invocation...(Unknown Source)
+	at org.jboss.remoting3.EndpointImpl.connect(EndpointImpl.java:570)
+	at org.jboss.remoting3.EndpointImpl.connect(EndpointImpl.java:532)
+	at org.jboss.remoting3.EndpointImpl.connect(EndpointImpl.java:520)
+	at org.jboss.remotingjmx.RemotingConnector.internalRemotingConnect(RemotingConnector.java:268)
+	at org.jboss.remotingjmx.RemotingConnector.internalConnect(RemotingConnector.java:156)
+	at org.jboss.remotingjmx.RemotingConnector.connect(RemotingConnector.java:103)
+	at com.oracle.jmc.rjmx.internal.RJMXConnection.connectJmxConnector(RJMXConnection.java:451)
+	at com.oracle.jmc.rjmx.internal.RJMXConnection.establishConnection(RJMXConnection.java:427)
+	at com.oracle.jmc.rjmx.internal.RJMXConnection.connect(RJMXConnection.java:399)
+	... 4 more
+Caused by: java.lang.NullPointerException
+	at org.wildfly.security.WildFlyElytronProvider$ProviderService.getImplementationClass(WildFlyElytronProvider.java:429)
+	at org.wildfly.security.WildFlyElytronProvider$ProviderService.newInstance(WildFlyElytronProvider.java:413)
+	at org.wildfly.security.sasl.util.SecurityProviderSaslClientFactory.createSaslClient(SecurityProviderSaslClientFactory.java:94)
+	at org.wildfly.security.sasl.util.AbstractDelegatingSaslClientFactory.createSaslClient(AbstractDelegatingSaslClientFactory.java:66)
+	at org.wildfly.security.sasl.util.ProtocolSaslClientFactory.createSaslClient(ProtocolSaslClientFactory.java:50)
+	at org.wildfly.security.sasl.util.AbstractDelegatingSaslClientFactory.createSaslClient(AbstractDelegatingSaslClientFactory.java:66)
+	at org.wildfly.security.sasl.util.ServerNameSaslClientFactory.createSaslClient(ServerNameSaslClientFactory.java:50)
+	at org.wildfly.security.sasl.util.AbstractDelegatingSaslClientFactory.createSaslClient(AbstractDelegatingSaslClientFactory.java:66)
+	at org.wildfly.security.sasl.util.ServerNameSaslClientFactory.createSaslClient(ServerNameSaslClientFactory.java:50)
+	at org.wildfly.security.sasl.util.FilterMechanismSaslClientFactory.createSaslClient(FilterMechanismSaslClientFactory.java:102)
+	at org.wildfly.security.sasl.util.AbstractDelegatingSaslClientFactory.createSaslClient(AbstractDelegatingSaslClientFactory.java:66)
+	at org.wildfly.security.sasl.util.LocalPrincipalSaslClientFactory.createSaslClient(LocalPrincipalSaslClientFactory.java:76)
+	at org.wildfly.security.sasl.util.PrivilegedSaslClientFactory.lambda$createSaslClient$0(PrivilegedSaslClientFactory.java:64)
+	at java.base/java.security.AccessController.doPrivileged(Native Method)
+	at org.wildfly.security.sasl.util.PrivilegedSaslClientFactory.createSaslClient(PrivilegedSaslClientFactory.java:64)
+	at org.wildfly.security.auth.client.AuthenticationConfiguration.createSaslClient(AuthenticationConfiguration.java:1348)
+	at org.wildfly.security.auth.client.AuthenticationContextConfigurationClient.createSaslClient(AuthenticationContextConfigurationClient.java:395)
+	at org.jboss.remoting3.remote.ClientConnectionOpenListener$Capabilities.handleEvent(ClientConnectionOpenListener.java:420)
+	at org.jboss.remoting3.remote.ClientConnectionOpenListener$Capabilities.handleEvent(ClientConnectionOpenListener.java:242)
+	at org.xnio.ChannelListeners.invokeChannelListener(ChannelListeners.java:92)
+	at org.xnio.conduits.ReadReadyHandler$ChannelListenerHandler.readReady(ReadReadyHandler.java:66)
+	at org.xnio.nio.NioSocketConduit.handleReady(NioSocketConduit.java:89)
+	at org.xnio.nio.WorkerThread.run(WorkerThread.java:591)
+
+
+",,,
+788,ELY-1568,"I am getting error in my IDE during xml validation
+
+* {noformat}
+cvc-complex-type.2.4.b: The content of element 'providers' is not complete. One of '{""urn:elytron:client:1.1"":global}' is expected.
+{noformat}
+While having this snippet in my wildfly-config.xml
+{code:xml|title=wildfly-config.xml}
+<providers>
+    <use-service-loader/>
+</providers>
+{code}
+
+* {noformat}
+cvc-complex-type.2.4.b: The content of element 'configuration' is not complete. One of '{""urn:elytron:client:
+ 1.1"":set-host, ""urn:elytron:client:1.1"":set-port, ""urn:elytron:client:1.1"":set-protocol, ""urn:elytron:client:
+ 1.1"":abstract-user-spec, ""urn:elytron:client:1.1"":set-mechanism-realm, ""urn:elytron:client:1.1"":rewrite-user-
+ name-regex, ""urn:elytron:client:1.1"":set-mechanism-properties, ""urn:elytron:client:1.1"":set-authorization-
+ name, ""urn:elytron:client:1.1"":abstract-sasl-factories}' is expected.
+{noformat}
+While having this snippet in my wildfly-config.xml
+{code:xml|title=wildfly-config.xml}
+    <configuration name=""default"">
+        <sasl-mechanism-selector selector=""EXTERNAL""/>
+        <credentials>
+            <key-store-reference key-store-name=""keystore"">
+                <key-store-clear-password password=""${password}""/>
+            </key-store-reference>
+        </credentials>
+        <providers>
+            <use-service-loader/>
+        </providers>
+    </configuration>
+{code}
+
+
+Based on [1] I think elements in xsd:all should contain minOccurs=""0"" explicitly. E.g. <xsd:element ref=""abstract-user-spec"" minOccurs=""0""/>.
+
+I see this problem in providers-type and authentication-configuration-type -, key-pair-type and certificate-type-
+
+[1] https://www.w3schools.com/xml/el_all.asp
+",,,
+799,ELY-1564,"In PasswordKeyMapper an exception is logged with the default algorithm name instead of the algorithm used to instantiate PasswordFactory object. 
+
+{code:java|title=PasswordKeyMapper.java}
+        final PasswordFactory passwordFactory;
+        try {
+            passwordFactory = PasswordFactory.getInstance(algorithmName, providers);
+        } catch (NoSuchAlgorithmException e) {
+            throw log.couldNotObtainPasswordFactoryForAlgorithm(algorithmName, e);
+        }
+
+...
+
+        try {
+            Password password = passwordFactory.generatePassword(passwordSpec);
+            if (log.isTraceEnabled()) {
+                log.tracef(""Key Mapper: Password credential created using algorithm column value [%s]"", algorithmName);
+            }
+            return new PasswordCredential(password);
+        } catch (InvalidKeySpecException e) {
+            throw log.invalidPasswordKeySpecificationForAlgorithm(this.defaultAlgorithm, e);
+        }
+{code}",,,
+800,ELY-1561,"The TCCL is not set, so the chances of finding {{com.sun.security.auth.module.Krb5LoginModule}} or {{com.ibm.security.auth.module.Krb5LoginModule}} are essentially completely dependent on the environment.  However since the class is always the same, and we can safely assume that we should have a dependency on that module, we should set TCCL around the initialization of the {{LoginContext}}.",,,
+801,ELY-1557,"For example:
+https://github.com/wildfly-security/wildfly-elytron/blob/1.2.4.Final/src/main/java/org/wildfly/security/auth/client/ElytronXmlParser.java#L2431",,,
+802,ELY-1554,"In WFLY-10163 was Apache Directory upgraded for wildfly to 2.0.0-M24.
+To be consistent, DS should be upgraded in elytron too.",,,
+806,ELY-1553,"There is a difference between required Permission for {{ElytronXmlParser.parseAuthenticationClientConfiguration()}} method in version 1.1.7.Final (JBoss EAP 7.1.0.GA) and 1.2.4.Final (JBoss EAP 7.2.0.CD12.CR1) when runs with Security Manager. Version 1.2.4.Final newly requires Permission {{java.security.SecurityPermission putProviderProperty.WildFlyElytron}}. It fails with following Exception:
+{code}
+java.security.AccessControlException: WFSM000001: Permission check failed (permission ""(""java.security.SecurityPermission"" ""putProviderProperty.WildFlyElytron"")"" in code source ""(vfs:/content/WildflyConfigXmlReproducerServlet.war/WEB-INF/classes <no signer certificates>)"" of ""ModuleClassLoader for Module ""deployment.WildflyConfigXmlReproducerServlet.war"" from Service Module Loader"")
+	at org.wildfly.security.manager.WildFlySecurityManager.checkPermission(WildFlySecurityManager.java:295)
+	at org.wildfly.security.manager.WildFlySecurityManager.checkPermission(WildFlySecurityManager.java:192)
+	at java.lang.SecurityManager.checkSecurityAccess(SecurityManager.java:1759)
+	at org.wildfly.security.manager.WildFlySecurityManager.checkSecurityAccess(WildFlySecurityManager.java:581)
+	at java.security.Provider.check(Provider.java:658)
+	at java.security.Provider.putService(Provider.java:1120)
+	at org.wildfly.security.WildFlyElytronProvider.putHttpAuthenticationMechanismImplementations(WildFlyElytronProvider.java:232)
+	at org.wildfly.security.WildFlyElytronProvider.<init>(WildFlyElytronProvider.java:142)
+	at org.wildfly.security.auth.client.ElytronXmlParser.lambda$static$0(ElytronXmlParser.java:131)
+	at org.wildfly.security.util.ProviderUtil$1.get(ProviderUtil.java:159)
+	at org.wildfly.security.util.ProviderUtil$1.get(ProviderUtil.java:147)
+	at org.wildfly.security.auth.client.ElytronXmlParser$DeferredSupplier.get(ElytronXmlParser.java:2826)
+	at org.wildfly.security.password.PasswordFactory.getInstance(PasswordFactory.java:116)
+	at org.wildfly.security.auth.client.ElytronXmlParser.lambda$parseClearPassword$49(ElytronXmlParser.java:2252)
+	at org.wildfly.security.auth.client.ElytronXmlParser.lambda$parseCredentialsType$31(ElytronXmlParser.java:1065)
+	at org.wildfly.security.auth.client.ElytronXmlParser.lambda$andThenOp$27(ElytronXmlParser.java:1042)
+	at org.wildfly.security.auth.client.ElytronXmlParser.lambda$parseCredentialsType$38(ElytronXmlParser.java:1108)
+	at org.wildfly.security.auth.client.ElytronXmlParser.lambda$parseAuthenticationConfigurationType$22(ElytronXmlParser.java:836)
+	at org.wildfly.security.auth.client.ElytronXmlParser.lambda$andThenOp$27(ElytronXmlParser.java:1042)
+	at org.wildfly.security.auth.client.ElytronXmlParser.lambda$parseAuthenticationConfigurationType$26(ElytronXmlParser.java:884)
+	at org.wildfly.security.auth.client.ElytronXmlParser.lambda$parseAuthenticationRuleType$11(ElytronXmlParser.java:716)
+	at org.wildfly.security.auth.client.ElytronXmlParser.lambda$parseRulesType$12(ElytronXmlParser.java:742)
+	at org.wildfly.security.auth.client.ElytronXmlParser.parseAuthenticationClientType(ElytronXmlParser.java:351)
+	at org.wildfly.security.auth.client.ElytronXmlParser.parseAuthenticationClientConfiguration(ElytronXmlParser.java:227)
+	at org.wildfly.security.auth.client.ElytronXmlParser.parseAuthenticationClientConfiguration(ElytronXmlParser.java:188)
+	at com.redhat.eap.qe.elytron.authnctx.WildflyConfigXmlReproducerServlet.parseAndCreateAuthenticationClientConfiguration(WildflyConfigXmlReproducerServlet.java:51)
+	at com.redhat.eap.qe.elytron.authnctx.WildflyConfigXmlReproducerServlet.doGet(WildflyConfigXmlReproducerServlet.java:44)
+	...
+{code}
+
+In case this change is expected then Release Notes Jira should be created.
+
+The same Permission is needed when authentication context is obtained from server configuration (through default-authentication-context in elytron subsystem):
+{code}
+java.security.AccessControlException: WFSM000001: Permission check failed (permission ""(""java.security.SecurityPermission"" ""putProviderProperty.WildFlyElytron"")"" in code source ""(vfs:/content/direct-call-dep.war/WEB-INF/classes <no signer certificates>)"" of ""ModuleClassLoader for Module ""deployment.direct-call-dep.war"" from Service Module Loader"")
+	at org.wildfly.security.manager.WildFlySecurityManager.checkPermission(WildFlySecurityManager.java:295)
+	at org.wildfly.security.manager.WildFlySecurityManager.checkPermission(WildFlySecurityManager.java:192)
+	at java.lang.SecurityManager.checkSecurityAccess(SecurityManager.java:1759)
+	at org.wildfly.security.manager.WildFlySecurityManager.checkSecurityAccess(WildFlySecurityManager.java:581)
+	at java.security.Provider.check(Provider.java:658)
+	at java.security.Provider.putService(Provider.java:1120)
+	at org.wildfly.security.WildFlyElytronProvider.putHttpAuthenticationMechanismImplementations(WildFlyElytronProvider.java:232)
+	at org.wildfly.security.WildFlyElytronProvider.<init>(WildFlyElytronProvider.java:142)
+	at org.wildfly.security.auth.client.AuthenticationConfiguration.lambda$static$0(AuthenticationConfiguration.java:169)
+	at org.wildfly.security.util.ProviderUtil$1.get(ProviderUtil.java:159)
+	at org.wildfly.security.util.ProviderUtil$1.get(ProviderUtil.java:147)
+	at org.wildfly.security.sasl.util.SecurityProviderSaslClientFactory.createSaslClient(SecurityProviderSaslClientFactory.java:85)
+	at org.wildfly.security.sasl.util.AbstractDelegatingSaslClientFactory.createSaslClient(AbstractDelegatingSaslClientFactory.java:66)
+	at org.wildfly.security.sasl.util.ProtocolSaslClientFactory.createSaslClient(ProtocolSaslClientFactory.java:50)
+	at org.wildfly.security.sasl.util.AbstractDelegatingSaslClientFactory.createSaslClient(AbstractDelegatingSaslClientFactory.java:66)
+	at org.wildfly.security.sasl.util.ServerNameSaslClientFactory.createSaslClient(ServerNameSaslClientFactory.java:50)
+	at org.wildfly.security.sasl.util.AbstractDelegatingSaslClientFactory.createSaslClient(AbstractDelegatingSaslClientFactory.java:66)
+	at org.wildfly.security.sasl.util.ServerNameSaslClientFactory.createSaslClient(ServerNameSaslClientFactory.java:50)
+	at org.wildfly.security.sasl.util.FilterMechanismSaslClientFactory.createSaslClient(FilterMechanismSaslClientFactory.java:102)
+	at org.wildfly.security.sasl.util.AbstractDelegatingSaslClientFactory.createSaslClient(AbstractDelegatingSaslClientFactory.java:66)
+	at org.wildfly.security.sasl.util.LocalPrincipalSaslClientFactory.createSaslClient(LocalPrincipalSaslClientFactory.java:76)
+	at org.wildfly.security.sasl.util.PrivilegedSaslClientFactory.lambda$createSaslClient$0(PrivilegedSaslClientFactory.java:64)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at org.wildfly.security.sasl.util.PrivilegedSaslClientFactory.createSaslClient(PrivilegedSaslClientFactory.java:64)
+	at org.wildfly.security.auth.client.AuthenticationConfiguration.createSaslClient(AuthenticationConfiguration.java:1348)
+	at org.wildfly.security.auth.client.AuthenticationContextConfigurationClient.createSaslClient(AuthenticationContextConfigurationClient.java:395)
+	at org.jboss.remoting3.remote.ClientConnectionOpenListener$Capabilities.handleEvent(ClientConnectionOpenListener.java:420)
+	at org.jboss.remoting3.remote.ClientConnectionOpenListener$Capabilities.handleEvent(ClientConnectionOpenListener.java:242)
+	at org.xnio.ChannelListeners.invokeChannelListener(ChannelListeners.java:92)
+	at org.xnio.conduits.ReadReadyHandler$ChannelListenerHandler.readReady(ReadReadyHandler.java:66)
+	at org.xnio.nio.NioSocketConduit.handleReady(NioSocketConduit.java:89)
+	at org.xnio.nio.WorkerThread.run(WorkerThread.java:591)
+{code} 
+
+or when authentication context is created programatically:
+{code}
+java.security.AccessControlException: WFSM000001: Permission check failed (permission ""(""java.security.SecurityPermission"" ""putProviderProperty.WildFlyElytron"")"" in code source ""(vfs:/content/programatically-set-dep.war/WEB-INF/classes <no signer certificates>)"" of ""ModuleClassLoader for Module ""deployment.programatically-set-dep.war"" from Service Module Loader"")
+	at org.wildfly.security.manager.WildFlySecurityManager.checkPermission(WildFlySecurityManager.java:295)
+	at org.wildfly.security.manager.WildFlySecurityManager.checkPermission(WildFlySecurityManager.java:192)
+	at java.lang.SecurityManager.checkSecurityAccess(SecurityManager.java:1759)
+	at org.wildfly.security.manager.WildFlySecurityManager.checkSecurityAccess(WildFlySecurityManager.java:581)
+	at java.security.Provider.check(Provider.java:658)
+	at java.security.Provider.putService(Provider.java:1120)
+	at org.wildfly.security.WildFlyElytronProvider.putHttpAuthenticationMechanismImplementations(WildFlyElytronProvider.java:232)
+	at org.wildfly.security.WildFlyElytronProvider.<init>(WildFlyElytronProvider.java:142)
+	at org.wildfly.security.auth.client.AuthenticationConfiguration.lambda$static$0(AuthenticationConfiguration.java:169)
+	at org.wildfly.security.util.ProviderUtil$1.get(ProviderUtil.java:159)
+	at org.wildfly.security.util.ProviderUtil$1.get(ProviderUtil.java:147)
+	at org.wildfly.security.sasl.util.SecurityProviderSaslClientFactory.createSaslClient(SecurityProviderSaslClientFactory.java:85)
+	at org.wildfly.security.sasl.util.AbstractDelegatingSaslClientFactory.createSaslClient(AbstractDelegatingSaslClientFactory.java:66)
+	at org.wildfly.security.sasl.util.ProtocolSaslClientFactory.createSaslClient(ProtocolSaslClientFactory.java:50)
+	at org.wildfly.security.sasl.util.AbstractDelegatingSaslClientFactory.createSaslClient(AbstractDelegatingSaslClientFactory.java:66)
+	at org.wildfly.security.sasl.util.ServerNameSaslClientFactory.createSaslClient(ServerNameSaslClientFactory.java:50)
+	at org.wildfly.security.sasl.util.AbstractDelegatingSaslClientFactory.createSaslClient(AbstractDelegatingSaslClientFactory.java:66)
+	at org.wildfly.security.sasl.util.ServerNameSaslClientFactory.createSaslClient(ServerNameSaslClientFactory.java:50)
+	at org.wildfly.security.sasl.util.FilterMechanismSaslClientFactory.createSaslClient(FilterMechanismSaslClientFactory.java:102)
+	at org.wildfly.security.sasl.util.AbstractDelegatingSaslClientFactory.createSaslClient(AbstractDelegatingSaslClientFactory.java:66)
+	at org.wildfly.security.sasl.util.LocalPrincipalSaslClientFactory.createSaslClient(LocalPrincipalSaslClientFactory.java:76)
+	at org.wildfly.security.sasl.util.PrivilegedSaslClientFactory.lambda$createSaslClient$0(PrivilegedSaslClientFactory.java:64)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at org.wildfly.security.sasl.util.PrivilegedSaslClientFactory.createSaslClient(PrivilegedSaslClientFactory.java:64)
+	at org.wildfly.security.auth.client.AuthenticationConfiguration.createSaslClient(AuthenticationConfiguration.java:1348)
+	at org.wildfly.security.auth.client.AuthenticationContextConfigurationClient.createSaslClient(AuthenticationContextConfigurationClient.java:395)
+	at org.jboss.remoting3.remote.ClientConnectionOpenListener$Capabilities.handleEvent(ClientConnectionOpenListener.java:420)
+	at org.jboss.remoting3.remote.ClientConnectionOpenListener$Capabilities.handleEvent(ClientConnectionOpenListener.java:242)
+	at org.xnio.ChannelListeners.invokeChannelListener(ChannelListeners.java:92)
+	at org.xnio.conduits.ReadReadyHandler$ChannelListenerHandler.readReady(ReadReadyHandler.java:66)
+	at org.xnio.nio.NioSocketConduit.handleReady(NioSocketConduit.java:89)
+	at org.xnio.nio.WorkerThread.run(WorkerThread.java:591)
+{code}",,,
+808,ELY-1552,"In org.​wildfly.​security.​http.​impl.​DigestAuthenticationMechanism.​digestUriMatchesRequestUri(org.​wildfly.​security.​http.​HttpServerRequest, byte[]): Found a call to a method which will perform a byte to String (or String to byte) conversion, and will assume that the default platform encoding is suitable.
+
+{code}
+ private boolean digestUriMatchesRequestUri(HttpServerRequest request, byte[] digestUri) {
+        if (!validateUri) {
+            return true;
+        }
+
+        java.net.URI requestURI = request.getRequestURI();
+        String digestUriStr = new String(digestUri);
+
+{code}
+
+https://scan7.coverity.com/reports.htm#v20225/p11778/fileInstanceId=49333269&defectInstanceId=10309296&mergedDefectId=1466832",,,
+809,ELY-1550,"Synchronization in audit endpoint implementations leads to a great performance drop.
+We see the issue in {{FileAuditEndpoint.accept(EventPriority, String)}}, but similar code is also in the {{SyslogAuditEndpoint}}.
+
+Check the attached recording (FlightRecorder) in jmc (Java Mission Control).
+
+It can be seen in these tabs
+- Threads > Contention
+- Threads > Thread Dumps
+- Threads > Lock Instances",,,
+810,ELY-1549,"Given SPNEGO + FORM authentication configuration. AND SPNEGO is SESSION,CONNECTION or default (SESSIN) scoped. And running on IBM java.
+When invalid kerberos ticket is send 
+Then status code 401 is returned with http form. 
+
+There is agreement in such case SPNEGO+FORM 200 should return with form.
+",,,
+814,ELY-1547,"When the client sends an initial SPNEGO token with Kerberos as preferred mechanism and includes an invalid kerberos token, then client expects to see the {{WWW-Authenticate}} HTTP header with SPNEGO response {{negTokenResp[ negState = reject ]}}.
+
+As stated in [SPNEGO specification|https://tools.ietf.org/html/rfc4178#section-4.2.2] negstat is required in first reply:
+
+{code:borderStyle=dashed}
+negState
+
+...
+
+      This field is REQUIRED in the first reply from the target, and is
+
+      OPTIONAL thereafter.  When negState is absent, the actual state
+
+      should be inferred from the state of the negotiated mechanism
+
+      context.
+{code}",,,
+818,ELY-1540,"The build fails at the last step with this exception:
+
+{noformat}
+[INFO] --- japicmp-maven-plugin:0.11.0:cmp (default) @ wildfly-elytron ---
+[INFO] Written file '/home/david/src/java/wildfly-elytron/target/japicmp/japicmp.diff'.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 02:50 min
+[INFO] Finished at: 2018-03-09T10:05:46-06:00
+[INFO] Final Memory: 62M/206M
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal com.github.siom79.japicmp:japicmp-maven-plugin:0.11.0:cmp (default) on project wildfly-elytron: Execution default of goal com.github.siom79.japicmp:japicmp-maven-plugin:0.11.0:cmp failed: A required class was missing while executing com.github.siom79.japicmp:japicmp-maven-plugin:0.11.0:cmp: javax/xml/bind/JAXBException
+[ERROR] -----------------------------------------------------
+[ERROR] realm =    plugin>com.github.siom79.japicmp:japicmp-maven-plugin:0.11.0
+[ERROR] strategy = org.codehaus.plexus.classworlds.strategy.SelfFirstStrategy
+[ERROR] urls[0] = file:/home/david/.m2/repository/com/github/siom79/japicmp/japicmp-maven-plugin/0.11.0/japicmp-maven-plugin-0.11.0.jar
+[ERROR] urls[1] = file:/home/david/.m2/repository/org/sonatype/aether/aether-util/1.11/aether-util-1.11.jar
+[ERROR] urls[2] = file:/home/david/.m2/repository/org/sonatype/sisu/sisu-inject-bean/2.1.1/sisu-inject-bean-2.1.1.jar
+[ERROR] urls[3] = file:/home/david/.m2/repository/org/sonatype/sisu/sisu-guice/2.9.4/sisu-guice-2.9.4-no_aop.jar
+[ERROR] urls[4] = file:/home/david/.m2/repository/org/codehaus/plexus/plexus-interpolation/1.14/plexus-interpolation-1.14.jar
+[ERROR] urls[5] = file:/home/david/.m2/repository/org/codehaus/plexus/plexus-utils/2.0.6/plexus-utils-2.0.6.jar
+[ERROR] urls[6] = file:/home/david/.m2/repository/org/codehaus/plexus/plexus-component-annotations/1.5.5/plexus-component-annotations-1.5.5.jar
+[ERROR] urls[7] = file:/home/david/.m2/repository/org/sonatype/plexus/plexus-sec-dispatcher/1.3/plexus-sec-dispatcher-1.3.jar
+[ERROR] urls[8] = file:/home/david/.m2/repository/org/sonatype/plexus/plexus-cipher/1.4/plexus-cipher-1.4.jar
+[ERROR] urls[9] = file:/home/david/.m2/repository/com/github/siom79/japicmp/japicmp/0.11.0/japicmp-0.11.0.jar
+[ERROR] urls[10] = file:/home/david/.m2/repository/org/javassist/javassist/3.22.0-GA/javassist-3.22.0-GA.jar
+[ERROR] urls[11] = file:/home/david/.m2/repository/com/google/guava/guava/18.0/guava-18.0.jar
+[ERROR] urls[12] = file:/home/david/.m2/repository/org/apache/maven/reporting/maven-reporting-impl/2.3/maven-reporting-impl-2.3.jar
+[ERROR] urls[13] = file:/home/david/.m2/repository/backport-util-concurrent/backport-util-concurrent/3.1/backport-util-concurrent-3.1.jar
+[ERROR] urls[14] = file:/home/david/.m2/repository/junit/junit/3.8.1/junit-3.8.1.jar
+[ERROR] urls[15] = file:/home/david/.m2/repository/org/apache/maven/shared/maven-shared-utils/0.6/maven-shared-utils-0.6.jar
+[ERROR] urls[16] = file:/home/david/.m2/repository/com/google/code/findbugs/jsr305/2.0.1/jsr305-2.0.1.jar
+[ERROR] urls[17] = file:/home/david/.m2/repository/org/apache/maven/doxia/doxia-sink-api/1.2/doxia-sink-api-1.2.jar
+[ERROR] urls[18] = file:/home/david/.m2/repository/org/apache/maven/doxia/doxia-core/1.2/doxia-core-1.2.jar
+[ERROR] urls[19] = file:/home/david/.m2/repository/commons-lang/commons-lang/2.4/commons-lang-2.4.jar
+[ERROR] urls[20] = file:/home/david/.m2/repository/org/apache/httpcomponents/httpclient/4.0.2/httpclient-4.0.2.jar
+[ERROR] urls[21] = file:/home/david/.m2/repository/org/apache/httpcomponents/httpcore/4.0.1/httpcore-4.0.1.jar
+[ERROR] urls[22] = file:/home/david/.m2/repository/commons-codec/commons-codec/1.3/commons-codec-1.3.jar
+[ERROR] urls[23] = file:/home/david/.m2/repository/org/apache/maven/doxia/doxia-site-renderer/1.2/doxia-site-renderer-1.2.jar
+[ERROR] urls[24] = file:/home/david/.m2/repository/org/apache/maven/doxia/doxia-decoration-model/1.2/doxia-decoration-model-1.2.jar
+[ERROR] urls[25] = file:/home/david/.m2/repository/org/apache/maven/doxia/doxia-module-xhtml/1.2/doxia-module-xhtml-1.2.jar
+[ERROR] urls[26] = file:/home/david/.m2/repository/org/apache/maven/doxia/doxia-module-fml/1.2/doxia-module-fml-1.2.jar
+[ERROR] urls[27] = file:/home/david/.m2/repository/org/codehaus/plexus/plexus-i18n/1.0-beta-7/plexus-i18n-1.0-beta-7.jar
+[ERROR] urls[28] = file:/home/david/.m2/repository/org/codehaus/plexus/plexus-velocity/1.1.7/plexus-velocity-1.1.7.jar
+[ERROR] urls[29] = file:/home/david/.m2/repository/org/apache/velocity/velocity/1.5/velocity-1.5.jar
+[ERROR] urls[30] = file:/home/david/.m2/repository/oro/oro/2.0.8/oro-2.0.8.jar
+[ERROR] urls[31] = file:/home/david/.m2/repository/commons-collections/commons-collections/3.2.1/commons-collections-3.2.1.jar
+[ERROR] urls[32] = file:/home/david/.m2/repository/commons-validator/commons-validator/1.3.1/commons-validator-1.3.1.jar
+[ERROR] urls[33] = file:/home/david/.m2/repository/commons-beanutils/commons-beanutils/1.7.0/commons-beanutils-1.7.0.jar
+[ERROR] urls[34] = file:/home/david/.m2/repository/commons-digester/commons-digester/1.6/commons-digester-1.6.jar
+[ERROR] urls[35] = file:/home/david/.m2/repository/xml-apis/xml-apis/1.0.b2/xml-apis-1.0.b2.jar
+[ERROR] urls[36] = file:/home/david/.m2/repository/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4.jar
+[ERROR] urls[37] = file:/home/david/.m2/repository/org/apache/maven/reporting/maven-reporting-api/2.2.1/maven-reporting-api-2.2.1.jar
+[ERROR] urls[38] = file:/home/david/.m2/repository/org/apache/maven/doxia/doxia-logging-api/1.1/doxia-logging-api-1.1.jar
+[ERROR] urls[39] = file:/home/david/.m2/repository/org/codehaus/groovy/groovy-jsr223/2.4.6/groovy-jsr223-2.4.6.jar
+[ERROR] urls[40] = file:/home/david/.m2/repository/org/codehaus/groovy/groovy/2.4.6/groovy-2.4.6.jar
+[ERROR] Number of foreign imports: 1
+[ERROR] import: Entry[import  from realm ClassRealm[maven.api, parent: null]]
+[ERROR] 
+[ERROR] -----------------------------------------------------
+[ERROR] : javax.xml.bind.JAXBException
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/PluginContainerException
+{noformat}
+
+Maybe because JAXB is not an included module by default on Java 9.  Might need an {{--add-module}} somewhere?",,,
+819,ELY-1536,"Server sends ""stale=true"" when invalid nonce is used.
+Client should repeat authentication with new nonce, but it ignores it instead.
+
+rfc2831:
+{panel}
+If the response is valid, the server MAY choose to deem that
+   authentication has succeeded. However, if it has been too long since
+   the previous authentication, or for any other reason, the server MAY
+   send a new ""digest-challenge"" with a new value for nonce. The
+   challenge MAY contain a ""stale"" directive with value ""true"", which
+   says that the client may respond to the challenge using the password
+   it used in the previous response; otherwise, the client must solicit
+   the password anew from the user. This permits the server to make sure
+   that the user has presented their password recently. (The directive
+   name refers to the previous nonce being stale, not to the last use of
+   the password.) Except for the handling of ""stale"", after sending the
+   ""digest-challenge"" authentication proceeds as in the case of initial
+   authentication.
+{panel}",,,
+822,ELY-1535,"I was trying to be a good person and implement the Mozilla ""Modern"" cipher suite described here:
+
+https://wiki.mozilla.org/Security/Server_Side_TLS
+
+I'm doing this in a keycloak server. The config line there looks like
+
+{noformat}
+        <https-listener security-realm=""ApplicationRealm""
+                        enabled-protocols=""SSLv2Hello,TLSv1.2""
+                        enabled-cipher-suites=""TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384:TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256""        
+                       name=""default""
+                       socket-binding=""httpish""
+                       enable-http2=""true""        
+                       proxy-address-forwarding=""true""        
+        />
+{noformat}
+
+But I got this:
+
+{noformat}
+13:20:46,574 ERROR [org.jboss.msc.service.fail] (MSC service thread 1-1) MSC000001: Failed to start service org.wildfly.undertow.listener.default: org.jboss.msc.service.StartException in serv
+ice org.wildfly.undertow.listener.default: Failed to start service
+        at org.jboss.msc.service.ServiceControllerImpl$StartTask.run(ServiceControllerImpl.java:1978)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+        at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.IllegalArgumentException: ELY05016: Unrecognized token ""TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"" in mechanism selection string ""TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384:TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256""
+        at org.wildfly.security.ssl.CipherSuiteSelector.fromString(CipherSuiteSelector.java:423)
+        at org.wildfly.extension.undertow.HttpsListenerService.startListening(HttpsListenerService.java:120)
+        at org.wildfly.extension.undertow.ListenerService.start(ListenerService.java:169)
+        at org.jboss.msc.service.ServiceControllerImpl$StartTask.startService(ServiceControllerImpl.java:2032)
+        at org.jboss.msc.service.ServiceControllerImpl$StartTask.run(ServiceControllerImpl.java:1955)
+{noformat}
+
+With a little digging it appears that CipherSuiteSelector doesn't know what CHACHA20 or POLY1305 are.  See:
+
+https://github.com/wildfly-security/wildfly-elytron/blame/master/src/main/java/org/wildfly/security/ssl/CipherSuiteSelector.java
+
+",,,
+829,ELY-1529,"OAuth2SaslClientV10Test or OAuth2SaslClientV11Test intermittently fails during MockWebServer binding, for example for OAuth2SaslClientV10Test:
+
+{code}
+java.net.BindException: Address already in use (Bind failed)
+ 	at java.net.PlainSocketImpl.socketBind(Native Method)
+ 	at java.net.AbstractPlainSocketImpl.bind(AbstractPlainSocketImpl.java:387)
+ 	at java.net.ServerSocket.bind(ServerSocket.java:375)
+ 	at okhttp3.mockwebserver.MockWebServer.start(MockWebServer.java:317)
+ 	at okhttp3.mockwebserver.MockWebServer.start(MockWebServer.java:300)
+ 	at okhttp3.mockwebserver.MockWebServer.start(MockWebServer.java:289)
+ 	at org.wildfly.security.sasl.oauth2.OAuth2SaslClientV10Test.onBefore(OAuth2SaslClientV10Test.java:82)
+{code}
+
+When this happens it causes only one of test methods to fail. Other tests in OAuth2SaslClientV10Test/OAuth2SaslClientV11Test finish successfully. It seems this test issue is not depended on any platform or JDK.
+
+Part of log when test fails:
+{code}
+...
+04:44:06,995 TRACE (main) [org.wildfly.security] <ServerAuthenticationContext.java:1015> Handling AuthenticationCompleteCallback: succeed
+04:44:06,995 TRACE (main) [org.wildfly.security] <ServerAuthenticationContext.java:1032> Handling SecurityIdentityCallback: identity = SecurityIdentity{principal=jdoe, securityDomain=org.wildfly.security.auth.server.SecurityDomain@e7f11d, authorizationIdentity=org.wildfly.security.auth.realm.token.TokenSecurityRealm$TokenRealmIdentity$1@3d687a, realmInfo=RealmInfo{name='oauth-realm', securityRealm=org.wildfly.security.auth.realm.token.TokenSecurityRealm@a370f4}, creationTime=2018-02-27T09:44:06.981Z}
+04:44:06,996 INFO  (MockWebServer 50831) [okhttp3.mockwebserver.MockWebServer] <MockWebServer.java:349> MockWebServer[50831] done accepting connections: Socket closed
+04:44:12,006 INFO  (MockWebServer 50831) [okhttp3.mockwebserver.MockWebServer] <MockWebServer.java:323> MockWebServer[50831] starting to accept connections
+04:44:12,006 TRACE (main) [org.wildfly.security] <AuthenticationContextConfigurationClient.java:121> getAuthenticationConfiguration uri=protocol://test7.org, protocolDefaultPort=-1, abstractType=null, abstractTypeAuthority=null, MatchRule=[host=test7.org], AuthenticationConfiguration=[AuthenticationConfiguration:principal=anonymous,set-host=test7.org,set-protocol=protocol,credentials-present,providers-supplier=org.wildfly.security.auth.client.ElytronXmlParser$DeferredSupplier@18ca3c8,mechanism-properties={wildfly.sasl.local-user.quiet-auth=true}]
+04:44:12,008 TRACE (main) [org.wildfly.security] <SecurityProviderSaslClientFactory.java:114> Created SaslClient for mechanism OAUTHBEARER, using Provider WildFlyElytron and protocol protocol
+...
+{code}
+
+It also causes that Exception is thrown during {{@After}} for the same test, example for OAuth2SaslClientV10Test:
+{code}
+java.io.IOException: Gave up waiting for executor to shut down
+	at okhttp3.mockwebserver.MockWebServer.shutdown(MockWebServer.java:375)
+	at org.wildfly.security.sasl.oauth2.OAuth2SaslClientV10Test.onAfter(OAuth2SaslClientV10Test.java:88)
+{code}
+
+After those exceptions in {{@Before}} and {{@After}} are thrown for some particular test then all following tests works correctly.",,,
+831,ELY-1521,"New class SpnegoContext is Serializable, but does not define serialVersionUID explicitely.
+
+{code}
+/src/main/java/org/wildfly/security/http/impl/SpnegoAuthenticationMechanism.java: 466 in ()
+460             } catch (AuthenticationMechanismException e) {
+461                 throw e.toHttpAuthenticationException();
+462             } catch (UnsupportedCallbackException ignored) {
+463             }
+464         }
+465
+>>>     CID 1465386:  FindBugs: Bad practice  (FB.SE_NO_SERIALVERSIONID)
+>>>     org.wildfly.security.http.impl.SpnegoAuthenticationMechanism$SpnegoContext is Serializable; consider declaring a serialVersionUID.
+466         private static class SpnegoContext implements Serializable {
+467             transient GSSContext gssContext;
+468             transient KerberosTicket kerberosTicket;
+469         }
+470
+{code}
+
+
+[1] https://u2389337.ct.sendgrid.net/wf/click?upn=08onrYu34A-2BWcWUl-2F-2BfV0V05UPxvVjWch-2Bd2MGckcRYZquIFszCcwQkbx6rX2y-2BU3cXaE6CARUgniXZ7-2Bnr5WUQSJUaqvnVjrZTiOPiZUjE4gHFruUvUWirJK4uYfLLJ_2fPkMU1miRf-2FtjnMal9VVM35TqEfZozw4WTtk2YIMAIQ7ZX-2FrqN52DKamGWKkc-2BZ03nPXlDJ8513Hxh3bIGgozWV-2Br58G9cuPIcBSTZ0sZKFnBORW-2FVQq-2FlhVvsXloi5sz0yTu3g4X7ubZS16dIlMfNaHUR5ruCrctY-2B3N8QkrhuWYcGTEnDzc6FCrtIbD-2FEv9t7uYGSACfKYaHRPZEUVQ-3D-3D",,,
+834,ELY-1510,"If you try to access unprotected resource with no Authorization header, BearerTokenAuthenticationMechanism sees it as a failed authentication so 401 is sent.",,,
+835,ELY-1508,NoData,,,
+837,ELY-1507,"https://tools.ietf.org/html/rfc7519
+
+JwtValidator implements iss clam as optional, samy way as stated in RFC7519. The validator is supposed to ignore iss check if its issuers set was empty, however even though it logs that issuer check is ignored it still checks it and rejects all tokens that do not contain iss claim.",,,
+838,ELY-1503,"Session-scoped (default) SPNEGO authentication does not work on </distributable> deployments.
+
+Works on CONNECTION and NONE scoped.
+
+{code}
+07:09:42,554 ERROR [io.undertow.request] (default task-63) UT005023: Exception handling request to /3246302d-d806-4441-ab87-1cf291a618d5/protected/SimpleSecuredServlet: java.lang.IllegalArgumentException: org.infinispan.commons.marshall.NotSerializableException: sun.security.jgss.GSSContextImpl
+	at org.wildfly.clustering.web.infinispan.session.coarse.CoarseSessionAttributes.setAttribute(CoarseSessionAttributes.java:71)
+	at org.wildfly.clustering.web.undertow.session.DistributableSession.setAttribute(DistributableSession.java:176)
+	at io.undertow.servlet.spec.HttpSessionImpl.setAttribute(HttpSessionImpl.java:169)
+	at org.wildfly.extension.undertow.ApplicationSecurityDomainDefinition$ApplicationSecurityDomainService$4.setAttachment(ApplicationSecurityDomainDefinition.java:676)
+	at org.wildfly.security.http.impl.SpnegoAuthenticationMechanism.evaluateRequest(SpnegoAuthenticationMechanism.java:199)
+	at org.wildfly.security.http.util.SetMechanismInformationMechanismFactory$1.evaluateRequest(SetMechanismInformationMechanismFactory.java:114)
+	at org.wildfly.security.http.util.SetMechanismInformationMechanismFactory$1.evaluateRequest(SetMechanismInformationMechanismFactory.java:114)
+	at org.wildfly.security.http.util.SecurityIdentityServerMechanismFactory$1.evaluateRequest(SecurityIdentityServerMechanismFactory.java:77)
+	at org.wildfly.security.http.HttpAuthenticator$AuthenticationExchange.authenticate(HttpAuthenticator.java:115)
+	at org.wildfly.security.http.HttpAuthenticator$AuthenticationExchange.access$100(HttpAuthenticator.java:94)
+	at org.wildfly.security.http.HttpAuthenticator.authenticate(HttpAuthenticator.java:78)
+	at org.wildfly.elytron.web.undertow.server.SecurityContextImpl.authenticate(SecurityContextImpl.java:100)
+	at io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler.handleRequest(ServletAuthenticationCallHandler.java:55)
+	at io.undertow.server.handlers.DisableCacheHandler.handleRequest(DisableCacheHandler.java:33)
+	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.security.handlers.AuthenticationConstraintHandler.handleRequest(AuthenticationConstraintHandler.java:53)
+	at io.undertow.security.handlers.AbstractConfidentialityHandler.handleRequest(AbstractConfidentialityHandler.java:46)
+	at io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler.handleRequest(ServletConfidentialityConstraintHandler.java:64)
+	at io.undertow.servlet.handlers.security.ServletSecurityConstraintHandler.handleRequest(ServletSecurityConstraintHandler.java:59)
+	at io.undertow.security.handlers.AbstractSecurityContextAssociationHandler.handleRequest(AbstractSecurityContextAssociationHandler.java:43)
+	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow.security.jacc.JACCContextIdHandler.handleRequest(JACCContextIdHandler.java:61)
+	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow.deployment.GlobalRequestControllerHandler.handleRequest(GlobalRequestControllerHandler.java:68)
+	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.servlet.handlers.ServletInitialHandler.handleFirstRequest(ServletInitialHandler.java:292)
+	at io.undertow.servlet.handlers.ServletInitialHandler.access$100(ServletInitialHandler.java:81)
+	at io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:138)
+	at io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:135)
+	at io.undertow.servlet.core.ServletRequestContextThreadSetupAction$1.call(ServletRequestContextThreadSetupAction.java:48)
+	at io.undertow.servlet.core.ContextClassLoaderSetupAction$1.call(ContextClassLoaderSetupAction.java:43)
+	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1508)
+	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1508)
+	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1508)
+	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1508)
+	at io.undertow.servlet.handlers.ServletInitialHandler.dispatchRequest(ServletInitialHandler.java:272)
+	at io.undertow.servlet.handlers.ServletInitialHandler.access$000(ServletInitialHandler.java:81)
+	at io.undertow.servlet.handlers.ServletInitialHandler$1.handleRequest(ServletInitialHandler.java:104)
+	at io.undertow.server.Connectors.executeRootHandler(Connectors.java:326)
+	at io.undertow.server.HttpServerExchange$1.run(HttpServerExchange.java:812)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: org.infinispan.commons.marshall.NotSerializableException: sun.security.jgss.GSSContextImpl
+{code}
+",,,
+839,ELY-1500,"Effectivelly Elytron contains infinite recursion implemented.
+{code:java|title=FactoryCredentialSource.java}
+    @Override
+    public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
+        return getCredentialAcquireSupport(credentialType, algorithmName, parameterSpec) != null ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
+    }
+{code}
+
+[1] https://scan7.coverity.com/reports.htm#v23632/p11778/fileInstanceId=46596205&defectInstanceId=9782368&mergedDefectId=1464361",,,
+840,ELY-1499,"Despite the fact ServerAuthenticationContext is AutoClosable. Newly created instance in HttpAuthenticator#login() is not closed and no reference is passed outside of method, so is left unclosed forever. 
+
+[1] https://scan7.coverity.com/reports.htm#v23632/p11778/fileInstanceId=46513446&defectInstanceId=9767772&mergedDefectId=1464362",,,
+841,ELY-1494,"This happens on HP-UX in KeyStoreCredentialStoreTest. It probably related to ELY-1295 fix. Fix have to take HP-UX JDK in account as well.
+ 
+Btw. Isn't there more elegant way how to enable tests for PKCS12. Necessary hack seems to be problematic.
+
+{noformat}
+java.lang.SecurityException: JCE cannot authenticate the provider WildFlyElytron
+        at javax.crypto.JceSecurity.getInstance(JceSecurity.java:118)
+        at javax.crypto.SecretKeyFactory.getInstance(SecretKeyFactory.java:244)
+        at  org.wildfly.security.credential.store.impl.KeyStoreCredentialStoreTest.installWildFlyElytronProvider(KeyStoreCredentialStoreTest.java:117)
+Caused  by: java.lang.SecurityException: Cannot verify  jar:file:/hudson_workspace/workspace/wildfly-elytron-unit-tests/8cc93d85/wildfly-elytron/target/classes/!/
+        at javax.crypto.JarVerifier.verifySingleJar(JarVerifier.java:448)
+        at javax.crypto.JarVerifier.verifyJars(JarVerifier.java:363)
+        at javax.crypto.JarVerifier.verify(JarVerifier.java:289)
+        at javax.crypto.JceSecurity.verifyProviderJar(JceSecurity.java:164)
+        at javax.crypto.JceSecurity.getVerificationResult(JceSecurity.java:190)
+        at javax.crypto.JceSecurity.getInstance(JceSecurity.java:114)
+        ... 2 more
+Caused  by: java.security.PrivilegedActionException:  java.io.FileNotFoundException:  /hudson_workspace/workspace/wildfly-elytron-unit-tests/8cc93d85/wildfly-elytron/target/classes  (Is a directory)
+        at java.security.AccessController.doPrivileged(Native Method)
+        at javax.crypto.JarVerifier.verifySingleJar(JarVerifier.java:426)
+        ... 7 more
+Caused  by: java.io.FileNotFoundException:  /hudson_workspace/workspace/wildfly-elytron-unit-tests/8cc93d85/wildfly-elytron/target/classes  (Is a directory)
+        at java.util.zip.ZipFile.open(Native Method)
+        at java.util.zip.ZipFile.<init>(ZipFile.java:225)
+        at java.util.zip.ZipFile.<init>(ZipFile.java:155)
+        at java.util.jar.JarFile.<init>(JarFile.java:166)
+        at java.util.jar.JarFile.<init>(JarFile.java:103)
+        at javax.crypto.JarVerifier$2.run(JarVerifier.java:440)
+        at javax.crypto.JarVerifier$2.run(JarVerifier.java:427)
+        ... 9 more
+{noformat}
+
+[1] https://jenkins.hosts.mwqe.eng.bos.redhat.com/hudson/view/EAP7/view/EAP7-Security/view/Wildfly-Elytron/job/wildfly-elytron-unit-tests/40/jdk=jdk1.8_hpux,label=eap-sustaining&&hpux11v3/testReport/",,,
+842,ELY-1493,"On solaris 10 (slow machine) there occured timeout for task task2Future.get(1, TimeUnit.SECONDS) on line 492. 
+
+Prolong timeout will probably reduce occurences. 
+
+{noformat}
+java.lang.RuntimeException: java.util.concurrent.ExecutionException: java.util.concurrent.TimeoutException
+         at  org.wildfly.security.credential.store.KeystorePasswordStoreTest.testAccessFromMultipleCredentialStores(KeystorePasswordStoreTest.java:459)
+         at  org.wildfly.security.credential.store.KeystorePasswordStoreTest.testParallelAccessToCS(KeystorePasswordStoreTest.java:439)
+Caused by: java.util.concurrent.ExecutionException: java.util.concurrent.TimeoutException
+        at java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+         at  org.wildfly.security.credential.store.KeystorePasswordStoreTest.testAccessFromMultipleCredentialStores(KeystorePasswordStoreTest.java:457)
+        ... 1 more
+Caused by: java.util.concurrent.TimeoutException
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:204)
+        at org.wildfly.security.credential.store.KeystorePasswordStoreTest$1.call(KeystorePasswordStoreTest.java:492)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1167)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)
+        at java.base/java.lang.Thread.run(Thread.java:844)
+{noformat}
+
+
+[1] https://jenkins.hosts.mwqe.eng.bos.redhat.com/hudson/view/EAP7/view/EAP7-Security/view/Wildfly-Elytron/job/wildfly-elytron-unit-tests/40/jdk=java18_default,label=eap-sustaining&&solaris10&&sparc/testReport/
+",,,
+843,ELY-1492,"This occures in TS on JDK9 on Windows in tests:
+* org.wildfly.security.sasl.gssapi.CommunicationSuiteChild
+* org.wildfly.security.sasl.gs2.Gs2SuiteChild
+
+{noformat}
+javax.security.auth.login.LoginException: 
+java.nio.file.InvalidPathException: Illegal char <:> at index 2: /W:/workspace/wildfly-elytron-unit-tests/4ad7c91f/wildfly-elytron/target/test-classes/krb5.conf
+	at java.base/sun.nio.fs.WindowsPathParser.normalize(WindowsPathParser.java:182)
+	at java.base/sun.nio.fs.WindowsPathParser.parse(WindowsPathParser.java:153)
+	at java.base/sun.nio.fs.WindowsPathParser.parse(WindowsPathParser.java:77)
+	at java.base/sun.nio.fs.WindowsPath.parse(WindowsPath.java:92)
+	at java.base/sun.nio.fs.WindowsFileSystem.getPath(WindowsFileSystem.java:229)
+	at java.base/java.nio.file.Paths.get(Paths.java:84)
+	at java.security.jgss/sun.security.krb5.Config.lambda$loadConfigFile$0(Config.java:639)
+	at java.base/java.security.AccessController.doPrivileged(Native Method)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:429)
+	at java.security.jgss/sun.security.krb5.Config.loadConfigFile(Config.java:638)
+	at java.security.jgss/sun.security.krb5.Config.<init>(Config.java:176)
+	at java.security.jgss/sun.security.krb5.Config.refresh(Config.java:115)
+	at jdk.security.auth/com.sun.security.auth.module.Krb5LoginModule.login(Krb5LoginModule.java:528)
+	at java.base/javax.security.auth.login.LoginContext.invoke(LoginContext.java:726)
+	at java.base/javax.security.auth.login.LoginContext.access$000(LoginContext.java:194)
+	at java.base/javax.security.auth.login.LoginContext$4.run(LoginContext.java:665)
+	at java.base/javax.security.auth.login.LoginContext$4.run(LoginContext.java:663)
+	at java.base/java.security.AccessController.doPrivileged(Native Method)
+	at java.base/javax.security.auth.login.LoginContext.invokePriv(LoginContext.java:663)
+	at java.base/javax.security.auth.login.LoginContext.login(LoginContext.java:574)
+	at org.wildfly.security.sasl.gssapi.JaasUtil.login(JaasUtil.java:71)
+	at org.wildfly.security.sasl.gssapi.JaasUtil.loginClient(JaasUtil.java:53)
+	at org.wildfly.security.sasl.gs2.Gs2SuiteChild.init(Gs2SuiteChild.java:102)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:564)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+	at mockit.integration.junit4.internal.JUnit4TestRunnerDecorator.executeClassMethod(JUnit4TestRunnerDecorator.java:92)
+	at mockit.integration.junit4.internal.JUnit4TestRunnerDecorator.invokeExplosively(JUnit4TestRunnerDecorator.java:30)
+	at mockit.integration.junit4.internal.MockFrameworkMethod.invokeExplosively(MockFrameworkMethod.java:37)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:24)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+	at org.junit.runners.Suite.runChild(Suite.java:128)
+	at org.junit.runners.Suite.runChild(Suite.java:27)
+	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:367)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:274)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:238)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:161)
+	at org.apache.maven.surefire.booter.ForkedBooter.invokeProviderInSameClassLoader(ForkedBooter.java:290)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:242)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:121)
+
+	at java.base/javax.security.auth.login.LoginContext.invoke(LoginContext.java:821)
+	at java.base/javax.security.auth.login.LoginContext.access$000(LoginContext.java:194)
+	at java.base/javax.security.auth.login.LoginContext$4.run(LoginContext.java:665)
+	at java.base/javax.security.auth.login.LoginContext$4.run(LoginContext.java:663)
+	at java.base/java.security.AccessController.doPrivileged(Native Method)
+	at java.base/javax.security.auth.login.LoginContext.invokePriv(LoginContext.java:663)
+	at java.base/javax.security.auth.login.LoginContext.login(LoginContext.java:574)
+	at org.wildfly.security.sasl.gssapi.JaasUtil.login(JaasUtil.java:71)
+	at org.wildfly.security.sasl.gssapi.JaasUtil.loginClient(JaasUtil.java:53)
+	at org.wildfly.security.sasl.gs2.Gs2SuiteChild.init(Gs2SuiteChild.java:102)
+{noformat}
+
+[1] https://jenkins.hosts.mwqe.eng.bos.redhat.com/hudson/view/EAP7/view/EAP7-Security/view/Wildfly-Elytron/job/wildfly-elytron-unit-tests/41/jdk=jdk1.9,label=eap-sustaining&&w2k12r2&&x86_64/testReport/",,,
+846,ELY-1480,"There are 2 occurences of call to PasswordFactory.getInstance(algorithm) in FileSystemSecurityRealm where algorithm can be null, because algorithm is optional in wildfly-config.xml
+
+{code:xml|title=elytron-1_0_1.xsd}
+    <xsd:complexType name=""credential-type"">
+        <xsd:simpleContent>
+            <xsd:extension base=""xsd:string"">
+                <xsd:attribute name=""algorithm"" type=""xsd:string"" use=""optional""/>
+                <xsd:attribute name=""format"" type=""xsd:string"" use=""optional""/>
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name=""otp-credential-type"">
+        <xsd:simpleContent>
+            <xsd:extension base=""xsd:string"">
+                <xsd:attribute name=""algorithm"" type=""xsd:string"" use=""optional""/>
+                <xsd:attribute name=""hash"" type=""xsd:string"" use=""optional""/>
+                <xsd:attribute name=""seed"" type=""xsd:string"" use=""optional""/>
+                <xsd:attribute name=""sequence"" type=""xsd:string"" use=""optional""/>
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+{code}
+
+Algorithm is dereferenced in PasswordFactory.getInstance(algorithm) down in 
+{code:java|title=java.security.Provider$ServiceKey.java}
+        private ServiceKey(String type, String algorithm, boolean intern) {
+            this.type = type;
+            this.originalAlgorithm = algorithm;
+            algorithm = algorithm.toUpperCase(ENGLISH);
+            this.algorithm = intern ? algorithm.intern() : algorithm;
+        }
+{code}
+
+[1] https://scan7.coverity.com/reports.htm#v23632/p11778/fileInstanceId=44847809&defectInstanceId=9457601&mergedDefectId=1463442
+[2] https://scan7.coverity.com/reports.htm#v23632/p11778/fileInstanceId=44847809&defectInstanceId=9457602&mergedDefectId=1463441
+",,,
+847,ELY-1479,"super.getNegotiatedProperty() is not called in AbstractGssapiMechanism#getNegotiatedProperty, although it is called in similar cases in Gs2SaslServer, DigestSaslServer, AnonymousSaslClient.
+
+{code:java|title=AbstractGssapiMechanism.java}
+    @Override
+    public Object getNegotiatedProperty(String propName) {
+        assertComplete();
+
+        switch (propName) {
+            case Sasl.QOP:
+                return selectedQop.getName();
+            case Sasl.MAX_BUFFER:
+                return Integer.toString(actualMaxReceiveBuffer != 0 ? actualMaxReceiveBuffer : configuredMaxReceiveBuffer);
+            case Sasl.RAW_SEND_SIZE:
+                return Integer.toString(maxBuffer);
+        }
+
+        return null;
+    }
+{code}
+
+This coverity report is not caused by recent change in AbstractGssapiMechanism but rather Gs2SaslServer and DigestSaslServer
+
+[1] https://scan7.coverity.com/reports.htm#v23632/p11778/fileInstanceId=44847684&defectInstanceId=9457508&mergedDefectId=1463150",,,
+849,ELY-1477,NoData,,,
+874,ELY-1475,"In case when empty username is passed to FormAuthenticationMechanism.attemptAuthentication then IllegalArgumentException is thrown from constructor of NameCallback. This happens in cases when form is sent with empty value for j_username.
+
+See exception:
+{code}
+ERROR [io.undertow.request] (default task-18) UT005023: Exception handling request to /depForm/j_security_check: java.lang.IllegalArgumentException
+	at javax.security.auth.callback.NameCallback.<init>(NameCallback.java:90)
+	at org.wildfly.security.http.impl.UsernamePasswordAuthenticationMechanism.authenticate(UsernamePasswordAuthenticationMechanism.java:60)
+	at org.wildfly.security.http.impl.FormAuthenticationMechanism.attemptAuthentication(FormAuthenticationMechanism.java:172)
+	at org.wildfly.security.http.impl.FormAuthenticationMechanism.evaluateRequest(FormAuthenticationMechanism.java:106)
+	at org.wildfly.security.http.util.SetMechanismInformationMechanismFactory$1.evaluateRequest(SetMechanismInformationMechanismFactory.java:114)
+	at org.wildfly.security.http.util.SecurityIdentityServerMechanismFactory$1.evaluateRequest(SecurityIdentityServerMechanismFactory.java:77)
+	at org.wildfly.security.http.HttpAuthenticator$AuthenticationExchange.authenticate(HttpAuthenticator.java:115)
+	at org.wildfly.security.http.HttpAuthenticator$AuthenticationExchange.access$100(HttpAuthenticator.java:94)
+	at org.wildfly.security.http.HttpAuthenticator.authenticate(HttpAuthenticator.java:78)
+	at org.wildfly.elytron.web.undertow.server.SecurityContextImpl.authenticate(SecurityContextImpl.java:100)
+	at io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler.handleRequest(ServletAuthenticationCallHandler.java:55)
+	at io.undertow.server.handlers.DisableCacheHandler.handleRequest(DisableCacheHandler.java:33)
+	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.security.handlers.AuthenticationConstraintHandler.handleRequest(AuthenticationConstraintHandler.java:53)
+	at io.undertow.security.handlers.AbstractConfidentialityHandler.handleRequest(AbstractConfidentialityHandler.java:46)
+	at io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler.handleRequest(ServletConfidentialityConstraintHandler.java:64)
+	at io.undertow.servlet.handlers.security.ServletSecurityConstraintHandler.handleRequest(ServletSecurityConstraintHandler.java:59)
+	at io.undertow.security.handlers.AbstractSecurityContextAssociationHandler.handleRequest(AbstractSecurityContextAssociationHandler.java:43)
+	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow.security.jacc.JACCContextIdHandler.handleRequest(JACCContextIdHandler.java:61)
+	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow.deployment.GlobalRequestControllerHandler.handleRequest(GlobalRequestControllerHandler.java:68)
+	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.servlet.handlers.ServletInitialHandler.handleFirstRequest(ServletInitialHandler.java:292)
+	at io.undertow.servlet.handlers.ServletInitialHandler.access$100(ServletInitialHandler.java:81)
+	at io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:138)
+	at io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:135)
+	at io.undertow.servlet.core.ServletRequestContextThreadSetupAction$1.call(ServletRequestContextThreadSetupAction.java:48)
+	at io.undertow.servlet.core.ContextClassLoaderSetupAction$1.call(ContextClassLoaderSetupAction.java:43)
+	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1508)
+	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1508)
+	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1508)
+	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1508)
+	at io.undertow.servlet.handlers.ServletInitialHandler.dispatchRequest(ServletInitialHandler.java:272)
+	at io.undertow.servlet.handlers.ServletInitialHandler.access$000(ServletInitialHandler.java:81)
+	at io.undertow.servlet.handlers.ServletInitialHandler$1.handleRequest(ServletInitialHandler.java:104)
+	at io.undertow.server.Connectors.executeRootHandler(Connectors.java:326)
+	at io.undertow.server.HttpServerExchange$1.run(HttpServerExchange.java:812)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+{code}
+
+It seems that [1] should also check {{username.length() == 0}}.
+
+[1] https://github.com/wildfly-security/wildfly-elytron/blob/32ff7c17965b3ecae6be7ce1c9b96ab642ddc4ad/src/main/java/org/wildfly/security/http/impl/FormAuthenticationMechanism.java#L165
+",,,
+875,ELY-1471,"We currently load every single implementation class just to identify it's name.
+
+Whilst this makes refactoring easier it causes a heavy hit to the ClassLoader just to install the provider even though only a small subset of it's services tend to be used at once.
+",,,
+878,ELY-1468,"When more mechanismTypes is provided but the Kerberos mechanism is not listed as the supported one then authentication should fail. And 401 should be returned, but 403 is on IBM java.
+
+This issue was hidden by ELY-1340.",,,
+882,ELY-1464,"By only caching the name of the identity the server authentication context -> security domain -> security realm chain is called for each subsequent request when we should have been able to re-use an existing identity.
+",,,
+884,ELY-1463,NoData,,,
+887,ELY-1460,"To specify external secret file location externalPath is intended. However in case of PKCS11 it can't be achieved.
+
+{code}
+10:53:03,403 ERROR [org.jboss.msc.service.fail] (MSC service thread 1-1) MSC000001: Failed to start service org.wildfly.security.credential-store.fips-credential-store: org.jboss.msc.service.StartException in service org.wildfly.security.credential-store.fips-credential-store: WFLYELY00004: Unable to start the service.
+	at org.wildfly.extension.elytron.CredentialStoreService.start(CredentialStoreService.java:134)
+	at org.jboss.msc.service.ServiceControllerImpl$StartTask.startService(ServiceControllerImpl.java:2032)
+	at org.jboss.msc.service.ServiceControllerImpl$StartTask.run(ServiceControllerImpl.java:1955)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: org.wildfly.security.credential.store.CredentialStoreException: ELY09514: Unable to initialize credential store
+	at org.wildfly.security.credential.store.impl.KeyStoreCredentialStore.setupExternalStorage(KeyStoreCredentialStore.java:954)
+	at org.wildfly.security.credential.store.impl.KeyStoreCredentialStore.load(KeyStoreCredentialStore.java:828)
+	at org.wildfly.security.credential.store.impl.KeyStoreCredentialStore.initialize(KeyStoreCredentialStore.java:214)
+	at org.wildfly.security.credential.store.CredentialStore.initialize(CredentialStore.java:159)
+	at org.wildfly.extension.elytron.CredentialStoreService.start(CredentialStoreService.java:126)
+	... 5 more
+Caused by: java.nio.file.NoSuchFileException: /home/mchoma/workspace/git-repositories/tests-security/fips/fips-credential-store
+	at sun.nio.fs.UnixException.translateToIOException(UnixException.java:86)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:102)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:107)
+	at sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:214)
+	at java.nio.file.Files.newByteChannel(Files.java:361)
+	at java.nio.file.Files.newByteChannel(Files.java:407)
+	at java.nio.file.spi.FileSystemProvider.newInputStream(FileSystemProvider.java:384)
+	at java.nio.file.Files.newInputStream(Files.java:152)
+	at org.wildfly.security.credential.store.impl.KeyStoreCredentialStore.setupExternalStorage(KeyStoreCredentialStore.java:943)
+	... 9 more
+
+10:53:03,409 ERROR [org.jboss.as.controller.management-operation] (management-handler-thread - 4) WFLYCTL0013: Operation (""add"") failed - address: ([
+    (""subsystem"" => ""elytron""),
+    (""credential-store"" => ""fips-credential-store"")
+]) - failure description: {""WFLYCTL0080: Failed services"" => {""org.wildfly.security.credential-store.fips-credential-store"" => ""WFLYELY00004: Unable to start the service.
+    Caused by: org.wildfly.security.credential.store.CredentialStoreException: ELY09514: Unable to initialize credential store
+    Caused by: java.nio.file.NoSuchFileException: /home/mchoma/workspace/git-repositories/tests-security/fips/fips-credential-store""}}
+{code}
+
+Problem seems to be in method
+{code:java|title=KeyStoreCredentialStore.java}
+    private void setupExternalStorage(final String keyContainingKeyStoreType, final Path keyContainingKeyStoreLocation) throws CredentialStoreException {
+        KeyStore keyContainingKeyStore = getKeyStoreInstance(keyContainingKeyStoreType);
+        keyStore = getKeyStoreInstance(""JCEKS"");
+        externalStorage = new ExternalStorage();
+        try {
+            final char[] storePassword = getStorePassword(protectionParameter);
+            if (keyContainingKeyStoreLocation != null) {
+                try (InputStream is = Files.newInputStream(keyContainingKeyStoreLocation)) {
+                    keyContainingKeyStore.load(is, storePassword);
+                }
+            } else {
+                // keystore without file (e.g. PKCS11)
+                synchronized (EmptyProvider.getInstance()) {
+                    keyContainingKeyStore.load(null, storePassword);
+                }
+            }
+            externalStorage.init(cryptographicAlgorithm, encryptionKeyAlias, keyContainingKeyStore, storePassword, keyStore);
+        } catch(IOException | GeneralSecurityException e) {
+            throw log.cannotInitializeCredentialStore(e);
+        }
+    }
+{code}
+
+Although location is not specified in CLI command keyContainingKeyStoreLocation is not null. Because once location is not specified it becomes name of CS, in this case fips-credential-store (This default is in elytron subsystem).",,,
+892,ELY-1457,"{noformat}
+mvn clean install -DskipTests
+mvn surefire:test -fae -Dmaven.test.failure.ignore=true
+
+[WARNING] Corrupted stdin stream in forked JVM 1. See the dump file /home/mchoma/workspace/git-repositories/wildfly-elytron/target/surefire-reports/2017-11-30T17-02-48_325-jvmRun1.dumpstream
+
+ExecutionException The forked VM terminated without properly saying goodbye. VM crash or System.exit called?
+Command was /bin/sh -c cd /home/mchoma/workspace/git-repositories/wildfly-elytron && /usr/java/jdk1.8.0_131/jre/bin/java '-javaagent:${org.jmockit:jmockit:jar}' -jar /home/mchoma/workspace/git-repositories/wildfly-elytron/target/surefire/surefirebooter575191532113315054.jar /home/mchoma/workspace/git-repositories/wildfly-elytron/target/surefire 2017-11-30T17-02-48_325-jvmRun1 surefire4127140177271714029tmp surefire_06835135917194901533tmp
+Error occurred in starting fork, check output in log
+Process Exit Code: 1
+{noformat}
+
+*  ""mvn test"" works just fine.
+*  ""mvn surefire:test"" used to be necessary for running testsuite with IBM JDK, as TS was not compilable with IBM JDK (this is not true anymore). So TS was build with Oracle JDK and run with IBM JDK. 
+*  ""mvn surefire:test"" used to work back in July.",,,
+913,ELY-1443,"This is follow up on ELY-1435, but in this case trying scram hash.
+
+In DB there is 
+{noformat}
+Salt: c2FsdA==
+Password: YywoEuRtRgQQK6dhjp1tfS+BKPYma0oDJk0qBGC33LM=
+Salt: 1000
+{noformat}
+
+I get these values by
+{code:java|name=ScramDigestPasswordTest.java}
+        digest = ScramDigestPasswordImpl.scramDigest(ALGORITHM_SCRAM_SHA_256, ""password"".getBytes(StandardCharsets.UTF_8), ""salt"".getBytes(StandardCharsets.UTF_8), 1000);
+        assertEquals(""632c2812e46d4604102ba7618e9d6d7d2f8128f6266b4a03264d2a0460b7dcb3"", ByteIterator.ofBytes(digest).hexEncode().drainToString());
+        spec = new IteratedSaltedHashPasswordSpec(digest, ""salt"".getBytes(StandardCharsets.UTF_8), 1000);
+        impl = new ScramDigestPasswordImpl(ALGORITHM_SCRAM_SHA_256, spec);
+        assertTrue(impl.verify(""password"".toCharArray()));
+        assertFalse(impl.verify(""bad"".toCharArray()));
+
+        Encoder encoder = Base64.getEncoder();
+        String elytronSalt = encoder.encodeToString( impl.getSalt() );
+        String elytronHash = encoder.encodeToString( impl.getDigest() );
+        int itertationCount = impl.getIterationCount();
+{code}
+
+When user provides empty password """", there is error.
+
+{noformat}
+17:05:40,723 TRACE [org.wildfly.security] (default task-3) Handling NameCallback: authenticationName = correctUser
+17:05:40,723 TRACE [org.wildfly.security] (default task-3) Principal assigning: [correctUser], pre-realm rewritten: [correctUser], realm name: [jdbc-realm], post-realm rewritten: [correctUser], realm rewritten: [correctUser]
+17:05:40,727 TRACE [org.wildfly.security] (default task-3) Executing principalQuery SELECT PASSWORD, SALT, ITERATION FROM USERS WHERE NAME = ? with value correctUser
+17:05:40,813 TRACE [org.wildfly.security] (default task-3) Executing principalQuery SELECT roles.name FROM users, roles, users_roles WHERE users.name=? AND users.id = users_roles.userid AND roles.id = users_roles.roleid with value correctUser
+17:05:40,817 TRACE [org.wildfly.security] (default task-3) Executing principalQuery SELECT PASSWORD, SALT, ITERATION FROM USERS WHERE NAME = ? with value correctUser
+17:05:40,865 ERROR [io.undertow.request] (default task-3) UT005023: Exception handling request to /elytron-app/protected/printRoles: java.lang.IllegalArgumentException: Empty key
+	at javax.crypto.spec.SecretKeySpec.<init>(SecretKeySpec.java:96)
+	at org.wildfly.security.password.impl.ScramDigestPasswordImpl.getMacInstance(ScramDigestPasswordImpl.java:281)
+	at org.wildfly.security.password.impl.ScramDigestPasswordImpl.scramDigest(ScramDigestPasswordImpl.java:240)
+	at org.wildfly.security.password.impl.ScramDigestPasswordImpl.verify(ScramDigestPasswordImpl.java:195)
+	at org.wildfly.security.password.impl.PasswordFactorySpiImpl.engineVerify(PasswordFactorySpiImpl.java:755)
+	at org.wildfly.security.password.PasswordFactory.verify(PasswordFactory.java:209)
+	at org.wildfly.security.credential.PasswordCredential.verify(PasswordCredential.java:116)
+	at org.wildfly.security.credential.Credential.verify(Credential.java:79)
+	at org.wildfly.security.auth.realm.jdbc.JdbcSecurityRealm$JdbcRealmIdentity.verifyEvidence(JdbcSecurityRealm.java:199)
+	at org.wildfly.security.auth.server.ServerAuthenticationContext$NameAssignedState.verifyEvidence(ServerAuthenticationContext.java:1977)
+	at org.wildfly.security.auth.server.ServerAuthenticationContext.verifyEvidence(ServerAuthenticationContext.java:759)
+	at org.wildfly.security.auth.server.ServerAuthenticationContext$1.handleOne(ServerAuthenticationContext.java:992)
+	at org.wildfly.security.auth.server.ServerAuthenticationContext$1.handleOne(ServerAuthenticationContext.java:902)
+	at org.wildfly.security.auth.server.ServerAuthenticationContext$1.handleOne(ServerAuthenticationContext.java:1052)
+	at org.wildfly.security.auth.server.ServerAuthenticationContext$1.handle(ServerAuthenticationContext.java:839)
+	at org.wildfly.security.http.util.SecurityIdentityServerMechanismFactory$SecurityIdentityCallbackHandler.handle(SecurityIdentityServerMechanismFactory.java:113)
+	at org.wildfly.security.http.impl.UsernamePasswordAuthenticationMechanism.authenticate(UsernamePasswordAuthenticationMechanism.java:76)
+	at org.wildfly.security.http.impl.BasicAuthenticationMechanism.evaluateRequest(BasicAuthenticationMechanism.java:152)
+	at org.wildfly.security.http.util.SetMechanismInformationMechanismFactory$1.evaluateRequest(SetMechanismInformationMechanismFactory.java:114)
+	at org.wildfly.security.http.util.SecurityIdentityServerMechanismFactory$1.evaluateRequest(SecurityIdentityServerMechanismFactory.java:77)
+	at org.wildfly.security.http.HttpAuthenticator$AuthenticationExchange.authenticate(HttpAuthenticator.java:115)
+	at org.wildfly.security.http.HttpAuthenticator$AuthenticationExchange.access$100(HttpAuthenticator.java:94)
+	at org.wildfly.security.http.HttpAuthenticator.authenticate(HttpAuthenticator.java:78)
+	at org.wildfly.elytron.web.undertow.server.SecurityContextImpl.authenticate(SecurityContextImpl.java:100)
+	at io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler.handleRequest(ServletAuthenticationCallHandler.java:55)
+	at io.undertow.server.handlers.DisableCacheHandler.handleRequest(DisableCacheHandler.java:33)
+	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.security.handlers.AuthenticationConstraintHandler.handleRequest(AuthenticationConstraintHandler.java:53)
+	at io.undertow.security.handlers.AbstractConfidentialityHandler.handleRequest(AbstractConfidentialityHandler.java:46)
+	at io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler.handleRequest(ServletConfidentialityConstraintHandler.java:64)
+	at io.undertow.servlet.handlers.security.ServletSecurityConstraintHandler.handleRequest(ServletSecurityConstraintHandler.java:59)
+	at io.undertow.security.handlers.AbstractSecurityContextAssociationHandler.handleRequest(AbstractSecurityContextAssociationHandler.java:43)
+	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow.security.jacc.JACCContextIdHandler.handleRequest(JACCContextIdHandler.java:61)
+	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow.deployment.GlobalRequestControllerHandler.handleRequest(GlobalRequestControllerHandler.java:68)
+	at io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.servlet.handlers.ServletInitialHandler.handleFirstRequest(ServletInitialHandler.java:292)
+	at io.undertow.servlet.handlers.ServletInitialHandler.access$100(ServletInitialHandler.java:81)
+	at io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:138)
+	at io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:135)
+	at io.undertow.servlet.core.ServletRequestContextThreadSetupAction$1.call(ServletRequestContextThreadSetupAction.java:48)
+	at io.undertow.servlet.core.ContextClassLoaderSetupAction$1.call(ContextClassLoaderSetupAction.java:43)
+	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1508)
+	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1508)
+	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1508)
+	at org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1508)
+	at io.undertow.servlet.handlers.ServletInitialHandler.dispatchRequest(ServletInitialHandler.java:272)
+	at io.undertow.servlet.handlers.ServletInitialHandler.access$000(ServletInitialHandler.java:81)
+	at io.undertow.servlet.handlers.ServletInitialHandler$1.handleRequest(ServletInitialHandler.java:104)
+	at io.undertow.server.Connectors.executeRootHandler(Connectors.java:326)
+	at io.undertow.server.HttpServerExchange$1.run(HttpServerExchange.java:812)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:748)
+{noformat}
+",,,
+914,ELY-1436,"User reported problem with getting work jdbc_realm with bcrypt mapper. He had configured org.wildfly.security to log TRACE messages, but log does not provide any useful information regarding mapping password from DB.
+
+In this case seems problem was in mixing base64 vs. modular crypt format.
+
+Looking into PasswordKeyMapper there is a lot of logic and lot of steps which can get wrong. So logging some TRACE messages can hint user what is going on and what went wrong.
+
+Also I have noticed there is unhandled exception. Please at least log some TRACE message.
+
+{code:java|title=PasswordKeyMapper.java}
+} catch (InvalidKeySpecException e) {
+	// fall out (unlikely but possible)
+}
+{code}
+
+[1] https://developer.jboss.org/message/977727
+",,,
+915,ELY-1430,"When Elytron JACC policy resource is defined, there is WARN logged during server shutdown:
+
+{{WARN  [org.wildfly.security] (MSC service thread 1-8) ELY08509: Calling any of the Policy.getPermissions() methods is not supported; please see the Java Authorization Contract for Containers (JACC) specification (section ""1.4 Requirements"", item 1) and the Java SE API specification for the Policy.getPermissions() methods for more information.  Instead, use the Policy.implies() method for authorization checking.}}
+
+This is suspicious behaviour. Customers that monitor logs for warnings have to deal with this. Setting Critical.",,,
+920,ELY-1426,"In following patch was introduced bug:
+
+https://github.com/wildfly-security/wildfly-elytron/pull/851/files#diff-dc83c9f75c0f78bbdfd49f49d56514faR332
+
+DigestSaslClient requests URP digest for default userName (authzid), not for authentication name (from NameCallback).
+Code is ok for server side, but not for client side, where credential callback params should require name obtained by NameCallback.",,,
+968,ELY-1361,"This can have a big performance impact, as unless there are a large number of elements parallel streams are significantly more expensive than non parallel ones. I see it being used in:
+
+org.jboss.as.ejb3.remote.AssociationImpl#registerClusterTopologyListener
+org.wildfly.elytron.web.undertow.server.ElytronAccount#ElytronAccount
+org.wildfly.elytron.web.undertow.server.ElytronHttpExchange#getRequestParameters
+org.jboss.as.security.remoting.RemotingConnectionCredential#RemotingConnectionCredential
+org.jboss.as.security.api.ConnectionSecurityContext#getConnectionPrincipals
+
+
+",,,
+971,ELY-1353,There's no point to having a special/separate kerberosSecurityFactory on AuthenticationConfiguration.  The callback handling code path for this would work exactly the same if the Kerberos credential were instead stored on the regular CredentialSource in the configuration.,,,
+993,ELY-1306,"elytron-tool.sh --help printing before help output unnecessary bad message:
+*Missing arguments. Printing general help message:*
+
+This message is unnecessary because of I want to print general help message.
+
+{code}
+[hsvabek@dhcp-10-40-5-17 bin]$ ./elytron-tool.sh --help
+Missing arguments. Printing general help message:
+usage: ./elytron-tool.sh credential-store [-a <alias> | -e <alias> | -r <alias> | -v] [-c] [-d]  [-f] [-h] [-i <arg>] [-l <loc>] [-n <type>] [-o <providers>] [-p <pwd>] [-q <cs-provider>]  [-s <arg>] [-t <type>] [-u <arg>]  [-x <secret to store>]
+{code}",,,
+1004,ELY-1300,"Add a test like this to `PemTest`:
+
+{code}
+    @Test
+    public void testParsePemX509Certificate01() throws Exception {
+        URL url = PemTest.class.getResource(""/ca/certs/01.pem"");
+        byte[] bytes = Files.readAllBytes(Paths.get(url.toURI()));
+        assertNotNull(Pem.parsePemX509Certificate(CodePointIterator.ofUtf8Bytes(bytes)));
+    }
+{code}
+
+Note that {{ca/certs/01.pem}} should start with non-PEM content
+
+{code}
+Certificate:
+    Data:
+...
+{code}
+
+followed by the PEM content:
+
+{code}
+-----BEGIN CERTIFICATE-----
+{code}
+
+Run the test
+
+{code}
+mvn clean test -Dtest=PemTest#testParsePemX509Certificate01
+{code}
+
+Expected: Not quite sure if the parser should accept this. In any case, the following code works on Oracle/OpenJDK (while it does not on IBM JDK):
+
+{code}
+        CertificateFactory certificateFactory = CertificateFactory.getInstance(""X.509"");
+        InputStream is = X509EvidenceVerificationSuiteChild.class.getResourceAsStream(""/ca/certs/01.pem"");
+        Assert.assertNotNull((X509Certificate) certificateFactory.generateCertificate(is));
+{code}
+
+Actual: 
+
+{code}
+testParsePemX509Certificate01(org.wildfly.security.util.PemTest)  Time elapsed: 0.116 sec  <<< ERROR!
+java.lang.IllegalArgumentException: ELY03010: Malformed PEM content at offset 1
+	at org.wildfly.security.pem.Pem.parsePemContent(Pem.java:79)
+	at org.wildfly.security.pem.Pem.parsePemX509Certificate(Pem.java:272)
+	at org.wildfly.security.util.PemTest.testParsePemX509Certificate01(PemTest.java:57)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:367)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:274)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:238)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:161)
+	at org.apache.maven.surefire.booter.ForkedBooter.invokeProviderInSameClassLoader(ForkedBooter.java:290)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:242)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:121)
+{code}",,,
+1030,ELY-1294,"Credential-store command \-\-salt option is validated only when is \-\-summary is used too.
+It is caused by generation MASKed password for summary output[1].
+It is at least strange and confusing to user: without \-\-summary is passed, with \-\-summary is failed (entry is stored in storage successfully).
+
+*How to reproduce*
+{code}
+[hsvabek@dhcp-10-40-5-17 bin]$ ./elytron-tool.sh credential-store   --add secret_alias --password pass123 --create -x secret_password -l store005.jceks -s 1234567890 -i 230 --summary  --debug
+Alias ""secret_alias"" has been successfully stored
+Exception encountered executing the command:
+java.security.InvalidAlgorithmParameterException: Salt must be 8 bytes long
+        at com.sun.crypto.provider.PBES1Core.init(PBES1Core.java:234)
+        at com.sun.crypto.provider.PBES1Core.init(PBES1Core.java:331)
+        at com.sun.crypto.provider.PBEWithMD5AndDESCipher.engineInit(PBEWithMD5AndDESCipher.java:228)
+        at javax.crypto.Cipher.implInit(Cipher.java:810)
+        at javax.crypto.Cipher.chooseProvider(Cipher.java:864)
+        at javax.crypto.Cipher.init(Cipher.java:1539)
+        at javax.crypto.Cipher.init(Cipher.java:1470)
+        at org.wildfly.security.util.PasswordBasedEncryptionUtil$Builder.createAndInitCipher(PasswordBasedEncryptionUtil.java:506)
+        at org.wildfly.security.util.PasswordBasedEncryptionUtil$Builder.build(PasswordBasedEncryptionUtil.java:589)
+        at org.wildfly.security.tool.MaskCommand.computeMasked(MaskCommand.java:117)
+        at org.wildfly.security.tool.CredentialStoreCommand.execute(CredentialStoreCommand.java:287)
+        at org.wildfly.security.tool.ElytronTool.main(ElytronTool.java:81)
+{code}
+
+
+[1] https://github.com/wildfly-security/wildfly-elytron-tool/blob/1.0.0.CR2/src/main/java/org/wildfly/security/tool/CredentialStoreCommand.java#L286",,,
+1039,ELY-1303,"WildFly Elytron Tool, Vault command should support set security provider to convert vaults to custom credential store implementation.
+
+Something similar to credential-store command.
+http://undertheelytron.blogspot.cz/2017/07/custom-test-credential-store.html",,,
+1098,ELY-1246,"There are elements in the {{elytron-1_0.xsd}} that the parser does not accept. While I didn't check them all here are at least a few that are in the XSD that the parser will reject:
+
+* {{allow-sasl-mechanisms}} 
+* {{allow-all-sasl-mechanisms}}
+* {{forbid-sasl-mechanisms}}
+
+This may be all of them, but it should likely be validated that those are the only ones.",,,
+1232,ELY-1177,"When element {{rewrite-user-name-regex}} is used in Elytron client configuration file then NullPointerException is thrown during authentication.
+
+Stack trace of thrown NPE:
+{code}
+java.lang.NullPointerException
+org.wildfly.security.auth.client.AuthenticationConfiguration.rewriteUser(AuthenticationConfiguration.java:492)
+org.wildfly.security.auth.client.ElytronXmlParser.lambda$parseAuthenticationConfigurationType$14(ElytronXmlParser.java:605)
+org.wildfly.security.auth.client.ElytronXmlParser.lambda$andThenOp$27(ElytronXmlParser.java:832)
+org.wildfly.security.auth.client.ElytronXmlParser.lambda$andThenOp$27(ElytronXmlParser.java:832)
+org.wildfly.security.auth.client.ElytronXmlParser.lambda$andThenOp$27(ElytronXmlParser.java:832)
+org.wildfly.security.auth.client.ElytronXmlParser.lambda$parseAuthenticationConfigurationType$25(ElytronXmlParser.java:704)
+org.wildfly.security.auth.client.ElytronXmlParser.lambda$parseAuthenticationRuleType$7(ElytronXmlParser.java:513)
+org.wildfly.security.auth.client.ElytronXmlParser.lambda$parseRulesType$8(ElytronXmlParser.java:537)
+org.wildfly.security.auth.client.ElytronXmlParser.parseAuthenticationClientType(ElytronXmlParser.java:308)
+org.wildfly.security.auth.client.ElytronXmlParser.parseAuthenticationClientConfiguration(ElytronXmlParser.java:180)
+org.wildfly.security.auth.client.ElytronXmlParser.parseAuthenticationClientConfiguration(ElytronXmlParser.java:141)
+com.redhat.eap.qe.elytron.authnctx.WildflyConfigXmlServlet.parseAndCreateAuthenticationClientConfiguration(WildflyConfigXmlServlet.java:120)
+com.redhat.eap.qe.elytron.authnctx.WildflyConfigXmlServlet.doGet(WildflyConfigXmlServlet.java:95)
+javax.servlet.http.HttpServlet.service(HttpServlet.java:687)
+javax.servlet.http.HttpServlet.service(HttpServlet.java:790)
+io.undertow.servlet.handlers.ServletHandler.handleRequest(ServletHandler.java:85)
+io.undertow.servlet.handlers.security.ServletSecurityRoleHandler.handleRequest(ServletSecurityRoleHandler.java:62)
+io.undertow.servlet.handlers.ServletDispatchingHandler.handleRequest(ServletDispatchingHandler.java:36)
+org.wildfly.extension.undertow.security.SecurityContextAssociationHandler.handleRequest(SecurityContextAssociationHandler.java:78)
+io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+io.undertow.servlet.handlers.security.SSLInformationAssociationHandler.handleRequest(SSLInformationAssociationHandler.java:131)
+io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler.handleRequest(ServletAuthenticationCallHandler.java:57)
+io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+io.undertow.security.handlers.AbstractConfidentialityHandler.handleRequest(AbstractConfidentialityHandler.java:46)
+io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler.handleRequest(ServletConfidentialityConstraintHandler.java:64)
+io.undertow.security.handlers.AuthenticationMechanismsHandler.handleRequest(AuthenticationMechanismsHandler.java:60)
+io.undertow.servlet.handlers.security.CachedAuthenticatedSessionHandler.handleRequest(CachedAuthenticatedSessionHandler.java:77)
+io.undertow.security.handlers.NotificationReceiverHandler.handleRequest(NotificationReceiverHandler.java:50)
+io.undertow.security.handlers.AbstractSecurityContextAssociationHandler.handleRequest(AbstractSecurityContextAssociationHandler.java:43)
+io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+org.wildfly.extension.undertow.security.jacc.JACCContextIdHandler.handleRequest(JACCContextIdHandler.java:61)
+io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+org.wildfly.extension.undertow.deployment.GlobalRequestControllerHandler.handleRequest(GlobalRequestControllerHandler.java:68)
+io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+io.undertow.servlet.handlers.ServletInitialHandler.handleFirstRequest(ServletInitialHandler.java:292)
+io.undertow.servlet.handlers.ServletInitialHandler.access$100(ServletInitialHandler.java:81)
+io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:138)
+io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:135)
+io.undertow.servlet.core.ServletRequestContextThreadSetupAction$1.call(ServletRequestContextThreadSetupAction.java:48)
+io.undertow.servlet.core.ContextClassLoaderSetupAction$1.call(ContextClassLoaderSetupAction.java:43)
+org.wildfly.extension.undertow.security.SecurityContextThreadSetupAction.lambda$create$0(SecurityContextThreadSetupAction.java:105)
+org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1704)
+org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1704)
+org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1704)
+org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1704)
+io.undertow.servlet.handlers.ServletInitialHandler.dispatchRequest(ServletInitialHandler.java:272)
+io.undertow.servlet.handlers.ServletInitialHandler.access$000(ServletInitialHandler.java:81)
+io.undertow.servlet.handlers.ServletInitialHandler$1.handleRequest(ServletInitialHandler.java:104)
+io.undertow.server.Connectors.executeRootHandler(Connectors.java:211)
+io.undertow.server.HttpServerExchange$1.run(HttpServerExchange.java:809)
+java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+java.lang.Thread.run(Thread.java:745)
+{code}",,,
+1269,ELY-1141,"Section 3.3
+
+
+   For historical reasons, a sender MUST NOT generate the quoted string
+   syntax values for the following parameters: stale and algorithm.",,,
+1303,ELY-1101,Wrong offset causing padding check to throw BadPaddingException.,,,
+1320,ELY-1084,"When we try remove non-existent alias entry from credential store storage file then we get success message.
+
+There is expected error message.
+
+*How to reproduce:*
+Create credential store storage file and add there alias
+{code}
+java -jar  wildfly-elytron-tool.jar credential-store --remove secret_alias --password pass123 --uri ""cr-store://test1.jceks?modifiable=true;create=true;keyStoreType=JCEKS"" -l test1.jceks
+{code}
+
+We run command for remove alias from storage and in both cases we get success message:
+{code}
+java -jar  wildfly-elytron-tool.jar credential-store --remove secret_alias --password pass123 --uri ""cr-store://test1.jceks?modifiable=true;create=true;keyStoreType=JCEKS"" -l test1.jceks
+Alias ""secret_alias"" has been successfully removed
+
+java -jar  wildfly-elytron-tool.jar credential-store --remove secret_alias --password pass123 --uri ""cr-store://test1.jceks?modifiable=true;create=true;keyStoreType=JCEKS"" -l test1.jceks
+Alias ""secret_alias"" has been successfully removed
+{code}
+
+",,,
+1327,ELY-1082,"XSD file {{elytron-1_0.xsd}} [1] includes almost no documentation. If this XSD is included in server distribution (as {{docs/schema/elytron-1_0.xsd}}) then it affects user experience.
+
+[1] https://github.com/wildfly-security/wildfly-elytron/blob/master/src/main/resources/schema/elytron-1_0.xsd",,,
+1564,ELY-867,"I encountered couple of issues with cryptography used for password masking:
+* implementation of masked passwords drops initialization vector (IV) randomly generated by the {{javax.crypto.Cipher}} which makes unmasking (decryption) impossible.
+* the implementation is using the same algorithm for key derivation and encryption, which is not possible as there is no encryption support in {{javax.crypto.Cipher}} for PKDBF2 family of algorithms, they are supported only in {{javax.crypto.SecretKeyFactory}}
+",,,
+1653,ELY-793,"Using {{@STRENGTH}} keyword in {{CipherSuiteSelector.fromString}} should cause descending sorting of cipher suites, like OpenSSL does, e.g. {{openssl ciphers -v 'ALL:!ADH:@STRENGTH'}}. There is comparator in {{SortByAlgorithmKeyLengthCipherSuiteSelector}} [1].
+
+Or, am I wrong? Are cipher suites in {{javax.net.ssl.SSLParameters}} expected in ascending order? (Does it matter?) Will the OpenSSL provider expect ascending order? (Or will it parse cipher string itself?)
+
+The JavaDoc [2] should mention whether the sorting is ascending or descending.
+
+[1] https://github.com/wildfly-security/wildfly-elytron/blob/7666231fa76b95c3c97eed0d16968a5f77a7de22/src/main/java/org/wildfly/security/ssl/CipherSuiteSelector.java#L730
+[2] https://github.com/wildfly-security/wildfly-elytron/blob/7666231fa76b95c3c97eed0d16968a5f77a7de22/src/main/java/org/wildfly/security/ssl/CipherSuiteSelector.java#L356",,,
+1754,ELY-689,"If I want remove entry from credential store and immediately I try to add new entry with same alias then I get error message
+{code}
+{
+    ""outcome"" => ""failed"",
+    ""failure-description"" => ""WFLYCTL0158: Operation handler failed: java.lang.IllegalStateException: WFLYCTL0075: Duplicate resource csAlias001"",
+    ""rolled-back"" => true
+}
+{code}
+
+In case of reload after remove operation then adding entry with same alias passes.
+
+I cannot see any information about reload-required after executing remove operation. 
+{code}
+{
+    ""outcome"" => ""success"",
+    ""result"" => undefined
+}
+{code}
+
+My suggestions
+# add there information about reload-required
+OR
+# fix it so it will not be necessary reload
+
+In my opinion second option is better.",,,
+1791,ELY-656,While initializing KeystorePasswordStore an NPE is thrown instead of proper log message.,,,
+1860,ELY-613,"There are some inner classes in Elytron which should be considered to be static nested to avoid dependency on their outer class. Following nested classes should be considered:
+
+* LoadedIdentity and Identity from org.wildfly.security.auth.realm.FileSystemSecurityRealm
+* DecoderState from org.wildfly.security.asn1.DERDecoder
+* AccountEntry from org.wildfly.security.auth.realm.LegacyPropertiesSecurityRealm
+* JaasAuthorizationIdentity and DefaultCallbackHandler from org.wildfly.security.auth.realm.JaasSecurityRealm
+* LoadKey from org.wildfly.security.keystore.AtomicLoadKeyStore",,,
